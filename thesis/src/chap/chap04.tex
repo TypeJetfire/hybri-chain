@@ -224,7 +224,7 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 \textbf{futex\_block 规则。} 条件是 ev.type == "syscall" 且 ev.func == "futex" 且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。
 
-\textbf{mmap\_size 规则。} 条件是 ev.func 匹配 mmap/mmap2 且从 extra 字典中取 length 字段。如果 length > 1GB，级别是严重风险；如果 512MB < length <= 1GB，级别是高风险。
+\textbf{mmap\_size 规则。} 条件是 ev.func 匹配 mmap/mmap2 且从 extra 字典中取 length 字段。如果 length > 1GB，级别为 HIGH；如果 512MB < length <= 1GB，级别是高风险。
 
 \textbf{sensitive\_path 规则。} 条件是 ev.func == "openat" 且打开的路径匹配敏感模式。敏感模式包括：blobs（中等风险）、.gguf/.ggml（高风险）、server.json（低风险）、model.json（中风险）。路径字符串用 lower() 统一大小写后做子串匹配。
 

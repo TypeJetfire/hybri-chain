@@ -109,7 +109,7 @@ Time to First Token（TTFT）是衡量推理用户体验的关键指标。本实
     \label{fig:ttft}
 \end{figure}
 
-TinyLlama-1.1B 模型在 eBPF 追踪开启后，TTFT 从 65ms 上升至 66ms，增加约 1.5\%，增量可忽略不计。Qwen2-0.5B 模型的 TTFT 从 64ms 上升至 68ms，增加约 6.3\%，同样在可接受范围内。上述结果表明，HybriChain 的 eBPF 追踪机制对推理时延的影响极为有限，不会显著影响推理引擎的实时响应能力。
+TinyLlama-1.1B 模型在 eBPF 追踪开启后，TTFT 从 65ms 上升至 66ms，增加约 1.5\%，增量可忽略不计。Qwen2-0.5B 模型的 TTFT 从 64ms 上升至 68ms，增加约 6.3\%，同样在可接受范围内。上述结果表明，HybriChain 的 eBPF 追踪机制对推理时延的影响很小，不会影响推理引擎的实时响应能力。
 
 \subsection{内存占用分析}
 
@@ -132,7 +132,7 @@ TinyLlama-1.1B 模型在 eBPF 追踪开启后，TTFT 从 65ms 上升至 66ms，�
 
 \subsection{事件压缩效果}
 
-原始 bpftrace 追踪输出的文本数据经五步漏斗式降噪后，事件数量显著压缩。
+原始 bpftrace 追踪输出的文本数据经五步漏斗式降噪后，事件数量有所压缩。
 
 图~\ref{fig:compression} 展示了 TinyLlama-1.1B 与 Qwen2-0.5B 模型的压缩前后事件数量对比。
 
@@ -253,12 +253,12 @@ TinyLlama-1.1B 模型的推理执行阶段共包含约 119 次 llama\_decode 调
         \hline
         平均阻塞时长 & 7.8 秒 & 30 条告警的均值 \\
         \hline
-        阻塞总时长 & $> 244$ 秒 & 远超 23.83 秒采样时长 \\
+        阻塞总时长 & $> 244$ 秒 & 大于 23.83 秒采样时长 \\
         \hline
     \end{tabular}
 \end{table}
 
-代码~\ref{lst:alerts} 展示了前 10 条最严重的 futex 阻塞告警（按阻塞时长降序）。
+代码~\ref{lst:alerts} 展示了前 10 条阻塞时长最长的 futex 告警（按阻塞时长降序）。
 
 \begin{lstlisting}[caption={Top 10 futex 阻塞告警（JSON 片段）}, label={lst:alerts}]
 {"tid":45633,"type":"futex_block","risk":"HIGH","dur_ms":15186.0}
@@ -277,9 +277,9 @@ TinyLlama-1.1B 模型的推理执行阶段共包含约 119 次 llama\_decode 调
 
 \textbf{最大阻塞事件（15.2 秒）。} TID=45633 在 token 生成循环中陷入 futex 等待 15.2 秒，对应 llama.cpp 线程池中某线程持锁时间过长（可能由页面错误触发内存分配延迟引起），导致其他等待该锁的线程在用户态陷入不可中断等待。
 
-\textbf{并发阻塞峰值（9 条告警，9–10 秒级）。} 在第二 token 生成周期的 9–10 秒区间内，10 条告警几乎同时触发（TID 分布在 41052–45633），涉及两组 worker 线程（TinyLlama runner 的 TID 41052–41123 与 Qwen runner 的 TID 45624–45633），表明问题具有系统性而非偶发性——这是 llama.cpp 在 CPU-only 环境下进行推理时多线程同步机制的结构性瓶颈。
+\textbf{并发阻塞峰值（9 条告警，9–10 秒级）。} 在第二 token 生成周期的 9–10 秒区间内，10 条告警几乎同时触发（TID 分布在 41052–45633），涉及两组 worker 线程（TinyLlama runner 的 TID 41052–41123 与 Qwen runner 的 TID 45624–45633），说明 llama.cpp 在 CPU-only 环境下进行推理时多线程同步机制的结构性瓶颈。
 
-\textbf{对推理 SLA 的影响。} 15.2 秒的单次最大阻塞意味着在最坏情况下，一次 token 生成循环中的单次锁等待可阻塞推理线程十余秒。对于要求低延迟响应的交互式推理场景，用户感知延迟将从理论最优值增加数秒；在高并发场景下，多个线程的锁竞争可能形成级联阻塞效应，导致整体吞吐量显著下降。
+\textbf{对推理 SLA 的影响。} 15.2 秒的单次最大阻塞意味着在最坏情况下，一次 token 生成循环中的单次锁等待可阻塞推理线程十余秒。对于要求低延迟响应的交互式推理场景，用户感知延迟将从理论最优值增加；在高并发场景下，多个线程的锁竞争可能形成级联阻塞效应，导致整体吞吐量有所下降。
 
 \section{HybriChain 综合评估}
 

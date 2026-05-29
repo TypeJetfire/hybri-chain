@@ -77,7 +77,7 @@ HybriChain 包含三个核心模块：
     \item \texttt{llama\_sampler\_sample}（以及 \texttt{common\_sampler\_csample}）：token 采样函数，代表输出生成的关键节点。
 \end{itemize}
 
-这四个函数覆盖了推理过程从"计算触发"到"输出生成"的完整路径，是跨语言边界出现最密集的位置。
+这四个函数覆盖了推理过程从"计算触发"到"输出生成"的完整路径，是跨语言边界上出现最多的位置。
 
 在内核系统调用层面，追踪以下类型：read/write（文件和网络 I/O）、futex（线程同步和阻塞等待）、mmap/munmap（内存分配释放）、clone3（线程创建）、openat/close（文件打开关闭）。brk、mprotect、madvise、clock\_gettime 等高频但语义价值低的调用直接排除。
 
@@ -224,7 +224,7 @@ HybriChain 按语义把推理引擎内部函数划分为八个层次，每个层
 
 目前实现了以下规则：
 
-\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，一次 futex 等待超过 1 秒说明线程在等锁。5 秒以上是高风险告警，1\~5 秒是中风险告警。在实测中我们发现，Qwen2-0.5B 推理时最严重的一次 futex 阻塞达到 15.2 秒，说明 CPU-only 环境下 llama.cpp 的多线程同步存在严重瓶颈。
+\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，一次 futex 等待超过 1 秒说明线程在等锁。5 秒以上是高风险告警，1\~5 秒是中风险告警。在实测中观察到 Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒，CPU-only 环境下 llama.cpp 的多线程同步存在瓶颈。
 
 \textbf{规则 2：mmap 大小检测。} KV Cache 分配通常在几百 MB 到 1GB 之间。如果 mmap 大小超过 1GB，可能意味着配置错误或遭受攻击。超过 1GB 的 mmap 触发高风险告警，512MB\~1GB 触发中风险告警。
 
