@@ -1,0 +1,45 @@
+================================================================================
+Ollama 推理调用链缝合图
+================================================================================
+
+图例：
+  ✓ = confirmed（动态直接观测）
+  ? = inferred（静态存在 + 部分动态观测）
+  ↔ = 跨层调用（重点关注）
+
+【跨层 Confirmed 调用链（核心证据）】
+--------------------------------------------------------------------------------
+
+  Go↔CGO 边界  →  Llama API 层  [2 条 confirmed]
+    ✓ _cgo_8aa400f2462b_Cfunc_llama_decode
+      ↓
+      llama_decode
+
+    ✓ _cgo_8aa400f2462b_Cfunc_common_sampler_csample
+      ↓
+      common_sampler_csample
+
+
+  Llama API 层  →  GGML 调度  [1 条 confirmed]
+    ✓ llama_decode
+      ↓
+      ggml_backend_sched_graph_compute_async
+
+
+【 llama_decode 推理主路径 】
+--------------------------------------------------------------------------------
+  llama_decode (Llama API 层)
+    ?→ llama_synchronize [Llama API 层]
+    ?→ ggml_backend_sched_synchronize [GGML 调度]
+    ✓→ ggml_backend_sched_graph_compute_async [GGML 调度]
+
+【各层调用统计】
+--------------------------------------------------------------------------------
+  Go↔CGO 边界                 confirmed= 2  inferred= 1
+  Llama API 层               confirmed= 3  inferred= 5
+  批处理/采样                    confirmed= 0  inferred= 3
+  GGML 调度                   confirmed= 1  inferred= 4
+  GGML 算子                   confirmed= 0  inferred= 4
+  未知层                       confirmed= 0  inferred= 1
+
+================================================================================

@@ -1,0 +1,114 @@
+{
+  "stitched_at": "2026-05-12T17:15:27.702430",
+  "total_nodes": 4832,
+  "total_static_edges": 52,
+  "summary": {
+    "confirmed": 3,
+    "inferred": 11,
+    "conflicting": 0,
+    "unknown": 38
+  },
+  "confirmed_edges": [
+    {
+      "from": "_cgo_8aa400f2462b_Cfunc_llama_decode",
+      "to": "llama_decode",
+      "confidence": "confirmed",
+      "layer_from": "go_cgo_bridge",
+      "layer_to": "llama_api"
+    },
+    {
+      "from": "_cgo_8aa400f2462b_Cfunc_common_sampler_csample",
+      "to": "common_sampler_csample",
+      "confidence": "confirmed",
+      "layer_from": "go_cgo_bridge",
+      "layer_to": "llama_api"
+    },
+    {
+      "from": "llama_decode",
+      "to": "ggml_backend_sched_graph_compute_async",
+      "confidence": "confirmed",
+      "layer_from": "llama_api",
+      "layer_to": "sched_compute"
+    }
+  ],
+  "inferred_edges": [
+    {
+      "from": "_cgoexp_8aa400f2462b_llamarunner_llama_Execute",
+      "to": "llama_decode",
+      "confidence": "inferred",
+      "layer_from": "unknown",
+      "layer_to": "llama_api"
+    },
+    {
+      "from": "_cgo_8aa400f2462b_Cfunc_common_sampler_csample",
+      "to": "llama_sampler_sample",
+      "confidence": "inferred",
+      "layer_from": "go_cgo_bridge",
+      "layer_to": "batch_sampler"
+    },
+    {
+      "from": "llama_decode",
+      "to": "llama_synchronize",
+      "confidence": "inferred",
+      "layer_from": "llama_api",
+      "layer_to": "llama_api"
+    },
+    {
+      "from": "llama_decode",
+      "to": "ggml_backend_sched_synchronize",
+      "confidence": "inferred",
+      "layer_from": "llama_api",
+      "layer_to": "sched_compute"
+    },
+    {
+      "from": "llama_sampler_sample",
+      "to": "_Z21common_sampler_sample",
+      "confidence": "inferred",
+      "layer_from": "batch_sampler",
+      "layer_to": "ggml_ops"
+    },
+    {
+      "from": "common_sampler_sample",
+      "to": "_Z21common_sampler_sample",
+      "confidence": "inferred",
+      "layer_from": "llama_api",
+      "layer_to": "ggml_ops"
+    },
+    {
+      "from": "ggml_backend_sched_graph_compute_async",
+      "to": "ggml_backend_sched_synchronize",
+      "confidence": "inferred",
+      "layer_from": "sched_compute",
+      "layer_to": "sched_compute"
+    },
+    {
+      "from": "ggml_backend_sched_graph_compute_async",
+      "to": "ggml_backend_sched_reset",
+      "confidence": "inferred",
+      "layer_from": "sched_compute",
+      "layer_to": "sched_compute"
+    },
+    {
+      "from": "ggml_backend_sched_graph_compute_async",
+      "to": "ggml_backend_graph_compute_async",
+      "confidence": "inferred",
+      "layer_from": "sched_compute",
+      "layer_to": "sched_compute"
+    },
+    {
+      "from": "_Z21common_sampler_sample",
+      "to": "llama_sampler_sample",
+      "confidence": "inferred",
+      "layer_from": "ggml_ops",
+      "layer_to": "batch_sampler"
+    },
+    {
+      "from": "_Z21common_sampler_sample",
+      "to": "common_sampler_print",
+      "confidence": "inferred",
+      "layer_from": "ggml_ops",
+      "layer_to": "llama_api"
+    }
+  ],
+  "conflicting_edges": []
+}

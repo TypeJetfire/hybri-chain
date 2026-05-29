@@ -1,0 +1,13 @@
+/home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/trace_unified.bt:21:5-37: WARNING: Return value discarded.
+    delete(@start_llama_decode[tid]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/trace_unified.bt:34:5-29: WARNING: Return value discarded.
+    delete(@start_ggml[tid]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/trace_unified.bt:47:5-29: WARNING: Return value discarded.
+    delete(@start_sync[tid]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/trace_unified.bt:60:5-32: WARNING: Return value discarded.
+    delete(@start_csample[tid]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Attached 21 probes

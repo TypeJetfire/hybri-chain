@@ -1,0 +1,5 @@
+experiment_id,model,analysis_type,with_ebpf,llama_decode_calls,llama_decode_total_ms,llama_decode_avg_us,llama_decode_max_us,ggml_compute_total_ms,sampler_total_ms,ttft_s,tps,total_inference_s,memory_mmap_total_mb,memory_mmap_max_single_mb,mmap_count_ge1mb,syscall_futex_count,syscall_mmap_count,syscall_clone3_count,syscall_read_count,strace_key_events,bpftrace_raw_lines,bpftrace_clean_events,unique_stack_nodes,compression_ratio,parse_time_raw_ms,parse_time_clean_ms,call_graph_nodes,topological_order_len
+TinyLlama-1.1B,eBPF,TinyLlama-1.1B,true,190,11736.1,61769,1244835,11660.4,55.6,0.066,18.0,10.56,5513.0,606.5,84,4168,84,578,2472,195,25329,8891,4,2.8,1.6,6.8,38,42
+TinyLlama-1.1B,Static,TinyLlama-1.1B,false,0,0,0,0,0,0,N/A,N/A,N/A,0.0,0.0,0,0,0,0,0,0,0,0,0,N/A,N/A,N/A,38,42
+Qwen2-0.5B,eBPF,Qwen2-0.5B,true,10,444.0,44399,157972,438.7,10.6,0.062,33.8,0.30,5901.8,768.0,86,1131,86,47,4786,145,13670,6373,4,2.1,1.0,4.4,38,42
+Qwen2-0.5B,Static,Qwen2-0.5B,false,0,0,0,0,0,0,N/A,N/A,N/A,0.0,0.0,0,0,0,0,0,0,0,0,0,N/A,N/A,N/A,38,42

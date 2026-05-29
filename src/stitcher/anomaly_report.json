@@ -1,0 +1,680 @@
+{
+  "generated_at": "2026-05-12T17:25:19.315618",
+  "trace_file": "../../trace_unified.jsonl",
+  "summary": {
+    "total_events": 1427,
+    "total_syscalls": 1267,
+    "total_uprobes": 160,
+    "total_alerts": 30,
+    "alerts_by_type": {
+      "futex_block": 30
+    },
+    "alerts_by_risk": {
+      "high": 30
+    }
+  },
+  "top_alerts": [
+    {
+      "ts_ns": 20584108952430,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7976ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7976071,
+        "duration_ms": 7976.1
+      }
+    },
+    {
+      "ts_ns": 20584073980911,
+      "tid": 45627,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7913095,
+        "duration_ms": 7913.1
+      }
+    },
+    {
+      "ts_ns": 20584073897226,
+      "tid": 45633,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7912959,
+        "duration_ms": 7913.0
+      }
+    },
+    {
+      "ts_ns": 20584073844710,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7912848,
+        "duration_ms": 7912.8
+      }
+    },
+    {
+      "ts_ns": 20584041677178,
+      "tid": 41060,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880386,
+        "duration_ms": 7880.4
+      }
+    },
+    {
+      "ts_ns": 20584041616023,
+      "tid": 41059,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880323,
+        "duration_ms": 7880.3
+      }
+    },
+    {
+      "ts_ns": 20584041483902,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880154,
+        "duration_ms": 7880.2
+      }
+    },
+    {
+      "ts_ns": 20584041461658,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7879945,
+        "duration_ms": 7879.9
+      }
+    },
+    {
+      "ts_ns": 20576039499237,
+      "tid": 45633,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 15186ms（线程同步等待）",
+      "detail": {
+        "duration_us": 15186043,
+        "duration_ms": 15186.0
+      }
+    },
+    {
+      "ts_ns": 20575873008824,
+      "tid": 41060,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9792ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9791677,
+        "duration_ms": 9791.7
+      }
+    },
+    {
+      "ts_ns": 20575871986842,
+      "tid": 41122,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9790ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9790471,
+        "duration_ms": 9790.5
+      }
+    },
+    {
+      "ts_ns": 20575871974506,
+      "tid": 41061,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9789ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9789482,
+        "duration_ms": 9789.5
+      }
+    },
+    {
+      "ts_ns": 20575871545582,
+      "tid": 45627,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9413ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9412734,
+        "duration_ms": 9412.7
+      }
+    },
+    {
+      "ts_ns": 20575836930201,
+      "tid": 45624,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331969,
+        "duration_ms": 9332.0
+      }
+    },
+    {
+      "ts_ns": 20575836896651,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331882,
+        "duration_ms": 9331.9
+      }
+    },
+    {
+      "ts_ns": 20575836839617,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331714,
+        "duration_ms": 9331.7
+      }
+    },
+    {
+      "ts_ns": 20575806809123,
+      "tid": 41054,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301321,
+        "duration_ms": 9301.3
+      }
+    },
+    {
+      "ts_ns": 20575806750953,
+      "tid": 41053,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301256,
+        "duration_ms": 9301.3
+      }
+    },
+    {
+      "ts_ns": 20575806622490,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301120,
+        "duration_ms": 9301.1
+      }
+    },
+    {
+      "ts_ns": 20575806587036,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9300894,
+        "duration_ms": 9300.9
+      }
+    },
+    {
+      "ts_ns": 20566126476584,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5213ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5213430,
+        "duration_ms": 5213.4
+      }
+    },
+    {
+      "ts_ns": 20566082813992,
+      "tid": 45628,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5143ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5142542,
+        "duration_ms": 5142.5
+      }
+    },
+    {
+      "ts_ns": 20566082772821,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5142ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5142452,
+        "duration_ms": 5142.5
+      }
+    },
+    {
+      "ts_ns": 20566082323348,
+      "tid": 41053,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5489ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5488581,
+        "duration_ms": 5488.6
+      }
+    },
+    {
+      "ts_ns": 20566081180710,
+      "tid": 41061,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5487ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5487397,
+        "duration_ms": 5487.4
+      }
+    },
+    {
+      "ts_ns": 20566081164076,
+      "tid": 41054,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5487ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5487370,
+        "duration_ms": 5487.4
+      }
+    },
+    {
+      "ts_ns": 20566043978925,
+      "tid": 41122,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103382,
+        "duration_ms": 5103.4
+      }
+    },
+    {
+      "ts_ns": 20566043907369,
+      "tid": 41059,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103294,
+        "duration_ms": 5103.3
+      }
+    },
+    {
+      "ts_ns": 20566043743218,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103121,
+        "duration_ms": 5103.1
+      }
+    },
+    {
+      "ts_ns": 20566043675000,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5102908,
+        "duration_ms": 5102.9
+      }
+    }
+  ],
+  "all_alerts": [
+    {
+      "ts_ns": 20566043675000,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5102908,
+        "duration_ms": 5102.9
+      }
+    },
+    {
+      "ts_ns": 20566043743218,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103121,
+        "duration_ms": 5103.1
+      }
+    },
+    {
+      "ts_ns": 20566043907369,
+      "tid": 41059,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103294,
+        "duration_ms": 5103.3
+      }
+    },
+    {
+      "ts_ns": 20566043978925,
+      "tid": 41122,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5103ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5103382,
+        "duration_ms": 5103.4
+      }
+    },
+    {
+      "ts_ns": 20566081164076,
+      "tid": 41054,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5487ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5487370,
+        "duration_ms": 5487.4
+      }
+    },
+    {
+      "ts_ns": 20566081180710,
+      "tid": 41061,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5487ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5487397,
+        "duration_ms": 5487.4
+      }
+    },
+    {
+      "ts_ns": 20566082323348,
+      "tid": 41053,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5489ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5488581,
+        "duration_ms": 5488.6
+      }
+    },
+    {
+      "ts_ns": 20566082772821,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5142ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5142452,
+        "duration_ms": 5142.5
+      }
+    },
+    {
+      "ts_ns": 20566082813992,
+      "tid": 45628,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5143ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5142542,
+        "duration_ms": 5142.5
+      }
+    },
+    {
+      "ts_ns": 20566126476584,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 5213ms（线程同步等待）",
+      "detail": {
+        "duration_us": 5213430,
+        "duration_ms": 5213.4
+      }
+    },
+    {
+      "ts_ns": 20575806587036,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9300894,
+        "duration_ms": 9300.9
+      }
+    },
+    {
+      "ts_ns": 20575806622490,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301120,
+        "duration_ms": 9301.1
+      }
+    },
+    {
+      "ts_ns": 20575806750953,
+      "tid": 41053,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301256,
+        "duration_ms": 9301.3
+      }
+    },
+    {
+      "ts_ns": 20575806809123,
+      "tid": 41054,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9301ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9301321,
+        "duration_ms": 9301.3
+      }
+    },
+    {
+      "ts_ns": 20575836839617,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331714,
+        "duration_ms": 9331.7
+      }
+    },
+    {
+      "ts_ns": 20575836896651,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331882,
+        "duration_ms": 9331.9
+      }
+    },
+    {
+      "ts_ns": 20575836930201,
+      "tid": 45624,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9332ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9331969,
+        "duration_ms": 9332.0
+      }
+    },
+    {
+      "ts_ns": 20575871545582,
+      "tid": 45627,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9413ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9412734,
+        "duration_ms": 9412.7
+      }
+    },
+    {
+      "ts_ns": 20575871974506,
+      "tid": 41061,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9789ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9789482,
+        "duration_ms": 9789.5
+      }
+    },
+    {
+      "ts_ns": 20575871986842,
+      "tid": 41122,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9790ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9790471,
+        "duration_ms": 9790.5
+      }
+    },
+    {
+      "ts_ns": 20575873008824,
+      "tid": 41060,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 9792ms（线程同步等待）",
+      "detail": {
+        "duration_us": 9791677,
+        "duration_ms": 9791.7
+      }
+    },
+    {
+      "ts_ns": 20576039499237,
+      "tid": 45633,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 15186ms（线程同步等待）",
+      "detail": {
+        "duration_us": 15186043,
+        "duration_ms": 15186.0
+      }
+    },
+    {
+      "ts_ns": 20584041461658,
+      "tid": 41052,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7879945,
+        "duration_ms": 7879.9
+      }
+    },
+    {
+      "ts_ns": 20584041483902,
+      "tid": 41123,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880154,
+        "duration_ms": 7880.2
+      }
+    },
+    {
+      "ts_ns": 20584041616023,
+      "tid": 41059,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880323,
+        "duration_ms": 7880.3
+      }
+    },
+    {
+      "ts_ns": 20584041677178,
+      "tid": 41060,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7880ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7880386,
+        "duration_ms": 7880.4
+      }
+    },
+    {
+      "ts_ns": 20584073844710,
+      "tid": 45625,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7912848,
+        "duration_ms": 7912.8
+      }
+    },
+    {
+      "ts_ns": 20584073897226,
+      "tid": 45633,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7912959,
+        "duration_ms": 7913.0
+      }
+    },
+    {
+      "ts_ns": 20584073980911,
+      "tid": 45627,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7913ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7913095,
+        "duration_ms": 7913.1
+      }
+    },
+    {
+      "ts_ns": 20584108952430,
+      "tid": 45631,
+      "type": "futex_block",
+      "risk": "high",
+      "message": "futex 阻塞 7976ms（线程同步等待）",
+      "detail": {
+        "duration_us": 7976071,
+        "duration_ms": 7976.1
+      }
+    }
+  ]
+}

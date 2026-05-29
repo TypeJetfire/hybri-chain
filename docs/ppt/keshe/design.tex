@@ -1,0 +1,257 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+\usepackage{xeCJK} % 处理中文
+\usepackage{fontspec}
+\usepackage{cite}  % 引用管理
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, calc}
+\usetheme{Madrid}
+\usecolortheme{beaver} % 使用红色系主题，显得更严肃/醒目，也可改回 default
+
+% 设置字体 (根据你的系统环境调整，Overleaf 上通常不需要额外配置，本地可能需要)
+% \setCJKmainfont{SimSun}
+
+% --- 标题信息 ---
+\title{基于属性的 SD-WAN 控制系统}
+% \subtitle{从底层协议封装到声明式属性驱动的演进}
+\author[李梓勤]{李梓勤 \\ 指导教师：高凯}
+\institute[SCU]{四川大学网络空间安全学院}
+\date{2025 年 12 月 23 日}
+
+% --- 自定义命令 ---
+\newcommand{\citepeer}[1]{\textsuperscript{\cite{#1}}}
+
+\begin{document}
+
+% =================================================
+% 1. 标题页
+% =================================================
+\frame{\titlepage}
+
+% =================================================
+% 2. 研究背景
+% =================================================
+\begin{frame}{背景}
+    \begin{columns}
+        \column{0.6\textwidth}
+        \begin{block}{SD-WAN 的演进}
+            \begin{itemize}
+                \item \textbf{传统场景：} 聚焦于企业多分支机构与数据中心的高
+                    效互联，解决专线成本高、调度难的问题
+                    \cite{Jain2013, Hong2013, ONF2014}。
+                \item \textbf{新兴趋势（个人/SOHO）：} 随着边缘计算与 HomeLab
+                    的兴起，个人用户面临多设备（IoT、NAS、云服务器）跨地域、跨
+                    运营商互联的刚需。
+            \end{itemize}
+        \end{block}
+
+        \column{0.38\textwidth}
+        \begin{alertblock}{零信任 (Zero Trust)}
+            传统的边界防护已失效。部分 SD-WAN 引入了 NIST 的 ZTNA \cite{NIST2020} 理念：
+            \begin{itemize}
+                \item 从“基于位置的信任”转向 \textbf{“基于身份与属性的信任”}。
+                \item 强调持续验证与最小权限。
+            \end{itemize}
+        \end{alertblock}
+    \end{columns}
+
+    \vspace{0.5em}
+    % \textbf{核心矛盾：} 现有的企业级方案太重，消费级方案太黑盒，缺乏一种\textbf{轻量级、细粒度}的控制手段。
+\end{frame}
+
+% =================================================
+% 3. 相关工作 (Data Plane & Control Plane)
+% =================================================
+\begin{frame}{相关工作}
+    \textbf{1. 数据平面 (Data Plane)}
+    \begin{itemize}
+        \item \textbf{技术栈：} OpenVPN~\cite{OpenVPN}, IPsec~\cite{IPsec}, WireGuard~\cite{Donenfeld2017}。
+        \item \textbf{痛点：} 提供了虚拟 L3 信道与加密原语，但“裸”协议配置极其复杂（Key Exchange, Route Table, Firewall Rules），缺乏集中管理能力。
+    \end{itemize}
+
+    \vspace{1em}
+    \textbf{2. 控制平面 (Control Plane) 封装}
+    \begin{table}[]
+        \small
+        \begin{tabular}{|l|l|l|}
+            \hline
+            \textbf{分类} & \textbf{代表工作} & \textbf{特点与局限} \\ \hline
+            \textbf{端侧软件} & \begin{tabular}[c]{@{}l@{}}Tailscale
+                \cite{Tailscale}, ZeroTier\cite{ZeroTier}, \\
+                EasyTier\cite{EasyTier}, tinc \cite{tinc}\end{tabular} & \begin{tabular}[c]{@{}l@{}}基于 WireGuard 或自研协议；\\ \textbf{局限：} 策略表达能力固化，配置分散。\end{tabular} \\ \hline
+            \textbf{网关硬件} & \begin{tabular}[c]{@{}l@{}}Oray (蒲公英) \cite{OrayPgy}, \\ GL.iNet (GoodCloud)\end{tabular} & \begin{tabular}[c]{@{}l@{}}集成度高，开箱即用；\\ \textbf{局限：} Vendor-Lock，难以扩展自定义逻辑。\end{tabular} \\ \hline
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+% =================================================
+% 4. 问题定义 (Motivation)
+% =================================================
+\begin{frame}{相关工作}
+    尽管现有工具基本解决了“连通性”问题，但在“可控性”上仍存在本质缺陷：
+
+    \begin{exampleblock}{缺陷 1：表达力不足}
+        现有的 ACL 多基于静态的 Peer ID 或 IP 地址（如 \texttt{Allow 10.0.0.1 to 10.0.0.2}）。
+        \textbf{缺失：} 无法表达高级安全语义，如“仅允许 \textit{打过最新补丁} 且 \textit{位于可信网络} 的设备访问核心数据库”。
+    \end{exampleblock}
+
+    \begin{exampleblock}{缺陷 2：配置碎片化}
+        部分方案（如 tinc, 纯 WireGuard）需要在每台机器上手动维护 Peer 列表。
+    \end{exampleblock}
+
+    \begin{exampleblock}{缺陷 3：扩展性受限 (Limited Extensibility)。}
+        难以集成动态路由逻辑。无法实现环境感知策略。
+    \end{exampleblock}
+\end{frame}
+
+% =================================================
+% 5. 拟解决思路 (Proposed Method)
+% =================================================
+\begin{frame}{系统设计}
+    \textbf{逻辑集中化控制、声明式意图表达、高度可扩展插件架构}
+
+    \begin{columns}[T]
+        \column{0.55\textwidth}
+        \begin{block}{自动化与扩展}
+            \begin{itemize}
+                \item \textbf{Zero-Touch 部署：} 节点凭 Token 接入，Agent 自动完成隧道建立、密钥交换与防火墙配置。
+                \item \textbf{插件化架构：} 通过插件机制扩展控制平面功能（如：NAT 穿透）。
+            \end{itemize}
+        \end{block}
+
+        \begin{block}{声明式策略引擎}
+            \begin{itemize}
+                \item \textbf{ABAC：} 基于身份、设备状态动态授权。
+                    \cite{NISTABAC}\\
+                \textit{\footnotesize 例：IF device.ispatched == True THEN Allow Access}
+                \item \textbf{属性路由：} 根据网络属
+                    性/流属性（延迟、成本、运营商）调整流量路径。
+            \end{itemize}
+        \end{block}
+
+    \end{columns}
+\end{frame}
+
+\begin{frame}{系统架构}
+    \centering
+
+    % --- 第一层：逻辑控制中心 ---
+    \begin{columns}[t]
+        \column{0.8\textwidth}
+        \begin{block}{控制平面 (Control Plane / "The Brain")}
+            \centering
+            \textbf{Central Controller} \\
+            \vspace{0.2em}
+            \footnotesize 身份认证 (Auth) \quad | \quad 属性数据库 (Attribute Store) \quad | \quad 策略引擎 (ABAC/ABR)
+        \end{block}
+    \end{columns}
+
+    \vspace{0.5em}
+    $\downarrow$ \textit{\scriptsize 声明式配置下发 (gRPC / TLS)} $\downarrow$
+    % \vspace{0.5em}
+
+    % --- 第二层：分布式节点 ---
+    \begin{columns}[t]
+        \column{0.45\textwidth}
+        \begin{exampleblock}{边缘节点 A (Agent)}
+            \footnotesize
+            \textbf{属性上报：} OS, 延迟, 位置 \\
+            \textbf{执行器：} WireGuard 接口管理
+        \end{exampleblock}
+
+        \column{0.45\textwidth}
+        \begin{exampleblock}{边缘节点 B (Agent)}
+            \footnotesize
+            \textbf{属性上报：} 运营商, 负载状态 \\
+            \textbf{执行器：} 路由表动态更新
+        \end{exampleblock}
+    \end{columns}
+
+    \vspace{1em}
+
+    % --- 第三层：数据平面 ---
+    \begin{alertblock}{数据平面 (Data Plane)}
+        \centering
+        \textbf{P2P Mesh Network (Encrypted WireGuard Tunnels)} \\
+        \footnotesize 流量不经过控制器，实现低延迟、高隐私的直接互联
+    \end{alertblock}
+
+\end{frame}
+
+% =================================================
+% 6. Roadmap
+% =================================================
+\begin{frame}{研究计划与 Roadmap}
+    \begin{description}
+        \item[2025.12 - 2026.01] \textbf{设计阶段：} 确定属性描述语言（DSL）规范，完成 Controller 原型设计。
+        \item[2026.02] \textbf{核心开发：} 实现基于属性的 Policy Engine 及 WireGuard 接口封装。
+        \item[2026.03] \textbf{扩展功能：} 开发 Agent 端环境感知探针（延迟/丢包检测）。
+        \item[2026.04] \textbf{测试验证：} 在跨地域多云环境下部署，对比传统 Mesh 方案性能。
+        \item[2026.05] \textbf{论文撰写：} 整理实验数据，完成毕业论文初稿。
+        \item[2026.06] \textbf{答辩与交付：} 代码开源与毕业答辩。
+    \end{description}
+\end{frame}
+
+% =================================================
+% 7. 参考文献 (手动管理版，方便单文件编译)
+% =================================================
+\begin{frame}[allowframebreaks]{参考文献}
+    % \tiny % 缩小字号以容纳更多引用
+    \bibliographystyle{ieeetr}
+    \begin{thebibliography}{99}
+
+        % SD-WAN General
+        \bibitem{Jain2013} Jain, S., Kumar, A., et al. "B4: Experience with a globally-deployed software defined WAN." \textit{SIGCOMM}, 2013.
+        \bibitem{Hong2013} Hong, CY., Kandula, S., et al. "Achieving High Utilization with Software-Driven WAN" \textit{SIGCOMM}, 2013.
+        \bibitem{ONF2014} Open Networking Foundation. "SDN architecture." \textit{ONF TR-502}, 2014.
+
+        % Data Plane
+        \bibitem{Donenfeld2017} Donenfeld, Jason A. "WireGuard: Next Generation Kernel Network Tunnel." \textit{NDSS}, 2017.
+        \bibitem{OpenVPN} OpenVPN Inc. "OpenVPN Community Documentation." 2024.
+        \bibitem{IPsec} Frankel, S., et al. "IP Security (IPsec) and Internet Key Exchange (IKE) Document Roadmap." \textit{RFC 6071}, 2011.
+
+        % Zero Trust
+        \bibitem{NIST2020} Rose, S., et al. "Zero Trust Architecture." \textit{NIST Special Publication 800-207}, 2020.
+
+        % Existing Tools
+        \bibitem{Tailscale} Tailscale Inc. "How Tailscale works." \textit{Tailscale Blog}, 2020.
+        \bibitem{tinc} Guus Sliepen. "tinc VPN daemon." \textit{tinc-vpn.org}, 1998.
+        \bibitem{Oray} Shanghai Oray Co., Ltd. "PgyVPN SD-WAN Whitepaper." 2023.
+
+        % NIST ABAC 标准文档 (SP 800-162)
+        \bibitem{NISTABAC}
+        Hu, V. C., Ferraiolo, D., Kuhn, R., Schnitzer, A., Sandlin, K., Miller, R., and Scarfone, K.
+        "Guide to Attribute Based Access Control (ABAC) Definition and Considerations."
+        \textit{NIST Special Publication 800-162}, 2014.
+        Available: \url{https://csrc.nist.gov/pubs/sp/800/162/upd2/final}
+
+        % ZeroTier 平台
+        \bibitem{ZeroTier}
+        ZeroTier, Inc.
+        "ZeroTier: Simple SD-WAN and Zero Trust Access Platform."
+        \textit{ZeroTier Official Website}, 2025.
+        Available: \url{https://www.zerotier.com/platform/}
+
+        % 贝锐蒲公英 (Oray)
+        \bibitem{OrayPgy}
+        上海贝锐信息科技股份有限公司.
+        "贝锐蒲公英 SD-WAN 解决方案：企业协同办公与远程访问."
+        \textit{蒲公英官网}, 2025.
+        Available: \url{https://pgy.oray.com/case/scenes/office}
+
+        % EasyTier 开源项目
+        \bibitem{EasyTier}
+        EasyTier Project.
+        "EasyTier: A simple, decentralized mesh VPN with WireGuard support."
+        \textit{GitHub Repository}, 2025.
+        Available: \url{https://github.com/EasyTier/EasyTier}
+
+    \end{thebibliography}
+\end{frame}
+\begin{frame}
+    \centering
+    \Huge \textcolor{blue}{Q \& A} \\
+    \vspace{20pt}
+    \large 感谢各位老师，请指正。
+\end{frame}
+
+\end{document}

@@ -1,0 +1,427 @@
+{
+  "topological_order": [
+    "llama_tokenize",
+    "ggml_backend_buffer_alloc",
+    "_cgo_8aa400f2462b_Cfunc_llama_decode",
+    "_cgo_8aa400f2462b_Cfunc_common_sampler_csample",
+    "_cgo_8aa400f2462b_Cfunc_llama_batch_add",
+    "llama_model_load_from_file",
+    "_cgo_8aa400f2462b_Cfunc_llama_sampler_sample",
+    "ggml_backend_cpu_init",
+    "llama_token_to_piece",
+    "_cgo_8aa400f2462b_Cfunc_llama_batch_init",
+    "llama_sampler_init",
+    "llama_sampler_accept",
+    "_cgoexp_8aa400f2462b_llamarunner_llama_Execute",
+    "llama_vocab_impl_tokenize",
+    "ggml_aligned_malloc",
+    "common_sampler_csample",
+    "llama_model_loader_load_tensors",
+    "ggml_init",
+    "ggml_backend_init_best",
+    "llama_load_model_from_file",
+    "llama_model_loader_init_mappings",
+    "common_token_to_piece",
+    "llama_vocab_impl_token_to_piece",
+    "llama_batch_init",
+    "llama_sampler_chain_init",
+    "common_sampler_init",
+    "common_sampler_accept",
+    "llama_decode",
+    "mmap",
+    "ggml_backend_sched_new",
+    "ggml_backend_sched_graph_compute_async",
+    "llama_synchronize",
+    "ggml_backend_sched_alloc_graph",
+    "ggml_backend_sched_reserve",
+    "ggml_backend_sched_synchronize",
+    "ggml_backend_graph_compute_async",
+    "ggml_backend_sched_reset",
+    "ggml_graph_new",
+    "ggml_backend_sched_set_tensor_backend",
+    "ggml_backend_synchronize",
+    "ggml_backend_graph_compute",
+    "ggml_backend_cpu_buffer_type"
+  ],
+  "call_sequence": [
+    {
+      "seq": 1,
+      "node_id": "llama_tokenize",
+      "layer_seq": "L3_202",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 2,
+      "node_id": "ggml_backend_buffer_alloc",
+      "layer_seq": "ggml_backend_buffer_alloc",
+      "layer": "unknown",
+      "layer_desc": ""
+    },
+    {
+      "seq": 3,
+      "node_id": "_cgo_8aa400f2462b_Cfunc_llama_decode",
+      "layer_seq": "L1_141",
+      "layer": "go_cgo_bridge",
+      "layer_desc": "Go → CGO 边界桥接函数"
+    },
+    {
+      "seq": 4,
+      "node_id": "_cgo_8aa400f2462b_Cfunc_common_sampler_csample",
+      "layer_seq": "L1_130",
+      "layer": "go_cgo_bridge",
+      "layer_desc": "Go → CGO 边界桥接函数"
+    },
+    {
+      "seq": 5,
+      "node_id": "_cgo_8aa400f2462b_Cfunc_llama_batch_add",
+      "layer_seq": "_cgo_8aa400f2462b_Cfunc_llama_batch_add",
+      "layer": "unknown",
+      "layer_desc": ""
+    },
+    {
+      "seq": 6,
+      "node_id": "llama_model_load_from_file",
+      "layer_seq": "L2_280",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 7,
+      "node_id": "_cgo_8aa400f2462b_Cfunc_llama_sampler_sample",
+      "layer_seq": "_cgo_8aa400f2462b_Cfunc_llama_sampler_sample",
+      "layer": "unknown",
+      "layer_desc": ""
+    },
+    {
+      "seq": 8,
+      "node_id": "ggml_backend_cpu_init",
+      "layer_seq": "L5_074",
+      "layer": "ggml_backend",
+      "layer_desc": "GGML 后端内存与调度"
+    },
+    {
+      "seq": 9,
+      "node_id": "llama_token_to_piece",
+      "layer_seq": "L3_201",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 10,
+      "node_id": "_cgo_8aa400f2462b_Cfunc_llama_batch_init",
+      "layer_seq": "L1_139",
+      "layer": "go_cgo_bridge",
+      "layer_desc": "Go → CGO 边界桥接函数"
+    },
+    {
+      "seq": 11,
+      "node_id": "llama_sampler_init",
+      "layer_seq": "L3_079",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 12,
+      "node_id": "llama_sampler_accept",
+      "layer_seq": "L3_030",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 13,
+      "node_id": "_cgoexp_8aa400f2462b_llamarunner_llama_Execute",
+      "layer_seq": "_cgoexp_8aa400f2462b_llamarunner_llama_Execute",
+      "layer": "unknown",
+      "layer_desc": ""
+    },
+    {
+      "seq": 14,
+      "node_id": "llama_vocab_impl_tokenize",
+      "layer_seq": "L3_262",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 15,
+      "node_id": "ggml_aligned_malloc",
+      "layer_seq": "L6_045",
+      "layer": "ggml_ops",
+      "layer_desc": "GGML 张量运算"
+    },
+    {
+      "seq": 16,
+      "node_id": "common_sampler_csample",
+      "layer_seq": "L2_057",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 17,
+      "node_id": "llama_model_loader_load_tensors",
+      "layer_seq": "L2_318",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 18,
+      "node_id": "ggml_init",
+      "layer_seq": "L6_275",
+      "layer": "ggml_ops",
+      "layer_desc": "GGML 张量运算"
+    },
+    {
+      "seq": 19,
+      "node_id": "ggml_backend_init_best",
+      "layer_seq": "L5_115",
+      "layer": "ggml_backend",
+      "layer_desc": "GGML 后端内存与调度"
+    },
+    {
+      "seq": 20,
+      "node_id": "llama_load_model_from_file",
+      "layer_seq": "L2_225",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 21,
+      "node_id": "llama_model_loader_init_mappings",
+      "layer_seq": "L2_317",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 22,
+      "node_id": "common_token_to_piece",
+      "layer_seq": "L7_004",
+      "layer": "vocab",
+      "layer_desc": "词表与分词/Detokenize"
+    },
+    {
+      "seq": 23,
+      "node_id": "llama_vocab_impl_token_to_piece",
+      "layer_seq": "L3_261",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 24,
+      "node_id": "llama_batch_init",
+      "layer_seq": "L3_008",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 25,
+      "node_id": "llama_sampler_chain_init",
+      "layer_seq": "L3_042",
+      "layer": "batch_sampler",
+      "layer_desc": "批处理与采样"
+    },
+    {
+      "seq": 26,
+      "node_id": "common_sampler_init",
+      "layer_seq": "L2_061",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 27,
+      "node_id": "common_sampler_accept",
+      "layer_seq": "L2_048",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 28,
+      "node_id": "llama_decode",
+      "layer_seq": "L2_105",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 29,
+      "node_id": "mmap",
+      "layer_seq": "L8_039",
+      "layer": "memory",
+      "layer_desc": "内存分配与 mmap/munmap"
+    },
+    {
+      "seq": 30,
+      "node_id": "ggml_backend_sched_new",
+      "layer_seq": "L4_023",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 31,
+      "node_id": "ggml_backend_sched_graph_compute_async",
+      "layer_seq": "L4_022",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 32,
+      "node_id": "llama_synchronize",
+      "layer_seq": "L2_404",
+      "layer": "llama_api",
+      "layer_desc": "Llama API 层（顶层推理接口）"
+    },
+    {
+      "seq": 33,
+      "node_id": "ggml_backend_sched_alloc_graph",
+      "layer_seq": "L4_010",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 34,
+      "node_id": "ggml_backend_sched_reserve",
+      "layer_seq": "L4_024",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 35,
+      "node_id": "ggml_backend_sched_synchronize",
+      "layer_seq": "L4_029",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 36,
+      "node_id": "ggml_backend_graph_compute_async",
+      "layer_seq": "L4_006",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 37,
+      "node_id": "ggml_backend_sched_reset",
+      "layer_seq": "L4_025",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 38,
+      "node_id": "ggml_graph_new",
+      "layer_seq": "L6_252",
+      "layer": "ggml_ops",
+      "layer_desc": "GGML 张量运算"
+    },
+    {
+      "seq": 39,
+      "node_id": "ggml_backend_sched_set_tensor_backend",
+      "layer_seq": "L4_027",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 40,
+      "node_id": "ggml_backend_synchronize",
+      "layer_seq": "L5_142",
+      "layer": "ggml_backend",
+      "layer_desc": "GGML 后端内存与调度"
+    },
+    {
+      "seq": 41,
+      "node_id": "ggml_backend_graph_compute",
+      "layer_seq": "L4_005",
+      "layer": "sched_compute",
+      "layer_desc": "GGML 调度与计算层"
+    },
+    {
+      "seq": 42,
+      "node_id": "ggml_backend_cpu_buffer_type",
+      "layer_seq": "L5_049",
+      "layer": "ggml_backend",
+      "layer_desc": "GGML 后端内存与调度"
+    }
+  ],
+  "layer_summary": {
+    "go_cgo_bridge": {
+      "layer_seq_prefix": "L1",
+      "node_count": 3,
+      "description": "Go → CGO 边界桥接函数",
+      "sample_nodes": [
+        "_cgo_8aa400f2462b_Cfunc_llama_decode",
+        "_cgo_8aa400f2462b_Cfunc_common_sampler_csample",
+        "_cgo_8aa400f2462b_Cfunc_llama_batch_init"
+      ]
+    },
+    "llama_api": {
+      "layer_seq_prefix": "L2",
+      "node_count": 9,
+      "description": "Llama API 层（顶层推理接口）",
+      "sample_nodes": [
+        "llama_model_load_from_file",
+        "common_sampler_csample",
+        "llama_model_loader_load_tensors",
+        "llama_load_model_from_file",
+        "llama_model_loader_init_mappings"
+      ]
+    },
+    "batch_sampler": {
+      "layer_seq_prefix": "L3",
+      "node_count": 8,
+      "description": "批处理与采样",
+      "sample_nodes": [
+        "llama_tokenize",
+        "llama_token_to_piece",
+        "llama_sampler_init",
+        "llama_sampler_accept",
+        "llama_vocab_impl_tokenize"
+      ]
+    },
+    "sched_compute": {
+      "layer_seq_prefix": "L4",
+      "node_count": 9,
+      "description": "GGML 调度与计算层",
+      "sample_nodes": [
+        "ggml_backend_sched_new",
+        "ggml_backend_sched_graph_compute_async",
+        "ggml_backend_sched_alloc_graph",
+        "ggml_backend_sched_reserve",
+        "ggml_backend_sched_synchronize"
+      ]
+    },
+    "ggml_backend": {
+      "layer_seq_prefix": "L5",
+      "node_count": 4,
+      "description": "GGML 后端内存与调度",
+      "sample_nodes": [
+        "ggml_backend_cpu_init",
+        "ggml_backend_init_best",
+        "ggml_backend_synchronize",
+        "ggml_backend_cpu_buffer_type"
+      ]
+    },
+    "ggml_ops": {
+      "layer_seq_prefix": "L6",
+      "node_count": 3,
+      "description": "GGML 张量运算",
+      "sample_nodes": [
+        "ggml_aligned_malloc",
+        "ggml_init",
+        "ggml_graph_new"
+      ]
+    },
+    "vocab": {
+      "layer_seq_prefix": "L7",
+      "node_count": 1,
+      "description": "词表与分词/Detokenize",
+      "sample_nodes": [
+        "common_token_to_piece"
+      ]
+    },
+    "memory": {
+      "layer_seq_prefix": "L8",
+      "node_count": 1,
+      "description": "内存分配与 mmap/munmap",
+      "sample_nodes": [
+        "mmap"
+      ]
+    }
+  }
+}

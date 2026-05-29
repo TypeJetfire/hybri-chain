@@ -1,0 +1,110 @@
+{
+  "version": "1.0",
+  "description": "SD-WAN Access Matrix Resolved IR",
+  "nodes": {
+    "laptop_li": {
+      "internal_ip": "10.0.0.2",
+      "public_key": "7b5R...v1W0=",
+      "listen_port": 51820,
+      "endpoint": "1.2.3.4:51820"
+    },
+    "nas_core": {
+      "internal_ip": "10.0.0.100",
+      "public_key": "9xY2...p8Z1=",
+      "listen_port": 51820,
+      "endpoint": "5.6.7.8:51820"
+    },
+    "scu-lab-server": {
+      "internal_ip": "10.0.0.1",
+      "public_key": "peer_pubkey_A",
+      "listen_port": 51820,
+      "endpoint": "10.0.0.1:51820"
+    }
+  },
+  "access_matrix": [
+    {
+      "source": "laptop_li",
+      "destination": "nas_core",
+      "connectivity": true,
+      "l4_rules": [
+        {
+          "proto": "tcp",
+          "action": "accept",
+          "ports": [
+            22
+          ]
+        },
+        {
+          "proto": "icmp",
+          "action": "accept"
+        }
+      ]
+    },
+    {
+      "source": "laptop_li",
+      "destination": "scu-lab-server",
+      "connectivity": true,
+      "l4_rules": [
+        {
+          "proto": "tcp",
+          "action": "accept",
+          "ports": [
+            22
+          ]
+        },
+        {
+          "proto": "icmp",
+          "action": "accept"
+        }
+      ]
+    },
+    {
+      "source": "nas_core",
+      "destination": "laptop_li",
+      "connectivity": false,
+      "l4_rules": []
+    },
+    {
+      "source": "nas_core",
+      "destination": "scu-lab-server",
+      "connectivity": false,
+      "l4_rules": []
+    },
+    {
+      "source": "scu-lab-server",
+      "destination": "laptop_li",
+      "connectivity": true,
+      "l4_rules": [
+        {
+          "proto": "tcp",
+          "action": "accept",
+          "ports": [
+            22
+          ]
+        },
+        {
+          "proto": "icmp",
+          "action": "accept"
+        }
+      ]
+    },
+    {
+      "source": "scu-lab-server",
+      "destination": "nas_core",
+      "connectivity": true,
+      "l4_rules": [
+        {
+          "proto": "tcp",
+          "action": "accept",
+          "ports": [
+            22
+          ]
+        },
+        {
+          "proto": "icmp",
+          "action": "accept"
+        }
+      ]
+    }
+  ]
+}

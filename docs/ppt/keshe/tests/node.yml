@@ -1,0 +1,16 @@
+version: 1.0
+nodes:
+  - id: "scu-lab-server"
+    identity: "peer_pubkey_A"
+    ipv4: "10.0.0.1"
+    attributes:
+      system:
+        os: "linux"
+        kernel: "6.1.0"
+        patch_level: 20251201
+      identity:
+        role: "server"
+        owner: "li-ziqin"
+      network:
+        zone: "trusted"
+        isp: "CERNET"

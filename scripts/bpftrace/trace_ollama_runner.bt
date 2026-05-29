@@ -1,0 +1,62 @@
+#!/usr/bin/env bpftrace
+// trace_ollama_runner.bt - Ollama Runner eBPF 追踪脚本
+//
+// 实际可用全局符号 (T):
+//   llama_decode                   - LLM 解码（每次 token 推理都调用）
+//   ggml_backend_sched_graph_compute_async - GGML 计算调度
+//   sys_enter_mmap                 - 大块内存分配
+
+BEGIN
+{
+    @start_ns = nsecs;
+}
+
+// --- Part 1: llama_decode (LLM 解码核心 = token 生成循环) ---
+// 每个 token 的推理都会经过这里
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_decode"
+{
+    $ts = nsecs; $tid = tid;
+    // 计算距离上一次 decode 的时间间隔（token 生成频率）
+    $prev = @last_decode[$tid];
+    $interval = $prev != 0 ? ($ts - $prev) / 1000000 : 0;
+    @last_decode[$tid] = $ts;
+    @decode_cnt[$tid] = @decode_cnt[$tid] + 1;
+    // 用 comm 显示当前操作上下文
+    printf("[LLM-DEC]  %s tid=%d interval=%ums cnt=%d\n",
+           strftime("%H:%M:%S", $ts), $tid, $interval,
+           @decode_cnt[$tid]);
+}
+
+// --- Part 2: GGML 计算调度 ---
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"ggml_backend_sched_graph_compute_async"
+{
+    $ts = nsecs; $tid = tid;
+    $prev = @last_compute[$tid];
+    $interval = $prev != 0 ? ($ts - $prev) / 1000000 : 0;
+    @last_compute[$tid] = $ts;
+    printf("[GGML-CMP] %s tid=%d interval=%ums\n",
+           strftime("%H:%M:%S", $ts), $tid, $interval);
+}
+
+// --- Part 3: mmap 大块分配 ---
+tracepoint:syscalls:sys_enter_mmap
+{
+    if (args->len >= 1048576) {
+        printf("[MMAP-ENT] %s pid=%d tid=%d len=%dKB\n",
+               strftime("%H:%M:%S", nsecs), pid, tid, args->len / 1024);
+    }
+}
+
+// --- Part 4: 心跳 + 统计 ---
+interval:s:10
+{
+    printf("\n=== %s (elapsed %ds) ===\n",
+           strftime("%H:%M:%S", nsecs), (nsecs - @start_ns) / 1000000000);
+}
+
+end
+{
+    clear(@last_decode); clear(@last_compute);
+    clear(@decode_cnt); clear(@start_ns);
+    printf("\n[TRACE END]\n");
+}

@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{研究现状}{3}{0}{1}
+\beamer@sectionintoc {2}{TrivialTier 系统概述}{4}{0}{2}
+\beamer@sectionintoc {3}{属性模型}{5}{0}{3}
+\beamer@sectionintoc {4}{核心逻辑}{6}{0}{4}
+\beamer@sectionintoc {5}{演示验证}{7}{0}{5}

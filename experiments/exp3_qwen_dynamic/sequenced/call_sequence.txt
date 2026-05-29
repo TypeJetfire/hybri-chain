@@ -1,0 +1,62 @@
+================================================================================
+静态调用图 — 拓扑排序调用序列
+================================================================================
+
+总节点: 4832, 总边: 52
+
+【层序号体系】
+  L1 go_cgo_bridge          3 个节点  Go → CGO 边界桥接函数
+  L2 llama_api              9 个节点  Llama API 层（顶层推理接口）
+  L3 batch_sampler          8 个节点  批处理与采样
+  L4 sched_compute          9 个节点  GGML 调度与计算层
+  L5 ggml_backend           4 个节点  GGML 后端内存与调度
+  L6 ggml_ops               3 个节点  GGML 张量运算
+  L7 vocab                  1 个节点  词表与分词/Detokenize
+  L8 memory                 1 个节点  内存分配与 mmap/munmap
+
+================================================================================
+#     层序号        层名                   函数名                                     
+--------------------------------------------------------------------------------
+1     L3_202     batch_sampler        llama_tokenize                          
+2     ggml_backend_buffer_alloc unknown              ggml_backend_buffer_alloc               
+3     L1_141     go_cgo_bridge        _cgo_8aa400f2462b_Cfunc_llama_decode    
+4     L1_130     go_cgo_bridge        _cgo_8aa400f2462b_Cfunc_common_sampler_csample
+5     _cgo_8aa400f2462b_Cfunc_llama_batch_add unknown              _cgo_8aa400f2462b_Cfunc_llama_batch_add 
+6     L2_280     llama_api            llama_model_load_from_file              
+7     _cgo_8aa400f2462b_Cfunc_llama_sampler_sample unknown              _cgo_8aa400f2462b_Cfunc_llama_sampler_sample
+8     L5_074     ggml_backend         ggml_backend_cpu_init                   
+9     L3_201     batch_sampler        llama_token_to_piece                    
+10    L1_139     go_cgo_bridge        _cgo_8aa400f2462b_Cfunc_llama_batch_init
+11    L3_079     batch_sampler        llama_sampler_init                      
+12    L3_030     batch_sampler        llama_sampler_accept                    
+13    _cgoexp_8aa400f2462b_llamarunner_llama_Execute unknown              _cgoexp_8aa400f2462b_llamarunner_llama_Execute
+14    L3_262     batch_sampler        llama_vocab_impl_tokenize               
+15    L6_045     ggml_ops             ggml_aligned_malloc                     
+16    L2_057     llama_api            common_sampler_csample                  
+17    L2_318     llama_api            llama_model_loader_load_tensors         
+18    L6_275     ggml_ops             ggml_init                               
+19    L5_115     ggml_backend         ggml_backend_init_best                  
+20    L2_225     llama_api            llama_load_model_from_file              
+21    L2_317     llama_api            llama_model_loader_init_mappings        
+22    L7_004     vocab                common_token_to_piece                   
+23    L3_261     batch_sampler        llama_vocab_impl_token_to_piece         
+24    L3_008     batch_sampler        llama_batch_init                        
+25    L3_042     batch_sampler        llama_sampler_chain_init                
+26    L2_061     llama_api            common_sampler_init                     
+27    L2_048     llama_api            common_sampler_accept                   
+28    L2_105     llama_api            llama_decode                            
+29    L8_039     memory               mmap                                    
+30    L4_023     sched_compute        ggml_backend_sched_new                  
+31    L4_022     sched_compute        ggml_backend_sched_graph_compute_async  
+32    L2_404     llama_api            llama_synchronize                       
+33    L4_010     sched_compute        ggml_backend_sched_alloc_graph          
+34    L4_024     sched_compute        ggml_backend_sched_reserve              
+35    L4_029     sched_compute        ggml_backend_sched_synchronize          
+36    L4_006     sched_compute        ggml_backend_graph_compute_async        
+37    L4_025     sched_compute        ggml_backend_sched_reset                
+38    L6_252     ggml_ops             ggml_graph_new                          
+39    L4_027     sched_compute        ggml_backend_sched_set_tensor_backend   
+40    L5_142     ggml_backend         ggml_backend_synchronize                
+41    L4_005     sched_compute        ggml_backend_graph_compute              
+42    L5_049     ggml_backend         ggml_backend_cpu_buffer_type            
+================================================================================

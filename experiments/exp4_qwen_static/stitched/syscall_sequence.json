@@ -1,0 +1,11 @@
+{
+  "summary": {
+    "bpftrace_total": 0,
+    "strace_key": 0,
+    "bpftrace_by_type": {},
+    "syscall_counts": {},
+    "stage_counts": {},
+    "risk_counts": {}
+  },
+  "sequence": []
+}

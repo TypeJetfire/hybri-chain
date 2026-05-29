@@ -1,0 +1,180 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+\usepackage{xeCJK}
+\usepackage{fontspec}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{tikz}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+% 基础代码样式设置
+\lstset{
+    basicstyle=\tiny\ttfamily,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    extendedchars=false,
+    showstringspaces=false
+}
+
+\title[TrivialTier: ABAC SD-WAN]{TrivialTier: 基于属性的 SD-WAN 控制系统设计}
+\subtitle{从声明式策略到原生态网络执行的演进}
+\author[李梓勤, 周杰]{李梓勤、周杰 \\ 指导教师：高凯}
+\institute[SCU]{四川大学网络空间安全学院}
+\date{2025 年 12 月 23 日}
+
+\begin{document}
+
+% 1. 标题页
+\begin{frame}
+\titlepage
+\end{frame}
+
+% 2. 目录页
+\begin{frame}
+\frametitle{目录}
+\tableofcontents
+\end{frame}
+
+% 3. 研究现状
+\section{研究现状}
+\begin{frame}{研究动机：SD-WAN 的语义缺失}
+\begin{itemize}
+    \item \textbf{现状：} 现有的个人/SOHO SD-WAN (如 Tailscale) 策略多基于静态 Tag 或 IP。
+    \item \textbf{局限性：}
+    \begin{itemize}
+        \item 无法感知动态环境（如威胁等级、地理位置）。
+        \item 缺乏对 L4 细粒度协议的声明式描述。
+        \item 策略表达力（Expressiveness）受限，难以适配零信任模型。
+    \end{itemize}
+    \item \textbf{目标：} 构建一个逻辑集中化的控制平面，实现属性驱动的自动化安全部署。
+\end{itemize}
+\end{frame}
+
+% 4. 我的工作
+\section{TrivialTier 系统概述}
+\begin{frame}{TrivialTier 系统概述}
+\begin{block}{核心功能}
+\begin{itemize}
+    \item 设计并实现了基于 ABAC 的 SD-WAN 策略引擎
+    \item 支持声明式策略定义，自动生成 WireGuard 和 nftables 配置
+    \item 实现属性驱动的动态访问控制，支持主体、客体、环境多维判定
+\end{itemize}
+\end{block}
+\begin{block}{技术特点}
+\begin{itemize}
+    \item \textbf{声明式策略：} 通过 YAML 定义安全策略
+    \item \textbf{自动化生成：} 从策略到配置的自动化编译流程
+    \item \textbf{细粒度控制：} 支持 L3 (WireGuard) 和 L4 (nftables) 执行
+\end{itemize}
+\end{block}
+\end{frame}
+
+% 5. 属性模型
+\section{属性模型}
+\begin{frame}{属性模型：主体、客体与环境}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{主体属性 (Subject)}
+\begin{itemize}
+    \item \texttt{system.os}
+    \item \texttt{system.patch\_level}
+    \item \texttt{network.zone}
+\end{itemize}
+\end{block}
+\begin{block}{客体属性 (Object)}
+\begin{itemize}
+    \item \texttt{identity.role}
+    \item \texttt{identity.owner}
+\end{itemize}
+\end{block}
+\column{0.5\textwidth}
+\begin{block}{环境属性 (Environment)}
+\begin{itemize}
+    \item \texttt{global.threat\_level}
+\end{itemize}
+\end{block}
+\vspace{1em}
+\begin{exampleblock}{示例策略}
+\tiny
+\texttt{subject: system.patch\_level >= 20251101}\\
+\texttt{object: identity.role == "storage"}\\
+\texttt{environment: threat\_level < 3}
+\end{exampleblock}
+\end{columns}
+\end{frame}
+
+% 6. 核心逻辑 - 检查 fragile 闭合
+\section{核心逻辑}
+\begin{frame}[fragile]{核心逻辑：声明式属性判定}
+\begin{columns}
+\column{0.5\textwidth}
+\lstinputlisting[language=Python, firstline=48, lastline=65]{abac_engine.py}
+\column{0.5\textwidth}
+\begin{itemize}
+    \item \textbf{递归求值：} 支持 \textit{AllOf, AnyOf, NoneOf}。
+    \item \textbf{属性投影：} 通过 Dot-Notation 实现检索。
+    \item \textbf{环境感知：} 将全局变量注入判定流程。
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% 7. 演示验证
+\section{演示验证}
+\begin{frame}{演示验证：策略引擎工作流程}
+\begin{block}{执行流程}
+\begin{enumerate}
+    \item 读取节点属性和策略定义
+    \item ABAC 引擎评估策略，生成访问矩阵
+    \item 自动化生成 WireGuard 及 nftables 配置
+\end{enumerate}
+\end{block}
+\begin{block}{输出结果}
+\texttt{demo\_output/} 目录包含所有生成的安全配置文件
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]{演示验证：策略评估结果}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{策略要求}
+\tiny
+\begin{itemize}
+    \item 主体：Linux 系统，补丁等级 $\geq$ 20251101
+    \item 客体：角色为 storage
+    \item 环境：威胁等级 $<$ 3
+\end{itemize}
+\end{block}
+\begin{block}{评估结果}
+\tiny
+\begin{itemize}
+    \item \texttt{laptop\_li}: 满足条件，可访问
+    \item \texttt{nas\_core}: 补丁等级不足，拦截请求
+\end{itemize}
+\end{block}
+\column{0.5\textwidth}
+\begin{block}{生成的配置示例}
+\begin{lstlisting}[language=bash]
+# laptop_li.conf (WireGuard)
+[Peer]
+PublicKey = 9xY2...p8Z1=
+AllowedIPs = 10.0.0.100/32
+
+# laptop_li.nft (nftables)
+chain inbound {
+    ip saddr 10.0.0.1 tcp dport 22 accept
+}
+\end{lstlisting}
+\end{block}
+\end{columns}
+\end{frame}
+
+% 8. 谢谢页
+\begin{frame}
+\centering
+\Huge \textcolor{blue}{谢谢！} \\
+\vspace{20pt}
+\large 请各位老师批评指正。
+\end{frame}
+
+\end{document}

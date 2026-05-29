@@ -1,0 +1,33 @@
+\frametitle{演示验证：策略评估结果}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{block}{策略要求}
+\tiny
+\begin{itemize}
+    \item 主体：Linux 系统，补丁等级 $\geq$ 20251101
+    \item 客体：角色为 storage
+    \item 环境：威胁等级 $<$ 3
+\end{itemize}
+\end{block}
+\begin{block}{评估结果}
+\tiny
+\begin{itemize}
+    \item \texttt{laptop\_li}: 满足条件，可访问
+    \item \texttt{nas\_core}: 补丁等级不足，拦截请求
+\end{itemize}
+\end{block}
+\column{0.5\textwidth}
+\begin{block}{生成的配置示例}
+\begin{lstlisting}[language=bash]
+# laptop_li.conf (WireGuard)
+[Peer]
+PublicKey = 9xY2...p8Z1=
+AllowedIPs = 10.0.0.100/32
+
+# laptop_li.nft (nftables)
+chain inbound {
+    ip saddr 10.0.0.1 tcp dport 22 accept
+}
+\end{lstlisting}
+\end{block}
+\end{columns}

@@ -1,0 +1,2036 @@
+{
+  "summary": {
+    "bpftrace_total": 6271,
+    "strace_key": 145,
+    "bpftrace_by_type": {
+      "futex_wake": 553,
+      "futex_wait": 559,
+      "close": 118,
+      "openat": 108,
+      "read": 4787,
+      "mmap": 77,
+      "clone3": 37,
+      "write": 32
+    },
+    "syscall_counts": {
+      "mmap": 65,
+      "futex": 72,
+      "clone3": 7,
+      "read": 1
+    },
+    "stage_counts": {
+      "进程初始化": 53,
+      "推理执行": 73,
+      "模型加载": 12,
+      "进程fork": 7
+    },
+    "risk_counts": {
+      "LOW": 142,
+      "HIGH": 3
+    },
+    "uprobe_counts": {
+      "ggml_backend_sched_graph_compute_async": 10,
+      "llama_decode": 10,
+      "llama_synchronize": 10,
+      "common_sampler_csample": 10
+    },
+    "uprobe_total_us": {
+      "ggml_backend_sched_graph_compute_async": 438652,
+      "llama_decode": 443992,
+      "llama_synchronize": 18,
+      "common_sampler_csample": 10603
+    },
+    "uprobe_avg_us": {
+      "ggml_backend_sched_graph_compute_async": 43865.2,
+      "llama_decode": 44399.2,
+      "llama_synchronize": 1.8,
+      "common_sampler_csample": 1060.3
+    },
+    "uprobe_max_us": {
+      "ggml_backend_sched_graph_compute_async": 157317,
+      "llama_decode": 157972,
+      "llama_synchronize": 3,
+      "common_sampler_csample": 1390
+    }
+  },
+  "sequence": [
+    {
+      "seq": 1,
+      "ts": "16:08:45.139139",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 276331,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750602000",
+      "stage": "stage_init",
+      "description": "mmap 269KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 2,
+      "ts": "16:08:45.139235",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750600000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 3,
+      "ts": "16:08:45.139254",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 75912,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47505ed000",
+      "stage": "stage_init",
+      "description": "mmap 74KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 4,
+      "ts": "16:08:45.139271",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47505f0000",
+        "len": 36864,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47505f0000",
+      "stage": "stage_init",
+      "description": "mmap 36KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 5,
+      "ts": "16:08:45.139291",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47505f9000",
+        "len": 12288,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47505f9000",
+      "stage": "stage_init",
+      "description": "mmap 12KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 6,
+      "ts": "16:08:45.139310",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47505fc000",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47505fc000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 7,
+      "ts": "16:08:45.139340",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47505fe000",
+        "len": 6280,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47505fe000",
+      "stage": "stage_init",
+      "description": "mmap 6KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 8,
+      "ts": "16:08:45.139415",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 2699336,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750200000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 2.6MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 9,
+      "ts": "16:08:45.139432",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f4750297000",
+        "len": 1396736,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f4750297000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.3MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 10,
+      "ts": "16:08:45.139451",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47503ec000",
+        "len": 598016,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47503ec000",
+      "stage": "stage_init",
+      "description": "mmap 584KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 11,
+      "ts": "16:08:45.139469",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f475047e000",
+        "len": 73728,
+        "prot": "READ+WRITE",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f475047e000",
+      "stage": "stage_init",
+      "description": "mmap 72KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 12,
+      "ts": "16:08:45.139489",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f4750490000",
+        "len": 12360,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f4750490000",
+      "stage": "stage_init",
+      "description": "mmap 12KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 13,
+      "ts": "16:08:45.139565",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 1233224,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47504bf000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.2MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 14,
+      "ts": "16:08:45.139582",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47504cf000",
+        "len": 618496,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47504cf000",
+      "stage": "stage_init",
+      "description": "mmap 604KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 15,
+      "ts": "16:08:45.139602",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f4750566000",
+        "len": 544768,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f4750566000",
+      "stage": "stage_init",
+      "description": "mmap 532KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 16,
+      "ts": "16:08:45.139620",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47505eb000",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47505eb000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 17,
+      "ts": "16:08:45.139698",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 180712,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47501d3000",
+      "stage": "stage_init",
+      "description": "mmap 176KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 18,
+      "ts": "16:08:45.139715",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47501d7000",
+        "len": 143360,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47501d7000",
+      "stage": "stage_init",
+      "description": "mmap 140KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 19,
+      "ts": "16:08:45.139732",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47501fa000",
+        "len": 16384,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47501fa000",
+      "stage": "stage_init",
+      "description": "mmap 16KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 20,
+      "ts": "16:08:45.139750",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f47501fe000",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f47501fe000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 21,
+      "ts": "16:08:45.139845",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 2173808,
+        "prot": "READ",
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f474fe00000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 2.1MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 22,
+      "ts": "16:08:45.139863",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f474fe24000",
+        "len": 1511424,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f474fe24000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.4MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 23,
+      "ts": "16:08:45.139886",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f474ff95000",
+        "len": 458752,
+        "prot": "READ",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f474ff95000",
+      "stage": "stage_init",
+      "description": "mmap 448KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 24,
+      "ts": "16:08:45.139903",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f4750005000",
+        "len": 24576,
+        "prot": "READ+WRITE",
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f4750005000",
+      "stage": "stage_init",
+      "description": "mmap 24KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 25,
+      "ts": "16:08:45.139922",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f475000b000",
+        "len": 31600,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f475000b000",
+      "stage": "stage_init",
+      "description": "mmap 30KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 26,
+      "ts": "16:08:45.139967",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47504bd000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 27,
+      "ts": "16:08:45.139993",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 12288,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47504ba000",
+      "stage": "stage_init",
+      "description": "mmap 12KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 28,
+      "ts": "16:08:45.140680",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 29,
+      "ts": "16:08:45.141533",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750606000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 30,
+      "ts": "16:08:45.141563",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 131072,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f475049a000",
+      "stage": "stage_init",
+      "description": "mmap 128KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 31,
+      "ts": "16:08:45.141585",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 1048576,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47500d3000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 32,
+      "ts": "16:08:45.141604",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8388608,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f474f600000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 8.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 33,
+      "ts": "16:08:45.141623",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 67108864,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f474b600000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 64.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 34,
+      "ts": "16:08:45.141642",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 536870912,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f472b600000",
+      "stage": "stage_model_load",
+      "description": "mmap KV Cache 预分配 512MB",
+      "risk": "HIGH"
+    },
+    {
+      "seq": 35,
+      "ts": "16:08:45.141661",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 536870912,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470b600000",
+      "stage": "stage_model_load",
+      "description": "mmap KV Cache 预分配 512MB",
+      "risk": "HIGH"
+    },
+    {
+      "seq": 36,
+      "ts": "16:08:45.141697",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0xd58000000",
+        "len": 67108864,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0xd58000000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 64.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 37,
+      "ts": "16:08:45.141719",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 33554432,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4709600000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 32.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 38,
+      "ts": "16:08:45.141753",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 69648,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47500c1000",
+      "stage": "stage_init",
+      "description": "mmap 68KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 39,
+      "ts": "16:08:45.141777",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0xd5b000000",
+        "len": 4194304,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0xd5b000000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 4.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 40,
+      "ts": "16:08:45.141803",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f475049a000",
+        "len": 131072,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f475049a000",
+      "stage": "stage_init",
+      "description": "mmap 128KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 41,
+      "ts": "16:08:45.141824",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f4750153000",
+        "len": 4096,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f4750153000",
+      "stage": "stage_init",
+      "description": "mmap 4KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 42,
+      "ts": "16:08:45.141854",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f474fa00000",
+        "len": 4096,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f474fa00000",
+      "stage": "stage_init",
+      "description": "mmap 4KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 43,
+      "ts": "16:08:45.141882",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f474d603000",
+        "len": 4096,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f474d603000",
+      "stage": "stage_init",
+      "description": "mmap 4KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 44,
+      "ts": "16:08:45.141908",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f473b61a000",
+        "len": 4096,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f473b61a000",
+      "stage": "stage_init",
+      "description": "mmap 4KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 45,
+      "ts": "16:08:45.141929",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f471b61a000",
+        "len": 4096,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0x7f471b61a000",
+      "stage": "stage_init",
+      "description": "mmap 4KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 46,
+      "ts": "16:08:45.141958",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 1048576,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4709500000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 47,
+      "ts": "16:08:45.142033",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 65536,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47500b1000",
+      "stage": "stage_init",
+      "description": "mmap 64KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 48,
+      "ts": "16:08:45.142218",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 65536,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47500a1000",
+      "stage": "stage_init",
+      "description": "mmap 64KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 49,
+      "ts": "16:08:45.142604",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 1439992,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47093a0000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 1.4MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 50,
+      "ts": "16:08:45.144148",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750061000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 51,
+      "ts": "16:08:45.144254",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8392704,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4708b9f000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 8.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 52,
+      "ts": "16:08:45.144312",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f470939fce8"
+      },
+      "ret": "= 22044",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f470939fce8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 53,
+      "ts": "16:08:45.144530",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f47009ffce8"
+      },
+      "ret": "= 22045",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f47009ffce8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 54,
+      "ts": "16:08:45.144617",
+      "pid": 22045,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 134217728,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f46f8000000",
+      "stage": "stage_model_load",
+      "description": "mmap 大块内存 128MB",
+      "risk": "HIGH"
+    },
+    {
+      "seq": 55,
+      "ts": "16:08:45.144645",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8392704,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470839e000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 8.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 56,
+      "ts": "16:08:45.144694",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f4708b9ece8"
+      },
+      "ret": "= 22046",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f4708b9ece8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 57,
+      "ts": "16:08:45.144839",
+      "pid": 22045,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8392704,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47037ff000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 8.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 58,
+      "ts": "16:08:45.144905",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 59,
+      "ts": "16:08:45.145132",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8392704,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4702ffe000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 8.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 60,
+      "ts": "16:08:45.145192",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f47037fece8"
+      },
+      "ret": "= 22048",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f47037fece8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 61,
+      "ts": "16:08:45.145303",
+      "pid": 22048,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0x7f46f4000000",
+        "len": 67108864,
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f46f4000000",
+      "stage": "stage_model_load",
+      "description": "mmap 内存映射 64.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 62,
+      "ts": "16:08:45.145477",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 63,
+      "ts": "16:08:45.145589",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 64,
+      "ts": "16:08:45.146324",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0xd5b400000",
+        "len": 4194304,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0xd5b400000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 4.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 65,
+      "ts": "16:08:45.147839",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 66,
+      "ts": "16:08:45.147987",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 67,
+      "ts": "16:08:45.148445",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470835e000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 68,
+      "ts": "16:08:45.152330",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 69,
+      "ts": "16:08:45.152622",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 70,
+      "ts": "16:08:45.152737",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 71,
+      "ts": "16:08:45.152775",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 72,
+      "ts": "16:08:45.152869",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f4702ffdce8"
+      },
+      "ret": "= 22049",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f4702ffdce8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 73,
+      "ts": "16:08:45.152961",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 74,
+      "ts": "16:08:45.153067",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 75,
+      "ts": "16:08:45.153133",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 76,
+      "ts": "16:08:45.153193",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 77,
+      "ts": "16:08:45.153252",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 78,
+      "ts": "16:08:45.153272",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 65536,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470834e000",
+      "stage": "stage_init",
+      "description": "mmap 64KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 79,
+      "ts": "16:08:45.153293",
+      "pid": 22045,
+      "syscall": "mmap",
+      "args": {
+        "addr": "0xd5b800000",
+        "len": 4194304,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE+FIXED"
+      },
+      "ret": "= 0xd5b800000",
+      "stage": "stage_init",
+      "description": "mmap 内存映射 4.0MB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 80,
+      "ts": "16:08:45.153387",
+      "pid": 22043,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f47027fcce8"
+      },
+      "ret": "= 22050",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f47027fcce8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 81,
+      "ts": "16:08:45.153569",
+      "pid": 22045,
+      "syscall": "clone3",
+      "args": {
+        "flags": "CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID",
+        "child_tid": "0x7f4701ffbce8"
+      },
+      "ret": "= 22051",
+      "stage": "stage_fork",
+      "description": "clone3 创建线程 child=0x7f4701ffbce8",
+      "risk": "LOW"
+    },
+    {
+      "seq": 82,
+      "ts": "16:08:45.153798",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 83,
+      "ts": "16:08:45.155121",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 84,
+      "ts": "16:08:45.155163",
+      "pid": 22050,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 85,
+      "ts": "16:08:45.155332",
+      "pid": 22047,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750604000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 86,
+      "ts": "16:08:45.155360",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 87,
+      "ts": "16:08:45.155533",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 88,
+      "ts": "16:08:45.155626",
+      "pid": 22050,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 89,
+      "ts": "16:08:45.155681",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 90,
+      "ts": "16:08:45.155796",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= ? ERESTARTSYS (To be restarted if SA_RESTART is set)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 91,
+      "ts": "16:08:45.155832",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 92,
+      "ts": "16:08:45.155886",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 93,
+      "ts": "16:08:45.155921",
+      "pid": 22050,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 8192,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f4750602000",
+      "stage": "stage_init",
+      "description": "mmap 8KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 94,
+      "ts": "16:08:45.156186",
+      "pid": 22051,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f47082ce000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 95,
+      "ts": "16:08:45.156276",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 96,
+      "ts": "16:08:45.156309",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= -1 ETIMEDOUT (连接超时)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 97,
+      "ts": "16:08:45.156563",
+      "pid": 22049,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 98,
+      "ts": "16:08:45.156626",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= ? ERESTARTSYS (To be restarted if SA_RESTART is set)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 99,
+      "ts": "16:08:45.156675",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= -1 EAGAIN (资源暂时不可用)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 100,
+      "ts": "16:08:45.156692",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 101,
+      "ts": "16:08:45.156755",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 102,
+      "ts": "16:08:45.156805",
+      "pid": 22049,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 103,
+      "ts": "16:08:45.156835",
+      "pid": 22043,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470828e000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 104,
+      "ts": "16:08:45.156977",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 105,
+      "ts": "16:08:45.157154",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 106,
+      "ts": "16:08:45.157193",
+      "pid": 22049,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 107,
+      "ts": "16:08:45.157268",
+      "pid": 22047,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470824e000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 108,
+      "ts": "16:08:45.157452",
+      "pid": 22047,
+      "syscall": "mmap",
+      "args": {
+        "addr": "NULL",
+        "len": 262144,
+        "prot": "READ+WRITE",
+        "anon": true,
+        "flags": "PRIVATE"
+      },
+      "ret": "= 0x7f470820e000",
+      "stage": "stage_init",
+      "description": "mmap 256KB",
+      "risk": "LOW"
+    },
+    {
+      "seq": 109,
+      "ts": "16:08:45.157619",
+      "pid": 22047,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 110,
+      "ts": "16:08:45.157666",
+      "pid": 22049,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 111,
+      "ts": "16:08:45.157820",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= ? ERESTARTSYS (To be restarted if SA_RESTART is set)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 112,
+      "ts": "16:08:45.158067",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 113,
+      "ts": "16:08:45.158091",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 0",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 114,
+      "ts": "16:08:45.158214",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 115,
+      "ts": "16:08:45.158873",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 116,
+      "ts": "16:08:45.158935",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 117,
+      "ts": "16:08:45.159318",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 118,
+      "ts": "16:08:45.159361",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 119,
+      "ts": "16:08:45.159469",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 120,
+      "ts": "16:08:45.159794",
+      "pid": 22049,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 121,
+      "ts": "16:08:45.159929",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 122,
+      "ts": "16:08:45.160136",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 123,
+      "ts": "16:08:45.160327",
+      "pid": 22043,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 124,
+      "ts": "16:08:45.216970",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 125,
+      "ts": "16:08:45.217082",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 126,
+      "ts": "16:08:45.217206",
+      "pid": 22051,
+      "syscall": "read",
+      "args": {
+        "fd": 3
+      },
+      "ret": "= 4553",
+      "stage": "stage_inference",
+      "description": "read(fd=3)",
+      "risk": "LOW"
+    },
+    {
+      "seq": 127,
+      "ts": "16:08:45.217287",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 128,
+      "ts": "16:08:45.218652",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 129,
+      "ts": "16:08:45.218720",
+      "pid": 22051,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 130,
+      "ts": "16:08:45.218822",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 131,
+      "ts": "16:08:45.271584",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 132,
+      "ts": "16:08:45.273317",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 133,
+      "ts": "16:08:45.303603",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 134,
+      "ts": "16:08:45.304049",
+      "pid": 22044,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= -1 ETIMEDOUT (连接超时)",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 135,
+      "ts": "16:08:45.319197",
+      "pid": 22045,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 136,
+      "ts": "16:08:45.335854",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 137,
+      "ts": "16:08:45.363677",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 138,
+      "ts": "16:08:45.408106",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 139,
+      "ts": "16:08:45.440767",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 140,
+      "ts": "16:08:45.441202",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 141,
+      "ts": "16:08:45.467941",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 142,
+      "ts": "16:08:45.499716",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 143,
+      "ts": "16:08:45.532419",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 144,
+      "ts": "16:08:45.565431",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    },
+    {
+      "seq": 145,
+      "ts": "16:08:45.565555",
+      "pid": 22046,
+      "syscall": "futex",
+      "args": {},
+      "ret": "= 1",
+      "stage": "stage_inference",
+      "description": "futex 同步等待",
+      "risk": "LOW"
+    }
+  ]
+}

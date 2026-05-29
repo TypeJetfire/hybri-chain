@@ -1,0 +1,45 @@
+{
+  "evaluated_at": "2026-05-12T17:25:10.216921",
+  "trace_file": "../../trace_unified.jsonl",
+  "graph_file": "call_graph_static.json",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 0.05,
+    "f1": 0.09523809523809523,
+    "recall_with_inferred": 0.4,
+    "tp": 1,
+    "fp": 0,
+    "gt_size": 20,
+    "confirmed": 3,
+    "inferred": 11
+  },
+  "ground_truth": {
+    "('llama_decode', 'ggml_backend_sched_graph_compute_async')": "[CONFIRMED/SRC] llama.cpp run.cpp — llama_decode 调用调度异步计算",
+    "('_cgo_8aa400f2462b_Cfunc_llama_decode', 'llama_decode')": "[CGO] Go CGO wrapper → llama_decode（标准 CGO 调用路径）",
+    "('_cgo_8aa400f2462b_Cfunc_common_sampler_csample', 'common_sampler_csample')": "[CGO] Go CGO wrapper → common_sampler_csample（标准 CGO 调用路径）",
+    "('_cgo_8aa400f2462b_Cfunc_llama_sampler_sample', 'llama_sampler_sample')": "[CGO] Go CGO wrapper → llama_sampler_sample（标准 CGO 调用路径）",
+    "('_cgo_8aa400f2462b_Cfunc_llama_batch_add', 'llama_batch_add')": "[CGO] Go CGO wrapper → llama_batch_add（标准 CGO 调用路径）",
+    "('_cgo_8aa400f2462b_Cfunc_llama_batch_init', 'llama_batch_init')": "[CGO] Go CGO wrapper → llama_batch_init（标准 CGO 调用路径）",
+    "('llama_sampler_sample', 'common_sampler_sample')": "[SRC] llama.cpp sampler.h — llama_sampler_sample 调用 common_sampler_sample",
+    "('llama_sampler_sample', '_Z21common_sampler_sample')": "[SRC] llama.cpp sampler.h — llama_sampler_sample 直接调用 C++ _Z21common_sampler_sample",
+    "('common_sampler_sample', '_Z21common_sampler_sample')": "[SRC] llama.cpp sampler.cpp — common_sampler_sample 调用 C++ _Z21common_sampler_sample",
+    "('_Z21common_sampler_sample', 'llama_sampler_sample')": "[SRC] llama.cpp sampler.cpp — 双向：_Z21common_sampler_sample 也可回调 llama_sampler_sample",
+    "('llama_batch_add', 'common_batch_add')": "[SRC] llama.cpp batch.h — llama_batch_add 调用 common_batch_add",
+    "('ggml_backend_sched_graph_compute_async', 'ggml_backend_sched_synchronize')": "[SRC] llama.cpp sched.h — 调度计算后必须同步",
+    "('ggml_backend_sched_graph_compute_async', 'ggml_backend_sched_reset')": "[SRC] llama.cpp sched.h — 调度计算后重置调度器",
+    "('ggml_backend_sched_graph_compute_async', 'ggml_backend_graph_compute_async')": "[SRC] llama.cpp sched.h — 调度计算内部调用异步图计算",
+    "('ggml_backend_sched_synchronize', 'ggml_backend_synchronize')": "[SRC] llama.cpp sched.h — 调度同步调用后端同步",
+    "('ggml_backend_sched_new', 'ggml_backend_sched_alloc_graph')": "[SRC] llama.cpp sched.h — 调度器初始化分配图",
+    "('llama_model_load_from_file', 'ggml_backend_sched_new')": "[SRC] llama.cpp model.cpp — 模型加载初始化调度器",
+    "('llama_model_load_from_file', 'ggml_init')": "[SRC] llama.cpp model.cpp — 模型加载初始化 GGML",
+    "('llama_model_load_from_file', 'ggml_backend_init_best')": "[SRC] llama.cpp model.cpp — 模型加载初始化最优后端",
+    "('llama_decode', 'llama_synchronize')": "[SRC] llama.cpp run.cpp — llama_decode 后可选同步",
+    "('llama_decode', 'ggml_backend_sched_reset')": "[SRC] llama.cpp run.cpp — llama_decode 后重置调度状态"
+  },
+  "stitched_summary": {
+    "confirmed": 3,
+    "inferred": 11,
+    "conflicting": 0,
+    "unknown": 38
+  }
+}

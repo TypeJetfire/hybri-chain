@@ -1,0 +1,45 @@
+policies:
+  - id: "pol-001"
+    description: "高安全等级访问策略"
+    action: ALLOW
+    
+    # 1. Subject (发起者) 的谓词逻辑
+    # 支持 all (AND), any (OR), none (NOT)
+    subject:
+      all:
+        - attribute: "system.os"
+          operator: "=="
+          value: "linux"
+        - attribute: "system.patch_level"
+          operator: ">="
+          value: 20251101
+        - attribute: "network.zone"
+          operator: "in"
+          value: ["trusted", "office"]
+
+    # 2. Object (接收者) 的谓词逻辑
+    object:
+      any:
+        - attribute: "identity.role"
+          operator: "=="
+          value: "storage"
+        - attribute: "identity.owner"
+          operator: "=="
+          value: "li-ziqin"
+
+    # 3. Environment (环境变量)
+    environment:
+      - variable: "global.threat_level"
+        operator: "<"
+        value: 3
+
+    # 4. Enforcement (强制执行细节)
+    enforcement:
+      layer3: 
+        proto: "wireguard"
+        routing: "p2p" # 或 "relay"
+      layer4:
+        rules:
+          - { proto: "tcp", dport: 22, action: "ACCEPT" }
+          - { proto: "icmp", action: "ACCEPT" }
+          - { action: "DROP" } # 默认尾部丢弃

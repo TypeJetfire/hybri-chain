@@ -1,0 +1,206 @@
+2026/05/25 16:08:29 routes.go:1231: INFO server config env="map[CUDA_VISIBLE_DEVICES: GPU_DEVICE_ORDINAL: HIP_VISIBLE_DEVICES: HSA_OVERRIDE_GFX_VERSION: HTTPS_PROXY: HTTP_PROXY: NO_PROXY: OLLAMA_CONTEXT_LENGTH:2048 OLLAMA_DEBUG:false OLLAMA_FLASH_ATTENTION:false OLLAMA_GPU_OVERHEAD:0 OLLAMA_HOST:http://127.0.0.1:11434 OLLAMA_INTEL_GPU:false OLLAMA_KEEP_ALIVE:5m0s OLLAMA_KV_CACHE_TYPE: OLLAMA_LLM_LIBRARY: OLLAMA_LOAD_TIMEOUT:5m0s OLLAMA_MAX_LOADED_MODELS:0 OLLAMA_MAX_QUEUE:512 OLLAMA_MODELS:/root/.ollama/models OLLAMA_MULTIUSER_CACHE:false OLLAMA_NEW_ENGINE:false OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NUM_PARALLEL:0 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://* vscode-webview://* vscode-file://*] OLLAMA_SCHED_SPREAD:false ROCR_VISIBLE_DEVICES: http_proxy: https_proxy: no_proxy:]"
+time=2026-05-25T16:08:29.464+08:00 level=INFO source=images.go:458 msg="total blobs: 10"
+time=2026-05-25T16:08:29.464+08:00 level=INFO source=images.go:465 msg="total unused blobs removed: 0"
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] HEAD   /                         --> github.com/ollama/ollama/server.(*Server).GenerateRoutes.func1 (5 handlers)
+[GIN-debug] GET    /                         --> github.com/ollama/ollama/server.(*Server).GenerateRoutes.func2 (5 handlers)
+[GIN-debug] HEAD   /api/version              --> github.com/ollama/ollama/server.(*Server).GenerateRoutes.func3 (5 handlers)
+[GIN-debug] GET    /api/version              --> github.com/ollama/ollama/server.(*Server).GenerateRoutes.func4 (5 handlers)
+[GIN-debug] POST   /api/pull                 --> github.com/ollama/ollama/server.(*Server).PullHandler-fm (5 handlers)
+[GIN-debug] POST   /api/push                 --> github.com/ollama/ollama/server.(*Server).PushHandler-fm (5 handlers)
+[GIN-debug] HEAD   /api/tags                 --> github.com/ollama/ollama/server.(*Server).ListHandler-fm (5 handlers)
+[GIN-debug] GET    /api/tags                 --> github.com/ollama/ollama/server.(*Server).ListHandler-fm (5 handlers)
+[GIN-debug] POST   /api/show                 --> github.com/ollama/ollama/server.(*Server).ShowHandler-fm (5 handlers)
+[GIN-debug] DELETE /api/delete               --> github.com/ollama/ollama/server.(*Server).DeleteHandler-fm (5 handlers)
+[GIN-debug] POST   /api/create               --> github.com/ollama/ollama/server.(*Server).CreateHandler-fm (5 handlers)
+[GIN-debug] POST   /api/blobs/:digest        --> github.com/ollama/ollama/server.(*Server).CreateBlobHandler-fm (5 handlers)
+[GIN-debug] HEAD   /api/blobs/:digest        --> github.com/ollama/ollama/server.(*Server).HeadBlobHandler-fm (5 handlers)
+[GIN-debug] POST   /api/copy                 --> github.com/ollama/ollama/server.(*Server).CopyHandler-fm (5 handlers)
+[GIN-debug] GET    /api/ps                   --> github.com/ollama/ollama/server.(*Server).PsHandler-fm (5 handlers)
+[GIN-debug] POST   /api/generate             --> github.com/ollama/ollama/server.(*Server).GenerateHandler-fm (5 handlers)
+[GIN-debug] POST   /api/chat                 --> github.com/ollama/ollama/server.(*Server).ChatHandler-fm (5 handlers)
+[GIN-debug] POST   /api/embed                --> github.com/ollama/ollama/server.(*Server).EmbedHandler-fm (5 handlers)
+[GIN-debug] POST   /api/embeddings           --> github.com/ollama/ollama/server.(*Server).EmbeddingsHandler-fm (5 handlers)
+[GIN-debug] POST   /v1/chat/completions      --> github.com/ollama/ollama/server.(*Server).ChatHandler-fm (6 handlers)
+[GIN-debug] POST   /v1/completions           --> github.com/ollama/ollama/server.(*Server).GenerateHandler-fm (6 handlers)
+[GIN-debug] POST   /v1/embeddings            --> github.com/ollama/ollama/server.(*Server).EmbedHandler-fm (6 handlers)
+[GIN-debug] GET    /v1/models                --> github.com/ollama/ollama/server.(*Server).ListHandler-fm (6 handlers)
+[GIN-debug] GET    /v1/models/:model         --> github.com/ollama/ollama/server.(*Server).ShowHandler-fm (6 handlers)
+time=2026-05-25T16:08:29.464+08:00 level=INFO source=routes.go:1298 msg="Listening on 127.0.0.1:11434 (version 0.0.0)"
+time=2026-05-25T16:08:29.464+08:00 level=INFO source=gpu.go:217 msg="looking for compatible GPUs"
+time=2026-05-25T16:08:29.522+08:00 level=INFO source=gpu.go:377 msg="no compatible GPUs were discovered"
+time=2026-05-25T16:08:29.522+08:00 level=INFO source=types.go:130 msg="inference compute" id=0 library=cpu variant="" compute="" driver=0.0 name="" total="15.4 GiB" available="7.8 GiB"
+[GIN] 2026/05/25 - 16:08:34 | 200 |      51.812µs |       127.0.0.1 | HEAD     "/"
+[GIN] 2026/05/25 - 16:08:36 | 200 |  2.116828781s |       127.0.0.1 | POST     "/api/pull"
+[GIN] 2026/05/25 - 16:08:38 | 200 |      35.723µs |       127.0.0.1 | HEAD     "/"
+[GIN] 2026/05/25 - 16:08:38 | 200 |    55.89409ms |       127.0.0.1 | POST     "/api/show"
+time=2026-05-25T16:08:38.962+08:00 level=INFO source=server.go:105 msg="system memory" total="15.4 GiB" free="7.8 GiB" free_swap="8.0 GiB"
+time=2026-05-25T16:08:38.962+08:00 level=WARN source=ggml.go:149 msg="key not found" key=qwen2.vision.block_count default=0
+time=2026-05-25T16:08:38.963+08:00 level=WARN source=ggml.go:149 msg="key not found" key=qwen2.attention.key_length default=64
+time=2026-05-25T16:08:38.963+08:00 level=WARN source=ggml.go:149 msg="key not found" key=qwen2.attention.value_length default=64
+time=2026-05-25T16:08:38.963+08:00 level=INFO source=server.go:138 msg=offload library=cpu layers.requested=-1 layers.model=25 layers.offload=0 layers.split="" memory.available="[7.8 GiB]" memory.gpu_overhead="0 B" memory.required.full="1.4 GiB" memory.required.partial="0 B" memory.required.kv="768.0 MiB" memory.required.allocations="[1.4 GiB]" memory.weights.total="287.6 MiB" memory.weights.repeating="165.8 MiB" memory.weights.nonrepeating="121.7 MiB" memory.graph.full="298.8 MiB" memory.graph.partial="420.5 MiB"
+llama_model_loader: loaded meta data with 20 key-value pairs and 291 tensors from /root/.ollama/models/blobs/sha256-fad2a06e4cc705c2fa8bec5477ddb00dc0c859ac184c34dcc5586663774161ca (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = qwen2
+llama_model_loader: - kv   1:                               general.name str              = Qwen2-beta-0_5B-Chat
+llama_model_loader: - kv   2:                          qwen2.block_count u32              = 24
+llama_model_loader: - kv   3:                       qwen2.context_length u32              = 32768
+llama_model_loader: - kv   4:                     qwen2.embedding_length u32              = 1024
+llama_model_loader: - kv   5:                  qwen2.feed_forward_length u32              = 2816
+llama_model_loader: - kv   6:                 qwen2.attention.head_count u32              = 16
+llama_model_loader: - kv   7:              qwen2.attention.head_count_kv u32              = 16
+llama_model_loader: - kv   8:     qwen2.attention.layer_norm_rms_epsilon f32              = 0.000001
+llama_model_loader: - kv   9:                qwen2.use_parallel_residual bool             = true
+llama_model_loader: - kv  10:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  11:                      tokenizer.ggml.tokens arr[str,151936]  = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  12:                  tokenizer.ggml.token_type arr[i32,151936]  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  13:                      tokenizer.ggml.merges arr[str,151387]  = ["Ġ Ġ", "ĠĠ ĠĠ", "i n", "Ġ t",...
+llama_model_loader: - kv  14:                tokenizer.ggml.eos_token_id u32              = 151643
+llama_model_loader: - kv  15:            tokenizer.ggml.padding_token_id u32              = 151643
+llama_model_loader: - kv  16:                tokenizer.ggml.bos_token_id u32              = 151643
+llama_model_loader: - kv  17:                    tokenizer.chat_template str              = {% for message in messages %}{% if lo...
+llama_model_loader: - kv  18:               general.quantization_version u32              = 2
+llama_model_loader: - kv  19:                          general.file_type u32              = 2
+llama_model_loader: - type  f32:  121 tensors
+llama_model_loader: - type q4_0:  169 tensors
+llama_model_loader: - type q6_K:    1 tensors
+print_info: file format = GGUF V3 (latest)
+print_info: file type   = Q4_0
+print_info: file size   = 371.02 MiB (5.02 BPW) 
+load: missing or unrecognized pre-tokenizer type, using: 'default'
+load: special tokens cache size = 293
+load: token to piece cache size = 0.9338 MB
+print_info: arch             = qwen2
+print_info: vocab_only       = 1
+print_info: model type       = ?B
+print_info: model params     = 619.57 M
+print_info: general.name     = Qwen2-beta-0_5B-Chat
+print_info: vocab type       = BPE
+print_info: n_vocab          = 151936
+print_info: n_merges         = 151387
+print_info: BOS token        = 151643 '<|endoftext|>'
+print_info: EOS token        = 151643 '<|endoftext|>'
+print_info: EOT token        = 151645 '<|im_end|>'
+print_info: PAD token        = 151643 '<|endoftext|>'
+print_info: LF token         = 198 'Ċ'
+print_info: EOG token        = 151643 '<|endoftext|>'
+print_info: EOG token        = 151645 '<|im_end|>'
+print_info: max token length = 256
+llama_model_load: vocab only - skipping tensors
+time=2026-05-25T16:08:39.141+08:00 level=INFO source=server.go:405 msg="starting llama server" cmd="/usr/bin/ollama runner --model /root/.ollama/models/blobs/sha256-fad2a06e4cc705c2fa8bec5477ddb00dc0c859ac184c34dcc5586663774161ca --ctx-size 8192 --batch-size 512 --threads 4 --no-mmap --parallel 4 --port 35503"
+time=2026-05-25T16:08:39.141+08:00 level=INFO source=sched.go:451 msg="loaded runners" count=1
+time=2026-05-25T16:08:39.141+08:00 level=INFO source=server.go:580 msg="waiting for llama runner to start responding"
+time=2026-05-25T16:08:39.142+08:00 level=INFO source=server.go:614 msg="waiting for server to become available" status="llm server error"
+time=2026-05-25T16:08:39.150+08:00 level=INFO source=runner.go:858 msg="starting go runner"
+operator() double registration of ggml_uncaught_exception
+time=2026-05-25T16:08:39.155+08:00 level=INFO source=ggml.go:109 msg=system CPU.0.LLAMAFILE=1 compiler=cgo(gcc)
+time=2026-05-25T16:08:39.155+08:00 level=INFO source=runner.go:918 msg="Server listening on 127.0.0.1:35503"
+llama_model_loader: loaded meta data with 20 key-value pairs and 291 tensors from /root/.ollama/models/blobs/sha256-fad2a06e4cc705c2fa8bec5477ddb00dc0c859ac184c34dcc5586663774161ca (version GGUF V3 (latest))
+llama_model_loader: Dumping metadata keys/values. Note: KV overrides do not apply in this output.
+llama_model_loader: - kv   0:                       general.architecture str              = qwen2
+llama_model_loader: - kv   1:                               general.name str              = Qwen2-beta-0_5B-Chat
+llama_model_loader: - kv   2:                          qwen2.block_count u32              = 24
+llama_model_loader: - kv   3:                       qwen2.context_length u32              = 32768
+llama_model_loader: - kv   4:                     qwen2.embedding_length u32              = 1024
+llama_model_loader: - kv   5:                  qwen2.feed_forward_length u32              = 2816
+llama_model_loader: - kv   6:                 qwen2.attention.head_count u32              = 16
+llama_model_loader: - kv   7:              qwen2.attention.head_count_kv u32              = 16
+llama_model_loader: - kv   8:     qwen2.attention.layer_norm_rms_epsilon f32              = 0.000001
+llama_model_loader: - kv   9:                qwen2.use_parallel_residual bool             = true
+llama_model_loader: - kv  10:                       tokenizer.ggml.model str              = gpt2
+llama_model_loader: - kv  11:                      tokenizer.ggml.tokens arr[str,151936]  = ["!", "\"", "#", "$", "%", "&", "'", ...
+llama_model_loader: - kv  12:                  tokenizer.ggml.token_type arr[i32,151936]  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
+llama_model_loader: - kv  13:                      tokenizer.ggml.merges arr[str,151387]  = ["Ġ Ġ", "ĠĠ ĠĠ", "i n", "Ġ t",...
+llama_model_loader: - kv  14:                tokenizer.ggml.eos_token_id u32              = 151643
+llama_model_loader: - kv  15:            tokenizer.ggml.padding_token_id u32              = 151643
+llama_model_loader: - kv  16:                tokenizer.ggml.bos_token_id u32              = 151643
+llama_model_loader: - kv  17:                    tokenizer.chat_template str              = {% for message in messages %}{% if lo...
+llama_model_loader: - kv  18:               general.quantization_version u32              = 2
+llama_model_loader: - kv  19:                          general.file_type u32              = 2
+llama_model_loader: - type  f32:  121 tensors
+llama_model_loader: - type q4_0:  169 tensors
+llama_model_loader: - type q6_K:    1 tensors
+print_info: file format = GGUF V3 (latest)
+print_info: file type   = Q4_0
+print_info: file size   = 371.02 MiB (5.02 BPW) 
+load: missing or unrecognized pre-tokenizer type, using: 'default'
+load: special tokens cache size = 293
+load: token to piece cache size = 0.9338 MB
+print_info: arch             = qwen2
+print_info: vocab_only       = 0
+print_info: n_ctx_train      = 32768
+print_info: n_embd           = 1024
+print_info: n_layer          = 24
+print_info: n_head           = 16
+print_info: n_head_kv        = 16
+print_info: n_rot            = 64
+print_info: n_swa            = 0
+print_info: n_embd_head_k    = 64
+print_info: n_embd_head_v    = 64
+print_info: n_gqa            = 1
+print_info: n_embd_k_gqa     = 1024
+print_info: n_embd_v_gqa     = 1024
+print_info: f_norm_eps       = 0.0e+00
+print_info: f_norm_rms_eps   = 1.0e-06
+print_info: f_clamp_kqv      = 0.0e+00
+print_info: f_max_alibi_bias = 0.0e+00
+print_info: f_logit_scale    = 0.0e+00
+print_info: n_ff             = 2816
+print_info: n_expert         = 0
+print_info: n_expert_used    = 0
+print_info: causal attn      = 1
+print_info: pooling type     = 0
+print_info: rope type        = 2
+print_info: rope scaling     = linear
+print_info: freq_base_train  = 10000.0
+print_info: freq_scale_train = 1
+print_info: n_ctx_orig_yarn  = 32768
+print_info: rope_finetuned   = unknown
+print_info: ssm_d_conv       = 0
+print_info: ssm_d_inner      = 0
+print_info: ssm_d_state      = 0
+print_info: ssm_dt_rank      = 0
+print_info: ssm_dt_b_c_rms   = 0
+print_info: model type       = 0.5B
+print_info: model params     = 619.57 M
+print_info: general.name     = Qwen2-beta-0_5B-Chat
+print_info: vocab type       = BPE
+print_info: n_vocab          = 151936
+print_info: n_merges         = 151387
+print_info: BOS token        = 151643 '<|endoftext|>'
+print_info: EOS token        = 151643 '<|endoftext|>'
+print_info: EOT token        = 151645 '<|im_end|>'
+print_info: PAD token        = 151643 '<|endoftext|>'
+print_info: LF token         = 198 'Ċ'
+print_info: EOG token        = 151643 '<|endoftext|>'
+print_info: EOG token        = 151645 '<|im_end|>'
+print_info: max token length = 256
+load_tensors: loading model tensors, this can take a while... (mmap = false)
+load_tensors:          CPU model buffer size =   371.02 MiB
+llama_init_from_model: n_seq_max     = 4
+llama_init_from_model: n_ctx         = 8192
+llama_init_from_model: n_ctx_per_seq = 2048
+llama_init_from_model: n_batch       = 2048
+llama_init_from_model: n_ubatch      = 512
+llama_init_from_model: flash_attn    = 0
+llama_init_from_model: freq_base     = 10000.0
+llama_init_from_model: freq_scale    = 1
+llama_init_from_model: n_ctx_per_seq (2048) < n_ctx_train (32768) -- the full capacity of the model will not be utilized
+llama_kv_cache_init: kv_size = 8192, offload = 1, type_k = 'f16', type_v = 'f16', n_layer = 24, can_shift = 1
+time=2026-05-25T16:08:39.393+08:00 level=INFO source=server.go:614 msg="waiting for server to become available" status="llm server loading model"
+llama_kv_cache_init:        CPU KV buffer size =   768.00 MiB
+llama_init_from_model: KV self size  =  768.00 MiB, K (f16):  384.00 MiB, V (f16):  384.00 MiB
+llama_init_from_model:        CPU  output buffer size =     2.33 MiB
+llama_init_from_model:        CPU compute buffer size =   300.75 MiB
+llama_init_from_model: graph nodes  = 846
+llama_init_from_model: graph splits = 1
+time=2026-05-25T16:08:39.645+08:00 level=INFO source=server.go:619 msg="llama runner started in 0.50 seconds"
+[GIN] 2026/05/25 - 16:08:40 | 200 |  1.226341156s |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/05/25 - 16:08:45 | 200 |      44.472µs |       127.0.0.1 | HEAD     "/"
+[GIN] 2026/05/25 - 16:08:45 | 200 |   56.543809ms |       127.0.0.1 | POST     "/api/show"
+[GIN] 2026/05/25 - 16:08:45 | 200 |  346.340738ms |       127.0.0.1 | POST     "/api/generate"

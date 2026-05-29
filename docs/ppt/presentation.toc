@@ -1,0 +1,7 @@
+\beamer@sectionintoc {1}{研究背景与动机}{3}{0}{1}
+\beamer@sectionintoc {2}{相关工作及其不足}{4}{0}{2}
+\beamer@sectionintoc {3}{整体方法与系统设计}{5}{0}{3}
+\beamer@sectionintoc {4}{Ollama 特殊工程问题及解决方案}{11}{0}{4}
+\beamer@sectionintoc {5}{实验设计与结果分析}{12}{0}{5}
+\beamer@sectionintoc {6}{本文创新点}{16}{0}{6}
+\beamer@sectionintoc {7}{总结与展望}{17}{0}{7}

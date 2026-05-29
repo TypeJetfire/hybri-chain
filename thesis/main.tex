@@ -1,0 +1,79 @@
+%--------------------------------------------------------------------
+% 导言区
+% !Mode:: "TeX:UTF-8"
+
+\documentclass[a4paper,UTF8,AutoFakeBold]{ctexrep}
+
+% 模板样式
+\usepackage{scuthesis}
+
+% 数学与定理
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+% 图表与排版辅助
+%\usepackage[all,cmtip]{xy}        % xy-pic 画交换图
+\usepackage{tikz}                  % tikz 绘图宏包
+\usepackage{float}                 % 固定图片位置
+\usepackage{subfig}                % 子图宏包
+\usepackage{booktabs}              % 三线表
+\usepackage{enumerate}             % 有序列表环境
+
+% 兼容旧写法 \subfigure[标题]{...}
+\providecommand{\subfigure}[2][]{\subfloat[#1]{#2}}
+
+% 定理环境
+\theoremstyle{plain}
+\newtheorem{thm}{定理~}[chapter]
+\newtheorem{lem}[thm]{引理~}
+\newtheorem{prop}[thm]{命题~}
+\newtheorem{cor}[thm]{推论~}
+
+\theoremstyle{definition}
+\newtheorem{defn}[thm]{定义~}
+\newtheorem{conj}[thm]{猜想~}
+\newtheorem{exmp}[thm]{例~}
+\newtheorem{ques}[thm]{问题~}
+\newtheorem{rem}[thm]{注~}
+
+% 公式编号
+\numberwithin{equation}{chapter}
+\renewcommand{\theequation}{\thechapter.\roman{equation}}
+
+% 基本信息
+\input{src/basic_info}
+
+%-----------------------------------------------------------------
+% 正文区
+\begin{document}
+\StyleBodyFont
+
+% 前置部分
+\input{src/cover}
+\input{src/abstract_cn}
+\input{src/abstract_en}
+\input{src/toc}
+
+% 正文
+\include{src/chap01}
+\include{src/chap02}
+
+% 参考文献
+\SCUBackmatterChapter{参考文献}{参考文献}
+\bibliographystyle{unsrt}
+\bibliography{ref/refs}
+
+% 声明
+\SCUBackmatterChapter{声\hspace{0.8cm}明}{声\hspace{0.8cm}明}
+\input{src/declaration}
+
+% AI 工具使用声明
+\SCUBackmatterChapter{四川大学本科毕业论文 AI 工具使用声明}{四川大学本科毕业论文 AI 工具使用声明}
+\input{src/ai_statement}
+
+% 致谢
+\SCUBackmatterChapter{致\hspace{0.8cm}谢}{致\hspace{0.8cm}谢}
+\input{src/acknowledgement}
+
+\end{document}

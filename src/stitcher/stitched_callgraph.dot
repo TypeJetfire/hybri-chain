@@ -1,0 +1,43 @@
+digraph call_chain {
+    rankdir=LR;
+    node [fontname="Courier New", fontsize=11];
+    edge [fontname="Courier New", fontsize=9];
+    splines=ortho;
+    nodesep=0.4;
+    ranksep=0.8;
+
+    # 全局样式
+    graph [label="Ollama 推理调用链缝合图\n(实线=confirmed, 虚线=inferred)", fontsize=14];
+
+    "_cgo_8aa400f2462b_Cfunc_llama_decode" [label="_cgo_8aa400f2462b_Cfunc_llama_decode\n[go_cgo_bridge]", fillcolor="#e74c3c", style=filled, fontcolor=white];
+    "llama_decode" [label="llama_decode\n[llama_api]", fillcolor="#e67e22", style=filled, fontcolor=white];
+    "_cgo_8aa400f2462b_Cfunc_common_sampler_csample" [label="_cgo_8aa400f2462b_Cfunc_common_sampler_c...\n[go_cgo_bridge]", fillcolor="#e74c3c", style=filled, fontcolor=white];
+    "common_sampler_csample" [label="common_sampler_csample\n[llama_api]", fillcolor="#e67e22", style=filled, fontcolor=white];
+    "ggml_backend_sched_graph_compute_async" [label="ggml_backend_sched_graph_compute_async\n[sched_compute]", fillcolor="#27ae60", style=filled, fontcolor=white];
+    "_cgoexp_8aa400f2462b_llamarunner_llama_Execute" [label="_cgoexp_8aa400f2462b_llamarunner_llama_E...\n[unknown]", fillcolor="#95a5a6", style=filled, fontcolor=white];
+    "llama_sampler_sample" [label="llama_sampler_sample\n[batch_sampler]", fillcolor="#f39c12", style=filled, fontcolor=white];
+    "llama_synchronize" [label="llama_synchronize\n[llama_api]", fillcolor="#e67e22", style=filled, fontcolor=white];
+    "ggml_backend_sched_synchronize" [label="ggml_backend_sched_synchronize\n[sched_compute]", fillcolor="#27ae60", style=filled, fontcolor=white];
+    "_Z21common_sampler_sample" [label="_Z21common_sampler_sample\n[ggml_ops]", fillcolor="#8e44ad", style=filled, fontcolor=white];
+    "common_sampler_sample" [label="common_sampler_sample\n[llama_api]", fillcolor="#e67e22", style=filled, fontcolor=white];
+    "ggml_backend_sched_reset" [label="ggml_backend_sched_reset\n[sched_compute]", fillcolor="#27ae60", style=filled, fontcolor=white];
+    "ggml_backend_graph_compute_async" [label="ggml_backend_graph_compute_async\n[sched_compute]", fillcolor="#27ae60", style=filled, fontcolor=white];
+    "common_sampler_print" [label="common_sampler_print\n[llama_api]", fillcolor="#e67e22", style=filled, fontcolor=white];
+
+    "_cgo_8aa400f2462b_Cfunc_llama_decode" -> "llama_decode" [color=darkgreen, penwidth=2, label="confirmed"];
+    "_cgo_8aa400f2462b_Cfunc_common_sampler_csample" -> "common_sampler_csample" [color=darkgreen, penwidth=2, label="confirmed"];
+    "llama_decode" -> "ggml_backend_sched_graph_compute_async" [color=darkgreen, penwidth=2, label="confirmed"];
+
+    # Inferred 边（虚线）
+    "_cgoexp_8aa400f2462b_llamarunner_llama_Execute" -> "llama_decode" [color=gray, style=dashed, label="inferred"];
+    "_cgo_8aa400f2462b_Cfunc_common_sampler_csample" -> "llama_sampler_sample" [color=gray, style=dashed, label="inferred"];
+    "llama_decode" -> "llama_synchronize" [color=gray, style=dashed, label="inferred"];
+    "llama_decode" -> "ggml_backend_sched_synchronize" [color=gray, style=dashed, label="inferred"];
+    "llama_sampler_sample" -> "_Z21common_sampler_sample" [color=gray, style=dashed, label="inferred"];
+    "common_sampler_sample" -> "_Z21common_sampler_sample" [color=gray, style=dashed, label="inferred"];
+    "ggml_backend_sched_graph_compute_async" -> "ggml_backend_sched_synchronize" [color=gray, style=dashed, label="inferred"];
+    "ggml_backend_sched_graph_compute_async" -> "ggml_backend_sched_reset" [color=gray, style=dashed, label="inferred"];
+    "ggml_backend_sched_graph_compute_async" -> "ggml_backend_graph_compute_async" [color=gray, style=dashed, label="inferred"];
+    "_Z21common_sampler_sample" -> "llama_sampler_sample" [color=gray, style=dashed, label="inferred"];
+    "_Z21common_sampler_sample" -> "common_sampler_print" [color=gray, style=dashed, label="inferred"];
+}

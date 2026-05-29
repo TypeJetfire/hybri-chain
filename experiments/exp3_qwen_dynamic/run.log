@@ -1,0 +1,64 @@
+============================================
+run_trace.sh — 动态追踪采集
+============================================
+exp_id    : exp3
+exp_name  : exp3_qwen_dynamic
+model     : qwen:0.5b
+prompt    : hello
+duration  : 30s
+output    : /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic
+
+[1/6] 生成 bpftrace 脚本 → /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/trace_unified.bt
+    检查二进制符号...
+0000000001a54560 T _cgo_8a15e6a9007d_Cfunc_ggml_backend_sched_graph_compute_async
+0000000001a54590 T _cgo_8a15e6a9007d_Cfunc_ggml_backend_sched_new
+0000000001a545d0 T _cgo_8a15e6a9007d_Cfunc_ggml_backend_sched_reset
+0000000001a545e0 T _cgo_8a15e6a9007d_Cfunc_ggml_backend_sched_synchronize
+0000000001878410 T _cgo_8aa400f2462b_Cfunc_common_sampler_caccept
+0000000001878420 T _cgo_8aa400f2462b_Cfunc_common_sampler_cfree
+0000000001878430 T _cgo_8aa400f2462b_Cfunc_common_sampler_cinit
+0000000001878460 T _cgo_8aa400f2462b_Cfunc_common_sampler_creset
+0000000001878470 T _cgo_8aa400f2462b_Cfunc_common_sampler_csample
+0000000001878720 T _cgo_8aa400f2462b_Cfunc_llama_decode
+000000000187e640 T common_sampler_caccept
+000000000187e620 T common_sampler_cfree
+000000000187e6a0 T common_sampler_cinit
+000000000040c24d t common_sampler_cinit.cold
+000000000187e630 T common_sampler_creset
+000000000187e650 T common_sampler_csample
+00000000019ffea0 T ggml_backend_sched_alloc_graph
+00000000019fdd90 T ggml_backend_sched_free
+00000000019fe320 T ggml_backend_sched_get_backend
+00000000019fe360 T ggml_backend_sched_get_buffer_size
+    bpftrace 脚本已写入
+[2/6] 停止现有 ollama 服务...
+[2.5/6] 替换 ollama 为 debug 版本...
+    已替换: /usr/bin/ollama → /home/typejetfire/graduation_thesis/ollama-debug
+[3/6] 启动 ollama serve...
+    ollama serve PID=21895
+[3.5/6] 预加载模型: ollama pull qwen:0.5b
+    模型预加载完成
+[4/6] 启动 bpftrace 追踪（30s）...
+    [WARN] /usr/bin/ollama 没有 llama_decode 符号，可能是系统二进制未替换
+    bpftrace PID=21940
+    运行: ollama run qwen:0.5b 'hello'
+    ollama run 完成（2s）
+    停止 bpftrace (PID=21940)...
+[5/6] 运行 strace 补充采集...
+    strace 追踪 PID: 21620
+    strace monitor PID=22036
+
+============================================
+追踪完成！
+输出目录: /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic
+
+生成的文件:
+总计 516K
+-rw-r--r-- 1 root root 401K  5月25日 16:08 bpftrace.jsonl
+-rw-r--r-- 1 root root  50K  5月25日 16:08 strace_run.txt
+-rw-r--r-- 1 root root  50K  5月25日 16:08 strace.txt
+-rw-r--r-- 1 root root 4.9K  5月25日 16:08 trace_unified.bt
+
+下一步（普通权限）:
+  python3 run_pipeline.py exp3
+============================================

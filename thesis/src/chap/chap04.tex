@@ -1,0 +1,373 @@
+% 第4章 HybriChain 实现方案
+
+\chapter{HybriChain 实现方案}
+\label{chap:implementation}
+
+本章以 Ollama 推理引擎为典型靶点，逐一阐述第三章各节设计方案的具体实现细节，证明 HybriChain 在实践中确实可以高效准确地完成跨语言调用链的获取。
+
+\section{Ollama 推理引擎的目标特征}
+
+在展开具体实现之前，必须首先认识 Ollama 的特殊架构——它是第三章所设计方案的直接应用对象，其工程特性决定了实现时必须做出针对性的适配。
+
+Ollama 采用典型的 Go-CGO-C++ 三层混合编程模式（详见 2.1 节），这一架构特征决定了追踪实现必须解决以下特殊问题：
+
+\textbf{CGO 哈希后缀问题。} Go 编译器生成的 CGO 桥接函数名包含 \texttt{\_cgoexp\_HASH\_} 格式的哈希后缀，无法通过标准的 \texttt{nm} 与 demangling 工具直接还原原始函数签名。这意味着第三章 §3.5 中的五层符号分类体系在应用于 Ollama 时，必须为 CGO 桥接函数单独设计识别策略。
+
+\textbf{双进程模型。} Ollama 的 HTTP 服务进程（daemon）与模型运行进程（runner）为独立进程，两者通过 Unix Domain Socket 通信。这意味着第三章 §3.3 中的 uprobe 挂载方案不能仅针对单一进程，需要同时追踪 daemon 和 runner 两个进程，并在缝合阶段建立跨进程的调用关联。
+
+\textbf{llama.cpp 函数命名规范。} 底层 llama.cpp 库的函数遵循一致的命名规范（如 \texttt{llama\_*}、\texttt{ggml\_*}、\texttt{common\_*}），这是五层分类体系在 Ollama 上得以实现的根基——正是这些命名规范，使得基于关键词匹配的自动分类成为可能。
+
+\section{高效且完备的函数调用追踪的实现}
+
+对应第三章 §3.3 的设计方案，本节阐述针对 Ollama 的追踪方案具体实现。
+
+根据第三章 §3.3 的分析，Ollama 的追踪需覆盖三个层次。具体探针配置如下：
+
+\textbf{用户态 uprobe 层（推理计算函数层）}：在 Ollama 的 llama.cpp 层，选择以下四个核心函数挂载 uprobe/uretprobe：
+
+\begin{itemize}
+    \item \texttt{llama\_decode}：推理主循环入口，代表一次 token 生成的核心计算触发点；
+    \item \texttt{ggml\_backend\_sched\_graph\_compute\_async}：张量计算调度入口，代表底层算子执行的触发点；
+    \item \texttt{llama\_synchronize}：同步点，代表推理阶段等待前序操作完成的等待节点；
+    \item \texttt{common\_sampler\_csample}：token 采样函数，代表推理输出生成的关键节点。
+\end{itemize}
+
+这四个函数覆盖了推理引擎从计算触发（decode）到底层执行（ggml）再到输出生成（sampler）的完整路径，是跨语言边界最密集出现的关键节点。
+
+图~\ref{fig:uretprobe} 给出了 uprobe 附加的核心工作流程：uprobe 在函数入口记录进入时刻，uretprobe 在函数返回时计算耗时差值，并将函数名、时间戳、线程ID、耗时及调用栈一并输出。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.6cm,
+    font=\small,
+    process/.style={rectangle,draw,minimum width=3.5cm,minimum height=0.7cm},
+    arrow/.style={->,>=stealth,thick}
+]
+
+\node[process] (probe_in) at (0,0) {uprobe: \texttt{llama\_decode} 命中};
+\node[process] (record) at (0,-2) {\texttt{@start[tid] = nsecs} 记录进入时刻};
+\node[process] (return) at (0,-4) {uretprobe: 函数返回触发};
+\node[process] (calc) at (0,-6) {$dur = (nsecs - @start[tid]) / 1000$};
+\node[process] (output) at (0,-8) {输出 @UPROBE@ 行 + 调用栈 + @END@};
+\node[process] (cleanup) at (0,-10) {delete(@start[tid]) 清理};
+\draw[arrow] (probe_in) -- (record);
+\draw[arrow] (record) -- (return);
+\draw[arrow] (return) -- (calc);
+\draw[arrow] (calc) -- (output);
+\draw[arrow] (output) -- (cleanup);
+\end{tikzpicture}
+\captionsetup{format=plain}
+\caption{uprobe/uretprobe 附加工作流程}
+\label{fig:uretprobe}
+\end{figure}
+
+其中 \texttt{ustack(32)} 获取最多 32 层调用栈，\texttt{@start[tid]} 哈希表记录 per-thread 函数进入时刻，以保证多线程并发安全。
+
+\textbf{内核 tracepoint 层（系统调用层）}：针对 Ollama 的系统调用层，采用内核 tracepoint 白名单策略，仅追踪以下与推理语义相关的系统调用：read/write（文件与 socket I/O）、futex（线程同步与阻塞等待）、mmap/munmap（内存分配释放）、clone3（进程/线程创建）、openat/close（文件打开关闭）。
+
+根据第三章 §3.3 的漏斗降噪设计，高频但语义弱的 syscall（如 brk、madvise、mprotect）被排除，因为它们与推理语义无直接关联。保留的白名单覆盖了推理引擎最核心的资源交互模式：I/O、内存、线程同步和进程管理。
+
+\textbf{针对 "高效性" 的具体保障——参数级过滤}：在第三章 §3.4 漏斗降噪设计的指导下，针对 Ollama 实现了参数级精细过滤：
+
+\begin{itemize}
+    \item read 调用：仅记录 fd $\geq$ 3 且字节数 $> 0$ 的事件，排除读取 /dev/zero、/dev/urandom 等设备文件的噪声；
+    \item mmap 调用：仅记录分配大小 $\geq$ 1MB 的事件，因为 KV Cache 分配具有数百 MB 的特征，微小分配是堆调整噪声。
+\end{itemize}
+
+这些参数级过滤规则直接对应第三章 §3.4 漏斗降噪的步骤四，使原始事件流在采集端即被大幅压缩，确保追踪对 Ollama 运行性能的影响最小化。
+
+\section{高效统一的调用链合成与降噪的实现}
+
+对应第三章 §3.4 的设计方案，本节阐述针对 Ollama 的数据清洗、解析与缝合方案的具体实现。
+
+bpftrace 的文本输出并非纯净的事件流，而是夹杂大量元信息。以一次 uprobe 追踪为例，原始输出包含：bpftrace 的启动/停止提示行（"Tracing... Hit Ctrl-C to terminate"）、每条事件的格式化输出行（时间戳、函数名、耗时、调用栈）、终止标记行。若不经过清洗，这些元信息将导致后续解析器无法正确识别事件边界。
+
+\textbf{trace\_unify.py 的三步清洗流程——对应第三章 §3.4 的漏斗降噪设计}：
+
+\textbf{第一步：元信息过滤。} 逐行扫描原始文本，过滤掉包含 "Tracing"、"Stop"、"Ctrl-C"、"---" 等非事件行的元信息，对应漏斗降噪的步骤一。
+
+\textbf{第二步：事件标记识别。} 识别三种关键标记：
+\begin{itemize}
+    \item \texttt{@UPROBE@} 标记：后跟函数名、时间戳、线程ID、耗时，标识一个 uprobe 事件的开始；
+    \item \texttt{@SYSCALL@} 标记：后跟系统调用名、进程ID、耗时及参数，标识一个系统调用事件；
+    \item \texttt{@END@} 标记：标识当前 uprobe 事件的结束，此时调用栈信息已完整，可以构造一条完整的调用事件。
+\end{itemize}
+
+\textbf{第三步：栈帧清洗。} 过滤掉所有以 \texttt{0x} 开头的内存地址帧，保留可读的函数符号名，并进行 C++ demangle 处理，将 mangled 符号（如 \texttt{\_Z13llama\_decodeP14llama\_context}）还原为可读形式（\texttt{llama\_decode(llama\_context*)})。
+
+图~\ref{fig:parse} 给出了事件帧解析的状态机逻辑：
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    font=\small,
+    process/.style={rectangle,draw,align=center,minimum height=0.6cm},
+    decision/.style={diamond,aspect=2,draw,align=center},
+    arrow/.style={->,>=stealth,thick},
+    >=stealth
+]
+
+% 左侧判断主干道 (x=0)
+\node[process] (start) at (0,0) {读取一行文本};
+\node[decision] (d1) at (0,-2.5) {\texttt{@UPROBE@} 前缀?};
+\node[decision] (d2) at (0,-5.5) {\texttt{@SYSCALL@} 前缀?};
+\node[decision] (d3) at (0,-8.5) {\texttt{@END@} 标记?};
+\node[process] (p3a) at (0,-11.5) {过滤地址帧 $\neg$\texttt{0x*} \\ 追加 Event};
+\node[process] (pend) at (0,-13.5) {按 ts\_ns 排序所有 Event};
+\node[process] (pnext) at (0,-15.5) {读取下一行};
+
+% 右侧执行分支 (x=5)
+\node[process] (p1) at (5,-2.5) {提取 func/ts/tid/dur \\ $\rightarrow$ cur\_type = uprobe};
+\node[process] (p2) at (5,-5.5) {提取 func/dur/extra \\ $\rightarrow$ cur\_type = syscall};
+\node[decision] (d4) at (5,-8.5) {cur\_type = uprobe?};
+\node[process] (p4a) at (5,-11.5) {从 cur\_stack 追加调用栈};
+
+% 主干道连线
+\draw[arrow] (start) -- (d1);
+\draw[arrow] (d1) -- node[left]{否} (d2);
+\draw[arrow] (d2) -- node[left]{否} (d3);
+\draw[arrow] (d3) -- node[left]{是} (p3a);
+\draw[arrow] (p3a) -- (pend);
+\draw[arrow] (pend) -- (pnext);
+
+% 分支连线
+\draw[arrow] (d1) -- node[above]{是} (p1);
+\draw[arrow] (d2) -- node[above]{是} (p2);
+\draw[arrow] (d3) -- node[above]{否} (d4);
+\draw[arrow] (d4) -- node[left]{是} (p4a);
+
+% 追加调用栈后，汇入排序节点
+\draw[arrow] (p4a) |- (pend);
+
+% 构建右侧边缘的"回流总线"，统一汇入"读取下一行"
+\draw[arrow] (p1.east) -- ++(1,0) |- (pnext.east);
+\draw[arrow] (p2.east) -- ++(1,0) |- (pnext.east);
+\draw[arrow] (d4.east) -- node[above]{否} ++(1,0) |- (pnext.east);
+
+% 底部大循环，回到起点
+\draw[arrow] (pnext.west) -- ++(-1.5,0) |- (start.west);
+
+\end{tikzpicture}
+\captionsetup{format=plain}
+\caption{trace\_unify.py 事件帧解析状态机}
+\label{fig:parse}
+\end{figure}
+
+清洗后的数据以 JSON 格式输出（\texttt{trace\_events.json}），同时生成折叠栈格式（\texttt{llama\_folded.txt}）供火焰图可视化使用。
+
+\textbf{stitcher.py 的置信度缝合——对应第三章 §3.4 的缝合算法设计}：
+
+缝合模块接收清洗后的 \texttt{trace\_events.json}，按照时间戳顺序将 uprobe 事件与系统调用事件缝合为统一序列，并计算每条边的置信状态。图~\ref{fig:confidence} 给出了置信度计算的三阶段流程：
+
+\textbf{阶段一：按 TID 构建请求树。} 同一线程内的事件按时间戳顺序构成一棵请求树，每棵树的根节点对应一个 HTTP 请求的发起（clone3 系统调用），树的节点代表该请求生命周期内触发的所有函数调用和系统调用。
+
+\textbf{阶段二：节点命中记录。} 遍历每棵请求树中的每个事件，为每个节点（函数符号）记录其命中的 (tree\_id, ts) 对应关系。例如，\texttt{llama\_decode} 可能在多棵树的多个时间点被命中，其命中记录为：$\{(\text{tree}_1, t_1), (\text{tree}_2, t_2), ...\}$
+
+\textbf{阶段三：静态边置信度判定。} 遍历静态符号提取阶段得到的每一条跨语言调用边，检查其两端节点是否在相同的请求树中同时出现：
+
+\begin{itemize}
+    \item \textbf{Confirmed}：该边两端节点在 $\ge 2$ 棵不同的请求树中共同出现——跨语言调用关系被多条独立请求路径确认，是最可靠的调用关系；
+    \item \textbf{Inferred}：该边两端节点仅在 1 棵请求树中共同出现——调用关系仅在单次请求中被观测到，可能存在时间窗口误匹配；
+    \item \textbf{Unknown}：该边两端节点从未在任何请求树中共同出现——该调用路径未被触发，或需要进一步采集更多数据。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.3cm,
+    font=\small,
+    process/.style={rectangle,draw,minimum height=0.7cm,align=center},
+    decision/.style={diamond,aspect=2.2,draw},
+    arrow/.style={->,>=stealth,thick}
+]
+
+\node[process,fill=blue!8] (s1) at (0,0) {阶段一：按 TID 构建请求树};
+\node[process,fill=blue!8] (s2) at (0,-1.8) {阶段二：为每个节点记录 (tree\_id, ts) 命中};
+\node[process,fill=blue!8] (s3) at (0,-3.6) {阶段三：遍历每条静态边};
+\node[decision] (d1) at (0,-6) {同一树内 A、B 均命中?};
+\node[process] (c1) at (-4.2,-8.5) {\texttt{CONFIRMED} \\ 共同命中 $\ge 2$ 棵树};
+\node[process] (c2) at (0,-8.5) {\texttt{INFERRED} \\ 共同命中 1 棵树};
+\node[process] (c3) at (4.2,-8.5) {\texttt{UNKNOWN} \\ 无共同命中};
+\node[process] (out) at (0,-10.5) {输出每条边的置信状态};
+
+\draw[arrow] (s1) -- (s2);
+\draw[arrow] (s2) -- (s3);
+\draw[arrow] (s3) -- (d1);
+\draw[arrow] (d1) -| node[above, near start]{$\geq 2$} (c1);
+\draw[arrow] (d1) -- node[right]{$=1$} (c2);
+\draw[arrow] (d1) -| node[above, near start]{$=0$} (c3);
+\draw[arrow] (c1) |- (out);
+\draw[arrow] (c2) -- (out);
+\draw[arrow] (c3) |- (out);
+\end{tikzpicture}
+\captionsetup{format=plain}
+\caption{confidence.py 置信度计算三阶段流程}
+\label{fig:confidence}
+\end{figure}
+
+\section{准确的跨语言符号映射的实现}
+
+对应第三章 §3.5 的设计方案，本节阐述针对 Ollama 的符号提取与分类方案的具体实现。
+
+如本章 §4.1 所述，Ollama 存在 CGO 哈希后缀问题：Go 编译器生成的 CGO 桥接函数名包含哈希后缀（如 \texttt{\_cgoexp\_a1b2c3d4...})，无法直接通过 \texttt{nm} 和标准 demangler 识别其语义角色。这意味着若不经过专门的符号处理，Ollama 中大量跨越 Go$\leftrightarrow$C++ 边界的胶水函数将完全不可识别，五层分类体系将失效。
+
+\textbf{classify\_func.py 的两层提取策略——对应第三章 §3.5 的五层分类设计}：
+
+\textbf{对 C/C++ 符号：通过 binutils 工具链提取并分类。}
+
+对 llama.so、ggml.so 等动态库，使用 \texttt{nm -gC --defined-only} 提取全局导出符号。其中 \texttt{-gC} 参数表示仅提取全局符号并自动 demangle C++ mangled 符号。提取结果按函数名前缀进入五层分类体系：
+
+\begin{itemize}
+    \item \texttt{llama\_*} 且含 batch/sampler/token $\to$ 张量计算层（f$_2$，batch\_sampler 子类）
+    \item \texttt{llama\_*} 且含 sched/graph\_compute $\to$ 调度协调层（f$_4$，sched\_compute 子类）
+    \item \texttt{ggml\_*} $\to$ 张量计算层（f$_2$，ggml\_ops 子类）
+    \item 含 vocab/tokenize $\to$ 内存管理层（f$_3$，vocab 子类）
+    \item 含 backend $\to$ 内存管理层（f$_3$，ggml\_backend 子类）
+\end{itemize}
+
+\textbf{对 Go 运行时符号：通过 /proc/pid/maps 定位并分类。}
+
+Ollama 的 Go 侧运行时符号分布在主进程中，通过读取 \texttt{/proc/pid/maps} 获取内存映射区间，过滤出包含 Go runtime 代码的区间后，识别以下前缀的函数：
+
+\begin{itemize}
+    \item \texttt{runtime.} 前缀 $\to$ Go 运行时调度与内存管理（goroutine 调度、GC）
+    \item \texttt{runtime/cgo.} 前缀 $\to$ CGO 导出函数，即跨越 Go $\leftrightarrow$ C 边界的胶水节点
+    \item 含 \texttt{\_cgo\_} 的函数名 $\to$ CGO 桥接层（f$_1$），这是 Ollama 跨语言边界识别的核心——\texttt{\_cgo\_} 哈希后缀虽然无法 demangle，但其前缀特征足以将其识别为胶水层函数
+\end{itemize}
+
+图~\ref{fig:classify} 给出了 classify\_func 的完整决策流程：
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    font=\small,
+    decision/.style={diamond,aspect=2,draw,align=center,inner sep=1pt},
+    process/.style={rectangle,draw,align=center},
+    arrow/.style={->,>=stealth,thick}
+]
+
+% 根节点与第一层
+\node[process] (start) at (0,0) {\texttt{输入: 符号名 $f$}};
+\node[decision] (d1) at (0,-2) {$f$ 含 \texttt{\_cgo\_}?};
+% 把执行动作拉到右侧，让开垂直主干
+\node[process] (p1) at (4,-2) {\texttt{go\_cgo\_bridge}}; 
+
+\node[decision] (d2) at (0,-4.5) {$f$ 前缀 \\ \texttt{llama\_}?};
+
+% 左侧分支树
+\node[decision] (d3) at (-3,-7) {含 batch/ \\ sampler/token?};
+\node[process] (p2) at (-5,-9.5) {\texttt{batch\_sampler}};
+\node[process] (p3) at (-1,-9.5) {\texttt{llama\_api}};
+
+% 右侧分支树
+\node[decision] (d4) at (3,-7) {含 sched / \\ graph\_compute?};
+\node[process] (p4) at (7,-7) {\texttt{sched\_compute}};
+
+\node[decision] (d5) at (3,-9.5) {$f$ 前缀 \\ \texttt{ggml\_}?};
+\node[process] (p5) at (0,-12) {\texttt{ggml\_ops}};
+
+\node[decision] (d6) at (6,-12) {含 vocab / \\ tokenize?};
+\node[process] (p6) at (9,-12) {\texttt{vocab}};
+\node[process] (p7) at (6,-14) {\texttt{ggml\_backend}};
+
+\node[process,dashed] (pend) at (9,-14) {\texttt{llama\_api}\\（默认）};
+
+% 连线逻辑 (使用 -| 画直角折线)
+\draw[arrow] (start) -- (d1);
+\draw[arrow] (d1) -- node[above]{是} (p1);
+\draw[arrow] (d1) -- node[left]{否} (d2);
+
+\draw[arrow] (d2) -| node[above left]{是} (d3);
+\draw[arrow] (d2) -| node[above right]{否} (d4);
+
+\draw[arrow] (d3) -| node[above left]{是} (p2);
+\draw[arrow] (d3) -| node[above right]{否} (p3);
+
+\draw[arrow] (d4) -- node[above]{是} (p4);
+\draw[arrow] (d4) -- node[left]{否} (d5);
+
+\draw[arrow] (d5) -| node[above left]{是} (p5);
+\draw[arrow] (d5) -| node[above right]{否} (d6);
+
+\draw[arrow] (d6) -- node[above]{是} (p6);
+\draw[arrow] (d6) -- node[left]{否} (p7);
+
+\end{tikzpicture}
+\captionsetup{format=plain}
+\caption{classify\_func 分类决策流程}
+\label{fig:classify}
+\end{figure}
+
+CGO 桥接函数是 Go $\to$ C++ 调用链上的必经节点。若遗漏这一层，则缝合出的调用链在 Go 层和 C++ 层之间将出现断裂，无法形成完整的跨语言调用链。通过识别 \texttt{\_cgo\_} 特征，可以将原本不可读的哈希后缀函数名正确分类为胶水层（f$_1$），从而保证调用链的完整性。
+
+\textbf{分类结果如何支撑缝合？} classify\_func.py 的输出不仅包含函数符号本身，还包含其对应的五层分类标签（如 \texttt{go\_cgo\_bridge} $\to$ f$_1$，\texttt{ggml\_ops} $\to$ f$_2$）。缝合模块在构建跨语言调用图时，每个节点都携带其层次标签，使得缝合结果可以展示为"f$_1$ $\to$ f$_2$"这样的跨层调用关系，而不仅仅是函数符号名的拼接。
+
+\section{异常检测规则的具体实现}
+
+对应第三章 §3.6 的设计方案，本节阐述针对 Ollama 的异常检测规则的具体实现。
+
+analyzer.py 在缝合后的统一调用序列上执行预定义规则。图~\ref{fig:ruleengine} 给出了规则引擎的工作流程。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    font=\small,
+    process/.style={rectangle,draw,align=center,minimum height=0.65cm},
+    decision/.style={diamond,aspect=1.8,draw,align=center,inner sep=0pt},
+    arrow/.style={->,>=stealth,thick}
+]
+
+\node[process] (init) at (0,0) {初始化：注册规则列表};
+\node[process] (loop) at (0,-1.8) {遍历每个事件 $e$};
+\node[decision] (d1) at (-3.8,-4) {$e$ 为 futex \\ 且耗时 $>1s$?};
+\node[decision] (d2) at (0,-4) {$e$ 为 mmap \\ 且大小 $>1GB$?};
+\node[decision] (d3) at (3.8,-4) {$e$ 访问 \\ 敏感路径?};
+\node[process] (a1) at (-3.8,-7) {生成 Alert \\ FUTEX\_BLOCK};
+\node[process] (a2) at (0,-7) {生成 Alert \\ MMAP\_SIZE};
+\node[process] (a3) at (3.8,-7) {生成 Alert \\ SENSITIVE\_PATH};
+\node[process] (collect) at (0,-9.5) {收集所有 Alert 输出};
+
+\draw[arrow] (init) -- (loop);
+\draw[arrow] (loop) -| (d1);
+\draw[arrow] (loop) -- (d2);
+\draw[arrow] (loop) -| (d3);
+\draw[arrow] (d1) -- node[right]{是} (a1);
+\draw[arrow] (d2) -- node[right]{是} (a2);
+\draw[arrow] (d3) -- node[right]{是} (a3);
+\draw[arrow] (a1) |- (collect);
+\draw[arrow] (a2) -- (collect);
+\draw[arrow] (a3) |- (collect);
+
+\end{tikzpicture}
+\captionsetup{format=plain}
+\caption{analyzer.py 规则引擎工作流程}
+\label{fig:ruleengine}
+\end{figure}
+
+针对 Ollama 目前实现了三条检测规则：
+
+\begin{itemize}
+    \item \textbf{futex\_block 规则}（对应第三章 §3.6）：futex 等待时间超过 5 秒时触发 HIGH 级别告警，1–5 秒触发 MEDIUM 级别告警。futex 长等待是锁竞争或 I/O 阻塞的强烈信号，表明推理阶段可能存在性能瓶颈。
+    \item \textbf{sensitive\_path 规则}（对应第三章 §3.6）：对敏感路径（如 /etc/passwd、/root、/.ssh 等）的文件访问操作触发 HIGH 级别告警。该规则利用缝合结果中的系统调用事件，识别非预期的文件访问行为。
+    \item \textbf{mmap\_size 规则}（对应第三章 §3.6）：mmap 分配大小超过 1GB 或分配失败（返回 -1）时触发 HIGH 级别告警。异常的 KV Cache 分配可能意味着模型配置错误或遭受恶意输入攻击。
+\end{itemize}
+
+各规则独立遍历事件序列，告警结果按风险等级聚合输出。
+
+\section{本章小结}
+
+本章以 Ollama 推理引擎为典型靶点，与第三章的设计方案形成一一对应的闭环：
+
+\begin{itemize}
+    \item §4.1 针对 Ollama 的架构特征（CGO 哈希后缀、双进程模型、llama.cpp 命名规范），分析了第三章设计方案在应用时面临的挑战；
+    \item §4.2 实现了高效且完备的函数调用追踪，在四个核心函数上挂载 uprobe/uretprobe，并配置参数级过滤策略，验证了探针下沉策略的可行性；
+    \item §4.3 实现了高效统一的调用链合成与降噪，通过 trace\_unify.py 的三步清洗流程和 stitcher.py 的三阶段置信度缝合，生成了带有置信状态的统一调用链；
+    \item §4.4 实现了准确的跨语言符号映射，通过 classify\_func.py 的两层提取策略和 \texttt{\_cgo\_} 特征识别，解决了 Ollama 的 CGO 哈希后缀问题，使五层分类体系在 Ollama 上完整生效；
+    \item §4.5 实现了异常检测规则引擎，在缝合后的调用链上执行三条规则，发现潜在的推理引擎安全风险。
+\end{itemize}
+
+通过上述实现，HybriChain 在 Ollama 推理引擎上完成了从原始追踪数据到可解释跨语言调用链的完整闭环，证明了第三章设计方案的实践可行性。下一章将通过实验数据对 HybriChain 的追踪准确性、缝合精度和异常检测能力进行定量评估。

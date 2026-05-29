@@ -1,0 +1,172 @@
+====================================================================================================
+Ollama 系统调用完整序列
+====================================================================================================
+
+【数据来源】
+  strace: /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/strace_run.txt
+  bpftrace: /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/raw/bpftrace.jsonl
+  静态调用图: /home/typejetfire/graduation_thesis/experiments/exp3_qwen_dynamic/static/call_graph_static.json
+
+  bpftrace 事件总数: 6271
+  strace 关键事件: 145
+
+【bpftrace 系统调用统计】
+  read: 4787 次
+  futex_wait: 559 次
+  futex_wake: 553 次
+  close: 118 次
+  openat: 108 次
+  mmap: 77 次
+  clone3: 37 次
+  write: 32 次
+
+====================================================================================================
+#     阶段             syscall            PID      描述                                                   风险
+--------------------------------------------------------------------------------------------------------------
+1     进程初始化          mmap               22043    mmap 269KB                                              LOW
+2     进程初始化          mmap               22043    mmap 8KB                                                LOW
+3     进程初始化          mmap               22043    mmap 74KB                                               LOW
+4     进程初始化          mmap               22043    mmap 36KB                                               LOW
+5     进程初始化          mmap               22043    mmap 12KB                                               LOW
+6     进程初始化          mmap               22043    mmap 8KB                                                LOW
+7     进程初始化          mmap               22043    mmap 6KB                                                LOW
+8     进程初始化          mmap               22043    mmap 内存映射 2.6MB                                         LOW
+9     进程初始化          mmap               22043    mmap 内存映射 1.3MB                                         LOW
+10    进程初始化          mmap               22043    mmap 584KB                                              LOW
+11    进程初始化          mmap               22043    mmap 72KB                                               LOW
+12    进程初始化          mmap               22043    mmap 12KB                                               LOW
+13    进程初始化          mmap               22043    mmap 内存映射 1.2MB                                         LOW
+14    进程初始化          mmap               22043    mmap 604KB                                              LOW
+15    进程初始化          mmap               22043    mmap 532KB                                              LOW
+16    进程初始化          mmap               22043    mmap 8KB                                                LOW
+17    进程初始化          mmap               22043    mmap 176KB                                              LOW
+18    进程初始化          mmap               22043    mmap 140KB                                              LOW
+19    进程初始化          mmap               22043    mmap 16KB                                               LOW
+20    进程初始化          mmap               22043    mmap 8KB                                                LOW
+21    进程初始化          mmap               22043    mmap 内存映射 2.1MB                                         LOW
+22    进程初始化          mmap               22043    mmap 内存映射 1.4MB                                         LOW
+23    进程初始化          mmap               22043    mmap 448KB                                              LOW
+24    进程初始化          mmap               22043    mmap 24KB                                               LOW
+25    进程初始化          mmap               22043    mmap 30KB                                               LOW
+26    进程初始化          mmap               22043    mmap 8KB                                                LOW
+27    进程初始化          mmap               22043    mmap 12KB                                               LOW
+28    推理执行           futex              22043    futex 同步等待                                              LOW
+29    进程初始化          mmap               22043    mmap 256KB                                              LOW
+30    进程初始化          mmap               22043    mmap 128KB                                              LOW
+31    进程初始化          mmap               22043    mmap 内存映射 1.0MB                                         LOW
+32    模型加载           mmap               22043    mmap 内存映射 8.0MB                                         LOW
+33    模型加载           mmap               22043    mmap 内存映射 64.0MB                                        LOW
+34    模型加载           mmap               22043    mmap KV Cache 预分配 512MB                              🔴 HIGH
+35    模型加载           mmap               22043    mmap KV Cache 预分配 512MB                              🔴 HIGH
+36    模型加载           mmap               22043    mmap 内存映射 64.0MB                                        LOW
+37    模型加载           mmap               22043    mmap 内存映射 32.0MB                                        LOW
+38    进程初始化          mmap               22043    mmap 68KB                                               LOW
+39    进程初始化          mmap               22043    mmap 内存映射 4.0MB                                         LOW
+40    进程初始化          mmap               22043    mmap 128KB                                              LOW
+41    进程初始化          mmap               22043    mmap 4KB                                                LOW
+42    进程初始化          mmap               22043    mmap 4KB                                                LOW
+43    进程初始化          mmap               22043    mmap 4KB                                                LOW
+44    进程初始化          mmap               22043    mmap 4KB                                                LOW
+45    进程初始化          mmap               22043    mmap 4KB                                                LOW
+46    进程初始化          mmap               22043    mmap 内存映射 1.0MB                                         LOW
+47    进程初始化          mmap               22043    mmap 64KB                                               LOW
+48    进程初始化          mmap               22043    mmap 64KB                                               LOW
+49    进程初始化          mmap               22043    mmap 内存映射 1.4MB                                         LOW
+50    进程初始化          mmap               22043    mmap 256KB                                              LOW
+51    模型加载           mmap               22043    mmap 内存映射 8.0MB                                         LOW
+52    进程fork         clone3             22043    clone3 创建线程 child=0x7f470939fce8                        LOW
+53    进程fork         clone3             22043    clone3 创建线程 child=0x7f47009ffce8                        LOW
+54    模型加载           mmap               22045    mmap 大块内存 128MB                                      🔴 HIGH
+55    模型加载           mmap               22043    mmap 内存映射 8.0MB                                         LOW
+56    进程fork         clone3             22043    clone3 创建线程 child=0x7f4708b9ece8                        LOW
+57    模型加载           mmap               22045    mmap 内存映射 8.0MB                                         LOW
+58    推理执行           futex              22046    futex 同步等待                                              LOW
+59    模型加载           mmap               22043    mmap 内存映射 8.0MB                                         LOW
+60    进程fork         clone3             22043    clone3 创建线程 child=0x7f47037fece8                        LOW
+61    模型加载           mmap               22048    mmap 内存映射 64.0MB                                        LOW
+62    推理执行           futex              22043    futex 同步等待                                              LOW
+63    推理执行           futex              22047    futex 同步等待                                              LOW
+64    进程初始化          mmap               22043    mmap 内存映射 4.0MB                                         LOW
+65    推理执行           futex              22043    futex 同步等待                                              LOW
+66    推理执行           futex              22045    futex 同步等待                                              LOW
+67    进程初始化          mmap               22043    mmap 256KB                                              LOW
+68    推理执行           futex              22043    futex 同步等待                                              LOW
+69    推理执行           futex              22045    futex 同步等待                                              LOW
+70    推理执行           futex              22047    futex 同步等待                                              LOW
+71    推理执行           futex              22047    futex 同步等待                                              LOW
+72    进程fork         clone3             22043    clone3 创建线程 child=0x7f4702ffdce8                        LOW
+73    推理执行           futex              22043    futex 同步等待                                              LOW
+74    推理执行           futex              22046    futex 同步等待                                              LOW
+75    推理执行           futex              22047    futex 同步等待                                              LOW
+76    推理执行           futex              22043    futex 同步等待                                              LOW
+77    推理执行           futex              22046    futex 同步等待                                              LOW
+78    进程初始化          mmap               22043    mmap 64KB                                               LOW
+79    进程初始化          mmap               22045    mmap 内存映射 4.0MB                                         LOW
+80    进程fork         clone3             22043    clone3 创建线程 child=0x7f47027fcce8                        LOW
+81    进程fork         clone3             22045    clone3 创建线程 child=0x7f4701ffbce8                        LOW
+82    推理执行           futex              22051    futex 同步等待                                              LOW
+83    推理执行           futex              22043    futex 同步等待                                              LOW
+84    推理执行           futex              22050    futex 同步等待                                              LOW
+85    进程初始化          mmap               22047    mmap 8KB                                                LOW
+86    推理执行           futex              22047    futex 同步等待                                              LOW
+87    推理执行           futex              22051    futex 同步等待                                              LOW
+88    推理执行           futex              22050    futex 同步等待                                              LOW
+89    推理执行           futex              22045    futex 同步等待                                              LOW
+90    推理执行           futex              22043    futex 同步等待                                              LOW
+91    推理执行           futex              22047    futex 同步等待                                              LOW
+92    推理执行           futex              22043    futex 同步等待                                              LOW
+93    进程初始化          mmap               22050    mmap 8KB                                                LOW
+94    进程初始化          mmap               22051    mmap 256KB                                              LOW
+95    推理执行           futex              22051    futex 同步等待                                              LOW
+96    推理执行           futex              22047    futex 同步等待                                              LOW
+97    推理执行           futex              22049    futex 同步等待                                              LOW
+98    推理执行           futex              22043    futex 同步等待                                              LOW
+99    推理执行           futex              22043    futex 同步等待                                              LOW
+100   推理执行           futex              22043    futex 同步等待                                              LOW
+101   推理执行           futex              22051    futex 同步等待                                              LOW
+102   推理执行           futex              22049    futex 同步等待                                              LOW
+103   进程初始化          mmap               22043    mmap 256KB                                              LOW
+104   推理执行           futex              22043    futex 同步等待                                              LOW
+105   推理执行           futex              22043    futex 同步等待                                              LOW
+106   推理执行           futex              22049    futex 同步等待                                              LOW
+107   进程初始化          mmap               22047    mmap 256KB                                              LOW
+108   进程初始化          mmap               22047    mmap 256KB                                              LOW
+109   推理执行           futex              22047    futex 同步等待                                              LOW
+110   推理执行           futex              22049    futex 同步等待                                              LOW
+111   推理执行           futex              22043    futex 同步等待                                              LOW
+112   推理执行           futex              22051    futex 同步等待                                              LOW
+113   推理执行           futex              22051    futex 同步等待                                              LOW
+114   推理执行           futex              22043    futex 同步等待                                              LOW
+115   推理执行           futex              22043    futex 同步等待                                              LOW
+116   推理执行           futex              22043    futex 同步等待                                              LOW
+117   推理执行           futex              22043    futex 同步等待                                              LOW
+118   推理执行           futex              22051    futex 同步等待                                              LOW
+119   推理执行           futex              22043    futex 同步等待                                              LOW
+120   推理执行           futex              22049    futex 同步等待                                              LOW
+121   推理执行           futex              22045    futex 同步等待                                              LOW
+122   推理执行           futex              22045    futex 同步等待                                              LOW
+123   推理执行           futex              22043    futex 同步等待                                              LOW
+124   推理执行           futex              22051    futex 同步等待                                              LOW
+125   推理执行           futex              22051    futex 同步等待                                              LOW
+126   推理执行           read               22051    read(fd=3)                                              LOW
+127   推理执行           futex              22051    futex 同步等待                                              LOW
+128   推理执行           futex              22051    futex 同步等待                                              LOW
+129   推理执行           futex              22051    futex 同步等待                                              LOW
+130   推理执行           futex              22045    futex 同步等待                                              LOW
+131   推理执行           futex              22046    futex 同步等待                                              LOW
+132   推理执行           futex              22046    futex 同步等待                                              LOW
+133   推理执行           futex              22045    futex 同步等待                                              LOW
+134   推理执行           futex              22044    futex 同步等待                                              LOW
+135   推理执行           futex              22045    futex 同步等待                                              LOW
+136   推理执行           futex              22046    futex 同步等待                                              LOW
+137   推理执行           futex              22046    futex 同步等待                                              LOW
+138   推理执行           futex              22046    futex 同步等待                                              LOW
+139   推理执行           futex              22046    futex 同步等待                                              LOW
+140   推理执行           futex              22046    futex 同步等待                                              LOW
+141   推理执行           futex              22046    futex 同步等待                                              LOW
+142   推理执行           futex              22046    futex 同步等待                                              LOW
+143   推理执行           futex              22046    futex 同步等待                                              LOW
+144   推理执行           futex              22046    futex 同步等待                                              LOW
+145   推理执行           futex              22046    futex 同步等待                                              LOW
+====================================================================================================
+共 145 条关键系统调用

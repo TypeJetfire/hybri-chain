@@ -1,0 +1,5 @@
+model,analysis_type,raw_bpftrace_lines,raw_bpftrace_kb,bpftrace_clean_events,ignored_syscall_lines,ignore_rate_pct,compression_ratio,parse_time_raw_ms,parse_time_clean_ms,pipeline_overhead_ms,unique_stack_nodes,notes
+TinyLlama-1.1B,eBPF,25329,831.3,8891,16438,64.9,2.8x,1.6,6.8,5.2,4,原始事件含UP行+SYSCALL行，清洗忽略brk/mprotect/madvise等28类噪声syscall
+TinyLlama-1.1B,Static,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,无bpftrace数据，纯静态符号分析
+Qwen2-0.5B,eBPF,13670,400.7,6373,7297,53.4,2.1x,1.0,4.4,3.4,4,同TinyLlama，清洗后事件数含UP行+非忽略SYSCALL
+Qwen2-0.5B,Static,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,无bpftrace数据，纯静态符号分析

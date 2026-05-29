@@ -1,0 +1,22 @@
+{
+  "policies": [
+    {
+      "name": "developer_access_high_confidentiality",
+      "action": "ALLOW",
+      "subject_constraints": {
+        "all": [
+          {"field": "role", "op": "==", "value": "developer"},
+          {"field": "trust_score", "op": ">=", "value": 80}
+        ]
+      },
+      "object_constraints": {
+        "all": [
+          {"field": "type", "op": "==", "value": "storage"}
+        ]
+      },
+      "l4_enforcement": [
+        {"proto": "tcp", "ports": [22, 443], "action": "accept"}
+      ]
+    }
+  ]
+}

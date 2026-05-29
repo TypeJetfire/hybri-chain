@@ -1,0 +1,140 @@
+% 第2章 相关技术综述
+
+\chapter{相关技术综述}
+\label{chap:background}
+
+为了实现对开源大语言模型复杂系统内部的深度穿透，准确实施针对数据传输 API 的调用链分析，本章将结合现代计算基础设施前沿技术的演进轨迹，对涵盖大模型推理硬件限制、eBPF 内核可观测性、跨语言程序图谱构建以及动态二进制底层追踪等领域的核心学术文献与工业界标杆进行穷尽式剖析。特别强调每一项关键研究在其技术节点上究竟解决了哪些核心挑战，以及在应对多语言 AI 安全审计时暴露出何种未决的局限性。
+
+\section{大语言模型推理架构的硬件极限与系统级突围}
+
+现代大模型的迭代极大地放大了计算架构中的根本性矛盾，迫使开发者在系统软件层进行极其复杂的工程优化，这些优化构成了跨语言调用链追踪的客观背景。
+
+\subsection{底层硬件制约与架构分析}
+
+X. Ma 与 D. Patterson \cite{ma2026challenges} 详细剖析了大型语言模型推理硬件的发展趋势与物理局限，他们通过对高带宽内存（HBM）堆叠成本与算力之间博弈的量化研究，解决了学术界对于"内存墙（Memory Wall）"制约大模型算力发展的宏观认知问题，明确指出了单纯堆砌硅片的路径不可持续。但其研究的局限在于，该分析高度聚焦于纯芯片与硬件互联拓扑的物理特性探讨，未能给出应用层系统软件突破这些瓶颈的具体代码级干预方案。
+
+A. M. Jain 等人 \cite{jain2025scaling} 通过构建合成负载生成器与统计学模型评估架构扩展性，解决了预测生产级聊天机器人在高并发长文本输入下发生尾部延迟（Tail Latency）爆炸的定量难题。但还有待解决的问题是，其研究将 AI 框架本身视为黑盒系统，仅在宏观负载层面测量输出，无法解释延迟激增在系统内部引发的跨层级拥塞机理。
+
+\subsection{应对内存危机与边缘部署方案}
+
+W. Kwon 等人 \cite{kwon2023efficient} 提出了著名的 PagedAttention 机制，他们利用操作系统经典的虚拟内存按需分页（On-demand Allocation）哲学，彻底解决了 LLM 推理时海量 KV Cache 必须连续分配导致的外部物理内存碎片化问题，实现了吞吐量的几何级攀升。然而不足之处在于，该机制极度优化了内存复用率，却缺乏对跨并发请求在混合内存块池中相互越界读写的深入安全隔离探讨。
+
+G. Gerganov \cite{gerganov2023llamacpp,gerganov2023ggml} 开发了具有划时代意义的纯 C/C++ 推理库 llama.cpp 及其核心张量库 ggml。他们通过实现深度的整数级混合量化（Quantization）技术与全平台指令集优化，解决了在缺乏专用 GPU 的边缘设备与消费级处理器上部署千亿级参数大模型的难题。但该框架面临的工程挑战是，由于追求极致底层的纯 C/C++ 控制，导致其难以直接且安全地对接现代基于 Go 或 Python 的高并发网络微服务 API 层，从而衍生出了错综复杂的跨语言封装层。
+
+图~\ref{fig:ollama_architecture} 展示了这一架构的典型形态：Ollama 在 Go HTTP Handler 层接收 API 请求后，经由 CGO 绑定层自动生成的桥接函数，最终调用底层 llama.cpp C++ 层完成推理计算。这种跨越 Go $\rightarrow$ CGO $\rightarrow$ C++ 三层语言的调用链，正是 HybriChain 需要追踪的核心对象。
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, node distance=0.5cm, font=\small]
+\node (go) [draw, rectangle, minimum width=9cm, fill=blue!10, rounded corners] {
+\begin{tabular}{c}
+\textbf{Go HTTP Handler 层} \\
+\texttt{Generate()} / \texttt{Chat()} / \texttt{PullModel()} \\
+\textit{C.llama\_model\_load\_from\_file}
+\end{tabular}
+};
+\node (cgo) [draw, rectangle, minimum width=9cm, fill=green!10, rounded corners, below=0.5cm of go] {
+\begin{tabular}{c}
+\textbf{CGO 绑定层（llama/llama.go）} \\
+\texttt{\_cgo\_Cfunc\_llama\_decode} / \texttt{\_cgoexp\_HASH\_...} \\
+\textit{Go 编译器自动生成的桥接函数}
+\end{tabular}
+};
+\node (cpp) [draw, rectangle, minimum width=9cm, fill=orange!10, rounded corners, below=0.5cm of cgo] {
+\begin{tabular}{c}
+\textbf{llama.cpp C++ 层（llama.cpp/src/）} \\
+\texttt{llama\_decode} / \texttt{ggml\_backend\_sched\_*} / \texttt{common\_*} \\
+\textit{核心推理逻辑}
+\end{tabular}
+};
+\draw[->, thick] (go.south) -- (cgo.north) node[midway, right] {\texttt{C.llama\_*}};
+\draw[->, thick] (cgo.south) -- (cpp.north) node[midway, right] {直接函数调用};
+\end{tikzpicture}
+\caption{Ollama 混合编程架构示意}
+\label{fig:ollama_architecture}
+\end{figure}
+
+\subsection{AI 基础设施的安全脆弱性暴露}
+
+PyTorch 团队维护的 TorchServe 项目 \cite{pytorchserve2024} 作为标杆性的部署工具，解决了深度学习模型提供 REST/gRPC API 与多模型并发动态批处理的业务痛点。但其在演进中暴露出的问题是，由于追求接口的绝对灵活，早期架构在反序列化阶段允许动态模型注册，导致遭遇了类似 CVE-2023-43654 这样通过构造恶意 YAML 存档进行远程代码执行（RCE）的毁灭性漏洞。
+
+S. Tzadik 领导的 Wiz 安全团队 \cite{tzadik2024probllama} 详细披露了 Ollama 框架的 CVE-2024-37032 高危漏洞（Probllama）。他们分析了攻击者如何利用该系统底层的解析缺陷，解决了业界对该框架在获取模型 API 数据包摘要（Digest）时由于未严格验证十六进制格式规范而引发"目录遍历攻击"的具体机理认知。但现阶段亟需解决的系统性难题是，传统安全修复仅停留在事后的打补丁与特定路径过滤上，完全未能在底层内核层面建立一套自动化、实时溯源此类畸形 API 数据从高层网络插口流动到敏感系统文件读写的监控追踪链路。
+
+\section{eBPF：重塑 Linux 内核与微服务可观测性范式}
+
+为了从根本上穿透大模型框架的双进程与跨语言壁垒，eBPF 技术展现出了独一无二的优越性，其演进史本身就是一部寻求在系统性能与监控深度之间完美平衡的进化史。
+
+\subsection{eBPF 基础架构与核心数据传输}
+
+A. Starovoitov \cite{corbet2014bpf} 提交的一系列历史性重构补丁，解决了传统 BPF 只能受限于网络子系统的僵化局面，通过将其升格为通用内核虚拟机并引入极其严格的代码静态验证器（Verifier），赋予了用户态在内核极速且安全执行观测逻辑的能力。基于此架构，B. Gregg \cite{gregg2020bpf} 和 D. Calavera \cite{calavera2019linux} 分别解决了传统系统性能剖析与网络层监控无法兼顾纳秒级开销与全栈透视的工程痛点，奠定了可观测性新范式。
+
+为了突破高频追踪数据的回传瓶颈，A. Nakryiko \cite{nakryiko2020ringbuf} 引入了划时代的 BPF Ring Buffer 数据结构。他通过构建多生产者单消费者（MPSC）共享内存队列，彻底解决了早期 Perf Buffer 在多核高并发大流量下频繁发生的事件拥塞丢失与时间戳乱序（Event Re-ordering）乱象。随后，Cilium 与 Cloudflare 联合团队 \cite{ciliumebpf2024} 开发了 cilium/ebpf，解决了云原生环境中 Go 语言无法高效、原生地下发与解析 eBPF 字节码的障碍。但这些底层能力依然存在局限，即纯粹的数据传输通道自身并不具备对复杂 AI API 负载进行跨语言重组的高级语义感知能力。
+
+表~\ref{tab:ebpf_comparison} 从执行位置、性能开销、安全验证、Go 兼容性等维度，将 eBPF 与 strace、GDB、DBI（Pin）、perf 等传统追踪技术进行了横向对比。如表中所示，eBPF 在内核态安全沙箱中运行，由 Verifier 提供运行时安全验证，同时具备极低的性能开销与对 Go 1.17+ 良好的兼容性，这些特性使其成为追踪多语言混合推理引擎的最佳候选技术。
+
+\begin{table}[H]
+\centering
+\caption{eBPF 与其他追踪技术对比}
+\label{tab:ebpf_comparison}
+\begin{tabular}{|p{2.2cm}|p{2.5cm}|p{2.2cm}|p{3.0cm}|p{2.2cm}|p{1.8cm}|}
+\hline
+\textbf{维度} & \textbf{strace} & \textbf{GDB} & \textbf{DBI (Pin)} & \textbf{eBPF} & \textbf{perf} \\
+\hline
+执行位置 & 用户态（ptrace）& 用户态 & 用户态（运行时注入）& 内核态（安全沙箱）& 内核态 \\
+\hline
+性能开销 & 高 & 极高 & 高 & \textbf{低} & 低 \\
+\hline
+安全验证 & 无 & 无 & 无 & \textbf{有（verifier）}& 有 \\
+\hline
+Go 1.17+ 兼容 & 可用 & 需调试信息 & \textbf{危险（ABI 不兼容）}& \textbf{推荐（无侵入）}& 可用 \\
+\hline
+学习曲线 & 低 & 高 & 高 & 中 & 中 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{将 eBPF 推向应用层服务质量与 AI 黑盒}
+
+Y. Hu \cite{hu2025ebpf} 创新性地将 eBPF uprobe 探针应用于 WebAssembly (Wasm) 运行时，解决了在无服务器（Serverless）沙箱环境中无法侵入源码即可进行精准 HTTP 流量统计的盲区问题。M. Ibnath 等人 \cite{ibnath2026ebeemetrics} 提出的 eBeeMetrics 框架，解决了系统在缺乏离线反馈分析的条件下，跨多种网络协议精准评估微服务吞吐与尾部延迟的难题。但以上宏观观测研究均存在缺陷，即将庞大的进程视为无状态的黑盒中继站，无法深入探究数据变量在跨语言进程内部的流向。
+
+针对大型人工智能模型底层的黑盒痛点，B. Zou 等人 \cite{zou2026profinfer} 提出的 ProfInfer 框架实现了史无前例的降维打击。他们利用 uprobe 结合硬件性能监控计数器（PMC），解决了在 Token 生成解码粒度上，精确追踪底层张量算子（如矩阵乘法）导致 L3 缓存未命中（Cache Refill）等微观硬件物理指标的难题。然而令人遗憾的是，该系统的高度专一化导致其完全放弃了对顶层数据传输 HTTP API 与底层 C++ 计算之间跨语言反序列化语义的缝合，当面对应用层 API 发起的利用攻击时，该框架无法提供任何溯源保护。
+
+\subsection{内核态观测所带来的系统级安全对抗}
+
+ControlPlane 的系统白皮书 \cite{controlplane2024ebpf} 与 LinuxSecurity 的深度对比分析 \cite{linuxsecurity2026auditd}，解决了业界在选择传统日志记录器（如 Auditd）与 eBPF 微隔离方案时的理论分歧。他们指出 Auditd 的事后诸葛亮机制无法抵御现代级联攻击，而 eBPF 在指令执行前（Pre-execution）拥有微秒级阻断优势。同时，Groundcover 团队 \cite{groundcover2024ebpf} 解决了 eBPF 在复杂 Kubernetes 容器网格环境中的高可用部署最佳实践问题。但安全社区依然面临挑战：由于 eBPF 的绝对权力，如何防范恶意构造的 BPF 程序进行拒绝服务攻击或越权读取，必须引入极其克制的最小特权（Least Privilege）模型，而当前针对 AI 系统内部特定 API 行为定制的轻量级细粒度隔离策略尚属空白。
+
+\section{跨语言系统边界的消解与全栈漏洞挖掘分析}
+
+"多语种编程"是当代复杂架构的常态，但不匹配的类型系统与异构编译器，直接导致了传统单语言静态分析的集体失效，学术界对此展开了猛烈的技术攻坚。
+
+\subsection{Go-CGO 互操作与混合图谱重建策略}
+
+Go 官方团队长期维护的 CGO 核心工具链 \cite{goauthorscgo}，解决了 Go 这门具有自动垃圾回收（GC）特性的云原生语言与系统级 C 代码进行底层交互的互操作基础问题。针对该机制的工程滥用，J. Chen 等人 \cite{chen2026empirical} 开展了海量的开源项目实证扫描。他们总结出多达 19 种特定于 CGO 的致命缺陷模式，彻底解决了学术界对 Go 语言中滥用互操作会导致类型安全遭到破坏、指针逃逸以及引发严重内存崩溃的感性认知，提供了坚实的量化数据。但其研究局限于静态规则扫描阶段，一旦程序编译打包，静态工具便无法在运行时的复杂并发环境中拦截真实的越界访问。
+
+为了跨越控制流断层，M. Hu 等人 \cite{hu2023cross} 提出了一种极具创意的图转换（Graph Transformation）算法。他们通过提取不同语言接口层的抽象模型并执行节点融合，解决了在诸如 Python 调用动态 C 库（.so）时的外部映射断链问题。但该方法的严重局限在于，其依赖于动态链接库中暴露的标准导出符号表；由于大语言模型推理框架追求极致效率，多采用静态链接（Static Linking）将 Go 与 C++ 打包，导致该方法完全失效。
+
+在此背景下，中科大安全实验室提出的 POLYCALL 框架 \cite{zheng2023effective} 采取了降维打击。他们主张直接将所有高级语言统一下沉编译至 WebAssembly (Wasm) 中间表示，成功解决了因为语法差异巨大而无法进行统一函数索引的难题，挖掘出了数百倍于源码分析的隐藏调用边。但其未能解决的挑战是，静态图谱极其庞大且缺乏时间维度，无法捕获实际高频调用中每个 API 载荷的真实状态分布，且极难处理现代编译器故意强行注入的随机哈希加扰（Hash Mangling）。此外，R. Sunil \cite{sunil2026llms} 尝试引入大型语言模型本身的强大内化知识库，解决了人工推导跨语言映射规则极其低效的问题。但目前的致命缺陷在于，大语言模型生成的控制流图经常出现严重的"推理幻觉"，其产出的拓扑置信度远未达到网络空间安全领域所需的苛刻取证标准。
+
+\subsection{追踪多语种静态数据流（污点分析）的进阶演化}
+
+针对跨域数据流动引发的沙箱逃逸，早期 Brucker 团队的研究 \cite{brucker2016static} 解决了揭示混合移动架构（Hybrid Mobile Apps）下，网页端 JavaScript 恶意向底层原生组件传输异常数据流带来风险的问题。
+
+随后，CHARON 框架 \cite{scholtes2025charon} 标志着此类技术真正走向成熟。他们开创性地在内存中动态链接不同语言的代码属性图（CPG），解决了高度复杂的数据污染流在高级脚本与底层 C 原生扩展层之间"来回多次反复穿梭"的致命追踪难题，一举协助发现了数百个潜伏多年的跨界缓冲区溢出漏洞。结合 X. Cheng 等人提出的 Deepwukong 系统 \cite{cheng2021deepwukong}，他们利用深度图神经网络模型自主学习漏洞在图结构中的拓扑分布模式，解决了依赖人工编写繁杂静态正则表达式检测未知变种漏洞的瓶颈。然而，无论图神经网络与 CPG 网络如何精妙，其根本劣势依然无法逾越：它们是对"程序可能如何运行"的静态预测，在面对真实的操作系统并发竞态、系统调用劫持以及通过 mmap 发起的动态巨页内存分配时，彻底失去了分析抓手。
+
+\section{动态二进制插桩体系的底层安全基石作用}
+
+为了弥补静态分析无法捕捉系统真实动态运行状态的死穴，动态二进制插桩（DBI）体系构筑了当代计算机安全理论不可或缺的最后防线。
+
+\subsection{DBI 的轻量级透明性与架构统一}
+
+D. Bruening 等人提出的 DynamoRIO 框架 \cite{bruening2003dynamorio}，其核心哲学在于"绝对透明与轻量"。他们通过构建精妙的软件"代码缓存（Code Cache）"沙箱区域，彻底解决了早期二进制插桩因为频繁触发内核态-用户态上下文切换而导致的系统性能断崖式下跌问题。不仅在极大程度上降低了探针探测损耗，甚至在某些特定场景下能略微提速。C. Lattner 等人 \cite{lattner2004llvm} 缔造的 LLVM 编译框架从编译器层面发力，创造性地提出了独立于硬件架构的强类型虚拟寄存器中间表示（IR），解决了横跨编译期、链接期甚至程序安装运行期的"终身持续分析与逻辑转换"的基础设施统一化问题。但上述体系依然未能完全解决深度的内存监控问题：轻量级缓存插桩粒度较粗，且基于编译器中后端的拦截难以实施非侵入式的三方安全审计。
+
+\subsection{内存级别极端监控的"影子"机制确立}
+
+N. Nethercote 与 J. Seward 等人逆向而行，推出了作为重量级 JIT 虚拟机的 Valgrind \cite{nethercote2007valgrind}。在其核心姊妹文献 \cite{nethercote2007shadow} 中，他们极其详尽地阐述了 Memcheck 工具底层的"影子值（Shadow Values）"映射机制。该框架通过为程序使用的每一比特物理内存维护平行的状态标识位，堪称完美地解决了在运行时捕捉脏数据非法初始化、彻底追杀内存泄漏与隐蔽越界跳转的千古难题。
+
+但这也带来了其最致命、最无可挽回的问题：构建影子内存以及指令级的翻译解释，将对被监控程序的执行效率带来数十倍的暴跌惩罚。在面对动辄需要每秒处理数百兆甚至数千兆张量权重文件内存吞吐的现代大语言模型推理引擎时，任何采用类似 Valgrind/Memcheck 的 DBI 工具，都会在数分钟内导致系统资源耗尽并陷入全面崩溃。这也成为了本文最终抛弃传统 DBI、全面转向利用 eBPF 实施微秒级低开销内核追踪的最核心驱动力。
+
+\section{本章小结}
+
+本章立足于现代计算基础设施在性能与安全边界的极致博弈，系统化地穷尽校验了三十项重磅学术与工程文献。从大模型硬件受限与系统软件（PagedAttention）层面的自我救赎，到 TorchServe 与 Ollama 等基础设施暴露的极其脆弱的 API 传输防线，论述了开展底层调用链追踪的紧迫性。进而深度剖析了以 Starovoitov 的内核虚拟机、Nakryiko 的环形缓冲区为核心的 eBPF 体系如何成为解决此困境的最佳低开销观测基座。通过剖析 CGO 失效与图转换、POLYCALL 及 CHARON 等在跨语言多语种程序分析上的得失，进一步结合 DynamoRIO 的轻便与 Valgrind 极其沉重但精确的影子内存哲学，明确了现有基于静态推演或重量级 DBI 监控技术的诸多未决局限。这些详实的考据与横向评测，有力地印证了本文利用动静结合手段开展开源 AI API 跨语言调用链分析方法的唯一性与不可替代性。

@@ -1,0 +1,271 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+\usepackage{xeCJK}
+\usepackage{fontspec}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{tikz}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+% 代码块样式设置
+\lstset{
+    basicstyle=\small\ttfamily,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+\title[TrivialTier Demo]{TrivialTier 系统演示}
+\subtitle{从策略定义到配置生成的完整流程}
+\author[李梓勤, 周杰]{李梓勤、周杰}
+\institute[SCU]{四川大学网络空间安全学院}
+\date{2025 年 12 月 23 日}
+
+\begin{document}
+
+% 1. 标题页
+\frame{\titlepage}
+
+% 2. 演示概述
+\begin{frame}{演示概述}
+    \begin{block}{演示目标}
+        展示 TrivialTier 策略引擎如何从声明式策略自动生成 WireGuard 和 nftables 配置文件
+    \end{block}
+    
+    \begin{block}{演示场景}
+        \begin{itemize}
+            \item 三个节点：laptop\_li, nas\_core, scu-lab-server
+            \item 一个安全策略：要求补丁等级 $\geq$ 20251101 的节点才能访问存储节点
+            \item 自动生成每个节点的 WireGuard 和 nftables 配置
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% 3. 输入：节点定义
+\begin{frame}[fragile]{输入：节点属性定义}
+    \begin{block}{test\_nodes.yml}
+        \lstset{language=yaml, basicstyle=\tiny\ttfamily}
+        \begin{lstlisting}
+nodes:
+  - id: "laptop_li"
+    ipv4: "10.0.0.2"
+    attributes:
+      system:
+        os: "linux"
+        patch_level: 20251201  # 满足策略
+      identity:
+        role: "developer"
+        owner: "li-ziqin"
+      network:
+        zone: "trusted"
+
+  - id: "nas_core"
+    ipv4: "10.0.0.100"
+    attributes:
+      system:
+        patch_level: 20241201  # 不满足策略
+      identity:
+        role: "storage"
+
+  - id: "scu-lab-server"
+    ipv4: "10.0.0.1"
+    attributes:
+      system:
+        patch_level: 20251201  # 满足策略
+      identity:
+        role: "server"
+        \end{lstlisting}
+    \end{block}
+\end{frame}
+
+% 4. 输入：策略定义
+\begin{frame}[fragile]{输入：安全策略定义}
+    \begin{block}{policies.yml}
+        \lstset{language=yaml, basicstyle=\tiny\ttfamily}
+        \begin{lstlisting}
+policies:
+  - id: "pol-001"
+    action: ALLOW
+    subject:
+      all:
+        - attribute: "system.os"
+          operator: "=="
+          value: "linux"
+        - attribute: "system.patch_level"
+          operator: ">="
+          value: 20251101
+        - attribute: "network.zone"
+          operator: "in"
+          value: ["trusted", "office"]
+    object:
+      any:
+        - attribute: "identity.role"
+          operator: "=="
+          value: "storage"
+        - attribute: "identity.owner"
+          operator: "=="
+          value: "li-ziqin"
+    enforcement:
+      layer4:
+        rules:
+          - { proto: "tcp", dport: 22, action: "ACCEPT" }
+          - { proto: "icmp", action: "ACCEPT" }
+        \end{lstlisting}
+    \end{block}
+\end{frame}
+
+% 5. 执行流程
+\begin{frame}{执行流程}
+    \begin{block}{命令}
+        \texttt{\$ python3 main.py tests/test\_nodes.yml tests/policies.yml -o demo\_output}
+    \end{block}
+    
+    \begin{enumerate}
+        \item \textbf{步骤 1：ABAC 策略评估}
+            \begin{itemize}
+                \item 读取节点属性和策略定义
+                \item 评估每个节点对之间的访问权限
+                \item 生成访问矩阵（\texttt{input.json}）
+            \end{itemize}
+        
+        \item \textbf{步骤 2：配置生成}
+            \begin{itemize}
+                \item 根据访问矩阵生成 WireGuard 配置文件（\texttt{*.conf}）
+                \item 根据 L4 规则生成 nftables 策略文件（\texttt{*.nft}）
+            \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+% 6. 访问矩阵结果
+\begin{frame}[fragile]{输出：访问矩阵（input.json）}
+    \begin{block}{策略评估结果}
+        \lstset{language=json, basicstyle=\tiny\ttfamily}
+        \begin{lstlisting}
+"access_matrix": [
+  {
+    "source": "laptop_li",
+    "destination": "nas_core",
+    "connectivity": true,  // 满足策略
+    "l4_rules": [
+      { "proto": "tcp", "ports": [22], "action": "accept" },
+      { "proto": "icmp", "action": "accept" }
+    ]
+  },
+  {
+    "source": "nas_core",
+    "destination": "laptop_li",
+    "connectivity": false,  // 补丁等级不足
+    "l4_rules": []
+  },
+  {
+    "source": "scu-lab-server",
+    "destination": "nas_core",
+    "connectivity": true,  // 满足策略
+    "l4_rules": [...]
+  }
+]
+        \end{lstlisting}
+    \end{block}
+    
+    \begin{alertblock}{关键发现}
+        \texttt{nas\_core} 由于补丁等级不足（20241201 $<$ 20251101），无法作为发起者访问其他节点
+    \end{alertblock}
+\end{frame}
+
+% 7. WireGuard 配置示例
+\begin{frame}[fragile]{输出：WireGuard 配置（laptop\_li.conf）}
+    \begin{block}{生成的 WireGuard 配置}
+        \lstset{language=bash, basicstyle=\small\ttfamily}
+        \begin{lstlisting}
+[Interface]
+# Node: laptop_li
+Address = 10.0.0.2/32
+ListenPort = 51820
+
+[Peer]
+# Peer: nas_core (outbound connection)
+PublicKey = 9xY2...p8Z1=
+Endpoint = 5.6.7.8:51820
+AllowedIPs = 10.0.0.100/32
+
+[Peer]
+# Peer: scu-lab-server (outbound connection)
+PublicKey = peer_pubkey_A
+Endpoint = 10.0.0.1:51820
+AllowedIPs = 10.0.0.1/32
+        \end{lstlisting}
+    \end{block}
+    
+    \begin{itemize}
+        \item 仅为策略允许的节点对建立 Peer 关系
+        \item 自动配置端点地址和允许的 IP 范围
+    \end{itemize}
+\end{frame}
+
+% 8. nftables 配置示例
+\begin{frame}[fragile]{输出：nftables 配置（nas\_core.nft）}
+    \begin{block}{生成的 nftables 策略}
+        \lstset{language=bash, basicstyle=\tiny\ttfamily}
+        \begin{lstlisting}
+table inet wireguard_policy {
+    chain input {
+        type filter hook input priority filter; 
+        policy drop;
+        
+        # Allow established connections
+        ct state established,related accept
+        
+        # Allow TCP port 22 from laptop_li (10.0.0.2)
+        ip saddr 10.0.0.2 tcp dport { 22 } accept
+        
+        # Allow ICMP from laptop_li
+        ip saddr 10.0.0.2 icmp type echo-request accept
+        ip saddr 10.0.0.2 icmp type echo-reply accept
+        
+        # Allow TCP port 22 from scu-lab-server (10.0.0.1)
+        ip saddr 10.0.0.1 tcp dport { 22 } accept
+        
+        # Allow ICMP from scu-lab-server
+        ip saddr 10.0.0.1 icmp type echo-request accept
+        ip saddr 10.0.0.1 icmp type echo-reply accept
+    }
+}
+        \end{lstlisting}
+    \end{block}
+    
+    \begin{itemize}
+        \item 默认拒绝（policy drop），仅允许策略明确的流量
+        \item 基于源 IP 地址和端口号的细粒度控制
+    \end{itemize}
+\end{frame}
+
+% 9. 演示总结
+\begin{frame}{演示总结}
+    \begin{block}{演示要点}
+        \begin{itemize}
+            \item \textbf{声明式策略：} 通过 YAML 定义安全策略，无需手动编写网络配置
+            \item \textbf{自动化生成：} 从策略到配置的完整自动化流程
+            \item \textbf{属性驱动：} 基于节点属性（如补丁等级）动态决定访问权限
+            \item \textbf{双重执行：} L3（WireGuard）和 L4（nftables）协同工作
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{实际效果}
+        \begin{itemize}
+            \item \texttt{laptop\_li} 和 \texttt{scu-lab-server} 可以访问 \texttt{nas\_core}
+            \item \texttt{nas\_core} 由于补丁等级不足，无法主动发起连接
+            \item 所有配置自动生成，无需手动配置
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% 10. 谢谢页
+\begin{frame}
+    \centering
+    \Huge \textcolor{blue}{谢谢！} \\
+    \vspace{20pt}
+    \large 欢迎提问与讨论。
+\end{frame}
+
+\end{document}
+

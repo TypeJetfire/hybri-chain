@@ -1,0 +1,175 @@
+// trace_unified.bt — Ollama 统一追踪（uprobe + syscall）
+// 生成时间由 run_trace.sh 自动注入
+
+BEGIN
+{
+    printf("Tracing Ollama uprobe + syscall...\n");
+    printf("Stop: Ctrl+C\n");
+}
+
+// ---- llama.cpp 推理函数 uprobe ----
+uprobe:/usr/bin/ollama:llama_decode
+{
+    @start_llama_decode[tid] = nsecs;
+}
+uretprobe:/usr/bin/ollama:llama_decode
+{
+    $dur = (nsecs - @start_llama_decode[tid]) / 1000;
+    printf("@UPROBE@ llama_decode %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+    delete(@start_llama_decode[tid]);
+}
+
+uprobe:/usr/bin/ollama:ggml_backend_sched_graph_compute_async
+{
+    @start_ggml[tid] = nsecs;
+}
+uretprobe:/usr/bin/ollama:ggml_backend_sched_graph_compute_async
+{
+    $dur = (nsecs - @start_ggml[tid]) / 1000;
+    printf("@UPROBE@ ggml_backend_sched_graph_compute_async %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+    delete(@start_ggml[tid]);
+}
+
+uprobe:/usr/bin/ollama:llama_synchronize
+{
+    @start_sync[tid] = nsecs;
+}
+uretprobe:/usr/bin/ollama:llama_synchronize
+{
+    $dur = (nsecs - @start_sync[tid]) / 1000;
+    printf("@UPROBE@ llama_synchronize %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+    delete(@start_sync[tid]);
+}
+
+uprobe:/usr/bin/ollama:common_sampler_csample
+{
+    @start_csample[tid] = nsecs;
+}
+uretprobe:/usr/bin/ollama:common_sampler_csample
+{
+    $dur = (nsecs - @start_csample[tid]) / 1000;
+    printf("@UPROBE@ common_sampler_csample %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+    delete(@start_csample[tid]);
+}
+
+// ---- 系统调用 tracepoint（仅 ollama 进程，过滤高频噪声）----
+// 进程名过滤：只追踪 ollama-runner 和 ollama 进程
+// 频率过滤：read/write 每进程每秒最多采样 1 次（避免 buffer 溢出）
+
+// read: 只记录 fd>=3 且字节数>0 的有效读（过滤 /dev/zero 等噪声）
+tracepoint:syscalls:sys_enter_read
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if (args->fd >= 3 && args->count > 0) {
+        printf("@SYSCALL@ read %lu %d fd=%d bytes=%lu\n", nsecs, pid, args->fd, args->count);
+        printf("@END@\n");
+    }
+}
+
+// write: 只记录大块输出（推理结果写入，>100 bytes）
+tracepoint:syscalls:sys_enter_write
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if (args->fd >= 3 && args->count > 100) {
+        printf("@SYSCALL@ write %lu %d fd=%d bytes=%lu\n", nsecs, pid, args->fd, args->count);
+        printf("@END@\n");
+    }
+}
+
+// futex: 只记录 WAIT 操作（val 的低 7 位 == 0）
+tracepoint:syscalls:sys_enter_futex
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if ((args->val & 0x7f) == 0) {
+        printf("@SYSCALL@ futex_wait %lu %d uaddr=%lx val=%u\n", nsecs, pid, args->uaddr, args->val);
+        printf("@END@\n");
+    }
+}
+
+// futex wake: 记录唤醒操作
+tracepoint:syscalls:sys_enter_futex
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if ((args->val & 0x7f) == 1) {
+        printf("@SYSCALL@ futex_wake %lu %d uaddr=%lx\n", nsecs, pid, args->uaddr);
+        printf("@END@\n");
+    }
+}
+
+// futex requeue
+tracepoint:syscalls:sys_enter_futex
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if ((args->val & 0x7f) == 3) {
+        printf("@SYSCALL@ futex_requeue %lu %d\n", nsecs, pid);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_exit_futex
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if (args->ret > 0 || args->ret == -1) {
+        printf("@FUTEX_RET@ %lu %d ret=%d\n", nsecs, tid, args->ret);
+    }
+}
+
+// mmap: 过滤小块映射（只保留 >=1MB，KV Cache 相关）
+tracepoint:syscalls:sys_enter_mmap
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if (args->len >= 0x100000) {
+        printf("@SYSCALL@ mmap %lu %d addr=%lx len=%lu prot=%d\n", nsecs, pid, args->addr, args->len, args->prot);
+        printf("@END@\n");
+    }
+}
+
+// munmap: 记录释放
+tracepoint:syscalls:sys_enter_munmap
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    printf("@SYSCALL@ munmap %lu %d addr=%lx len=%lu\n", nsecs, pid, args->addr, args->len);
+    printf("@END@\n");
+}
+
+// clone3: ollama 每次推理会 fork 出 runner 线程
+tracepoint:syscalls:sys_enter_clone3
+/comm == "ollama"/
+{
+    printf("@SYSCALL@ clone3 %lu %d\n", nsecs, pid);
+    printf("@END@\n");
+}
+
+// openat: 只记录 ollama 相关文件
+tracepoint:syscalls:sys_enter_openat
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    printf("@SYSCALL@ openat %lu %d dfd=%d\n", nsecs, pid, args->dfd);
+    printf("@END@\n");
+}
+
+// close: 只记录 ollama 进程关闭非标准 fd
+tracepoint:syscalls:sys_enter_close
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    if (args->fd >= 3) {
+        printf("@SYSCALL@ close %lu %d fd=%d\n", nsecs, pid, args->fd);
+        printf("@END@\n");
+    }
+}
+
+// brk: 过滤
+tracepoint:syscalls:sys_enter_brk
+/comm == "ollama-runner" || comm == "ollama"/
+{
+    printf("@SYSCALL@ brk %lu %d\n", nsecs, pid);
+    printf("@END@\n");
+}

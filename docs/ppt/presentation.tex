@@ -1,0 +1,406 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+\usepackage{xeCJK}
+\usepackage{fontspec}
+\usepackage{cite}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+
+\lstset{
+    basicstyle=\tiny\ttfamily,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    extendedchars=false,
+    showstringspaces=false
+}
+
+\title[HybriChain汇报]{HybriChain：基于 eBPF 的开源 AI 推理引擎的跨语言调用链追踪方法}
+\author{本科毕业论文}
+\institute[四川大学网络空间安全学院]{四川大学网络空间安全学院}
+\date{2026年6月}
+
+\setbeamertemplate{footline}{
+    \leavevmode%
+    \hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fill,rightskip=.3cm]{author in head/foot}%
+        \usebeamerfont{author in head/foot}\insertshortinstitute
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+        \usebeamerfont{title in head/foot}\insertshorttitle\nobreak\hfill\usebeamercolor[fg]{page number in head/foot}\usebeamerfont{page number in head/foot}\insertframenumber{} / \inserttotalframenumber
+    \end{beamercolorbox}}%
+    \vskip0pt%
+}
+
+\begin{document}
+
+% =================================================
+% 1. 标题页
+% =================================================
+\frame{\titlepage}
+
+% =================================================
+% 2. 总体结构（目录）
+% =================================================
+\begin{frame}{汇报结构}
+    \begin{enumerate}
+        \setlength{\itemsep}{0.8em}
+        \item 研究背景与动机
+        \item 相关工作及其不足
+        \item 整体方法与系统设计
+        \item Ollama 特殊工程问题及解决方案
+        \item 实验设计与结果分析
+        \item 本文创新点
+        \item 总结与展望
+    \end{enumerate}
+\end{frame}
+
+% =================================================
+% 3. 研究背景
+% =================================================
+\section{研究背景与动机}
+\begin{frame}{研究背景：AI 推理引擎的复杂性危机}
+    \begin{columns}
+        \column{0.55\textwidth}
+        \begin{block}{开源大模型私有化部署爆发}
+            \begin{itemize}
+                \item Ollama、llama.cpp 等开源推理框架成为企业/个人部署 LLM 的主流选择。
+                \item 为满足极致性能，底层架构采用多语言混合编程与多进程解耦。
+            \end{itemize}
+        \end{block}
+
+        \column{0.4\textwidth}
+        \begin{alertblock}{安全脆弱性暴露}
+            \begin{itemize}
+                \item \textbf{CVE-2023-43654}（TorchServe）：API 未授权上传 $\to$ 反序列化 RCE。
+                \item \textbf{CVE-2024-37032}（Ollama）：畸形 API 数据 $\to$ 目录遍历越权读取。
+            \end{itemize}
+        \end{alertblock}
+    \end{columns}
+
+    \vspace{0.8em}
+    \textbf{核心矛盾：} 推理引擎内部数据流转对安全运维人员几乎完全不透明，现有观测工具无法连贯还原从 API 接收到内核调用的完整链路。
+\end{frame}
+
+% =================================================
+% 4. 相关工作及其不足
+% =================================================
+\section{相关工作及其不足}
+\begin{frame}{相关工作及其不足}
+    \begin{itemize}
+        \item \textbf{Ollama 及同类推理引擎}
+            \begin{itemize}
+                \item 多语言混合编程 + 多进程解耦架构，导致内部数据流复杂且不透明。
+                \item 缺乏内建的可观测性接口，调用链追踪依赖外部工具。
+            \end{itemize}
+
+        \item \textbf{eBPF 动态追踪技术}
+            \begin{itemize}
+                \item 内核级零侵入观测，支持 uprobe/tracepoint 多锚点挂载。
+                \item 现有应用多集中于网络/存储领域，尚未针对多语言 AI 推理引擎形成系统性方案。
+            \end{itemize}
+
+        \item \textbf{现有调用链追踪方案}
+            \begin{itemize}
+                \item strace/ftrace：仅系统调用层，无法观测用户态函数级行为。
+                \item 动态二进制插桩（Valgrind/DynamoRIO）：性能退化 10--100 倍，不可用于生产环境。
+                \item APM 工具（Jaeger/SkyWalking）：需代码侵入插桩，对跨语言边界支持薄弱。
+            \end{itemize}
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{共性不足：} 控制流在跨语言边界时完全断裂，且各语言符号空间割裂，无法建立统一语义关联。
+\end{frame}
+
+% =================================================
+% 5. 研究目标（整体方法）
+% =================================================
+\section{整体方法与系统设计}
+\begin{frame}{研究目标与方法概述}
+    设计一套\textbf{动静结合、低开销、通用}的底层追踪框架，适用于所有采用多语言混合架构的 AI 推理引擎：
+
+    \begin{enumerate}[(1)]
+        \item \textbf{跨语言符号映射。} 将来自不同语言命名空间的函数符号统一映射到同一语义空间。
+        \item \textbf{eBPF 内核级追踪。} 利用 eBPF 在零侵入前提下，对推理引擎进行函数与系统调用的双层观测。
+        \item \textbf{统一调用链缝合。} 将用户态与内核态事件按时间戳缝合为端到端推理调用链，并赋予置信状态。
+        \item \textbf{调用链下游分析。} 基于端到端调用链图谱，支持异常行为检测、性能瓶颈定位、安全审计与容量规划等多种分析场景。
+    \end{enumerate}
+
+    \vspace{0.5em}
+    \small 本论文以 Ollama 为实验靶点验证方法有效性，但方法本身不依赖特定引擎实现，可推广至 llama.cpp、vLLM 等多语言推理框架。
+\end{frame}
+
+% =================================================
+% 6. 系统总体架构
+% =================================================
+\begin{frame}{系统总体架构}
+    \begin{center}
+        \includegraphics[height=0.55\textheight]{../figures/fig_architecture.pdf}
+    \end{center}
+
+    \vspace{0.3em}
+    HybriChain 由三大核心模块构成：
+
+    \begin{itemize}
+        \item \textbf{静态符号提取模块}：离线解析推理引擎二进制文件，提取各层函数符号。
+        \item \textbf{eBPF 内核追踪模块}：实时捕获系统调用与用户态函数调用事件流。
+        \item \textbf{缝合与分析引擎}：将静态拓扑与动态轨迹融合，输出带置信状态的调用链图谱。
+    \end{itemize}
+\end{frame}
+
+% =================================================
+% 7. eBPF 探针下沉策略
+% =================================================
+\begin{frame}{eBPF 探针下沉策略}
+    推理引擎每秒产生数万次调用事件，全量追踪将导致存储和计算资源迅速耗尽。
+
+    HybriChain 采用\textbf{探针下沉策略}，将追踪点精确挂载至三个关键层次：
+
+    \begin{enumerate}[(1)]
+        \item \textbf{推理计算函数层（uprobe）}：在张量计算核心函数上挂载，获取微秒级耗时数据。
+        \item \textbf{系统调用层（tracepoint）}：追踪 read/write/futex/mmap/clone3 等与推理语义相关的系统调用。
+        \item \textbf{内存分配层（mmap tracepoint）}：专门追踪大块内存分配，分析 KV Cache 缓存行为。
+    \end{enumerate}
+
+    \vspace{0.5em}
+    eBPF 相比 strace/DTrace 的优势：内核运行、零侵入、热更新、RingBuf 零拷贝传输。
+\end{frame}
+
+% =================================================
+% 8. 漏斗降噪流水线
+% =================================================
+\begin{frame}{漏斗式降噪流水线}
+    原始内核事件流每秒数万条，其中大量是与推理无关的噪声。HybriChain 设计五步漏斗降噪：
+
+    \begin{itemize}
+        \item \textbf{步骤一：元信息过滤。} 过滤追踪工具启动/停止提示行。
+        \item \textbf{步骤二：进程过滤。} 仅保留推理引擎相关进程的事件。
+        \item \textbf{步骤三：类型过滤。} 白名单保留 read/write/futex/mmap，过滤 brk/mprotect/madvise 等噪声。
+        \item \textbf{步骤四：参数过滤。} read 仅记录有效 fd，mmap 仅记录 $\geq$ 1MB 的分配。
+        \item \textbf{步骤五：栈帧清洗。} 过滤内存地址帧，保留可读符号名并 demangle。
+    \end{itemize}
+\end{frame}
+
+% =================================================
+% 9. 置信度缝合算法
+% =================================================
+\begin{frame}{置信度缝合算法}
+    降噪后的数据是两类分散事件（uprobe + tracepoint），处于不同时间精度（微秒 vs 毫秒），无法直接拼接。
+
+    HybriChain 基于\textbf{时间戳对齐的启发式缝合算法}，为每条跨语言边赋予置信状态：
+
+    \begin{itemize}
+        \item \textbf{Confirmed（确认）}：该边两端节点在 $\geq 2$ 棵不同请求树中共同出现。
+        \item \textbf{Inferred（推断）}：仅在 1 棵请求树中共同出现，可能存在时间窗口误匹配。
+        \item \textbf{Unknown（未知）}：静态存在但动态未观测到，调用路径未被触发。
+    \end{itemize}
+
+    \vspace{0.5em}
+    缝合输出：按时间排序的统一调用序列，每条事件携带置信状态与风险等级。
+\end{frame}
+
+% =================================================
+% 10. 五层符号分类体系
+% =================================================
+\begin{frame}{五层符号分类体系}
+    缝合后的调用链中每条边对应一个函数符号，但这些符号来自完全不同的命名空间。
+
+    \begin{table}[]
+        \small
+        \begin{tabular}{|c|c|p{6.5cm}|}
+            \hline
+            \textbf{层次} & \textbf{名称} & \textbf{说明} \\ \hline
+            f$_0$ & 系统边界层 & POSIX 标准函数（open/read/write/mmap），与语言无关 \\ \hline
+            f$_1$ & 运行时胶水层 & 语言绑定函数（如 cgo 桥接、Python C Extension 等），跨语言调用关键节点 \\ \hline
+            f$_2$ & 张量计算层 & 矩阵乘法、注意力机制等核心计算（\texttt{matmul}、\texttt{attention}） \\ \hline
+            f$_3$ & 内存管理层 & 缓存分配、模型权重加载、KV Cache 管理 \\ \hline
+            f$_4$ & 调度协调层 & 任务分发、线程池管理、futex 同步操作 \\ \hline
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    跨层调用举例：f$_1$ $\to$ f$_2$（通过语言桥接调用底层计算）、f$_2$ $\to$ f$_0$（推理计算触发 mmap 分配）。
+\end{frame}
+
+% =================================================
+% 11. Ollama 专门处理
+% =================================================
+\section{Ollama 特殊工程问题及解决方案}
+\begin{frame}{Ollama 特殊工程问题及解决方案}
+    以 Ollama 为例，验证方法有效性。需解决以下多语言混合架构特有的工程问题：
+
+    \begin{block}{语言绑定函数命名不确定}
+        \textbf{问题：} 多语言混合架构中，语言绑定层（如 CGO）编译器生成的函数符号含哈希后缀（如 \texttt{\_cgoexp\_HASH\_}），无法直接 demangle 与标准化分类。\\
+        \textbf{解决：} 通过识别语言绑定函数的前缀特征（\texttt{\_cgo\_}、\texttt{\_Py\_} 等），提取原始函数名，将其正确分类至胶水层（f$_1$）。
+    \end{block}
+
+    \begin{block}{多进程通信隔离}
+        \textbf{问题：} 推理引擎 daemon 进程与计算 runner 进程通过 Unix Domain Socket 通信，控制流跨越进程边界，无法在单进程追踪中缝合。\\
+        \textbf{解决：} 在 daemon 与 runner 双进程上同时挂载 uprobe，通过请求 ID 关联跨进程事件，建立完整调用链。
+    \end{block}
+\end{frame}
+
+% =================================================
+% 12. 实验设计
+% =================================================
+\section{实验设计与结果分析}
+\begin{frame}{实验设计}
+    \begin{itemize}
+        \item \textbf{实验环境}
+            \begin{itemize}
+                \item CPU-only 环境，评估 eBPF 探针在纯软件推理场景下的追踪能力。
+                \item 测试模型：TinyLlama-1.1B、Qwen2-0.5B。
+            \end{itemize}
+
+        \item \textbf{评估维度}
+            \begin{itemize}
+                \item \textbf{调用链缝合准确性：} 基于 20 条 Ground Truth 基准路径（CGO 桥接、采样、调度、模型加载、批量处理链路）。
+                \item \textbf{系统性能开销：} 推理时延（TTFT）、内存占用、数据处理时间。
+                \item \textbf{异常行为检测能力：} 在真实采样场景下检测 futex 阻塞、异常内存分配、敏感路径访问等。
+            \end{itemize}
+
+        \item \textbf{对照组}
+            \begin{itemize}
+                \item 无 eBPF 基线、strace 全量追踪对比。
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+
+% =================================================
+% 13. 实验结果：缝合准确性
+% =================================================
+\begin{frame}{实验结果：调用链缝合准确性}
+    基于 20 条 Ground Truth 基准路径验证：
+
+    \begin{table}[]
+        \small
+        \centering
+        \begin{tabular}{|c|c|p{6cm}|}
+            \hline
+            \textbf{指标} & \textbf{数值} & \textbf{说明} \\ \hline
+            精确率 & 全部确认 & 零假阳性，缝合确认的每一条边均真实可靠 \\ \hline
+            召回率 & 5\% & 仅直接观测确认 3/20 条 CGO 桥接边 \\ \hline
+            含推断召回率 & 40\% & 加入 Inferred 边后提升至 12/20 \\ \hline
+            Confirmed 边 & 3 & CGO 桥接链路与调度链路 \\ \hline
+            Inferred 边 & 11 & 时间窗口启发式推断 \\ \hline
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    召回率低的原因：仅在 4 个核心函数上挂载 uprobe，探针覆盖不完整。3 条 Confirmed 边恰好是最有价值的跨语言边界边。
+\end{frame}
+
+% =================================================
+% 14. 实验结果：性能开销
+% =================================================
+\begin{frame}{实验结果：系统性能开销}
+    \begin{columns}
+        \column{0.48\textwidth}
+        \begin{block}{推理时延（TTFT）}
+            \begin{itemize}
+                \item TinyLlama：65ms $\to$ 66ms（+1.5\%）
+                \item Qwen2：64ms $\to$ 68ms（+6.3\%）
+            \end{itemize}
+            eBPF 追踪对推理时延的影响可忽略不计。
+        \end{block}
+
+        \begin{block}{降噪压缩效果}
+            \begin{itemize}
+                \item TinyLlama：25,329 $\to$ 8,891 事件（压缩至 35\%）
+                \item Qwen2：13,670 $\to$ 6,373 事件（压缩至 47\%）
+            \end{itemize}
+            有效过滤无关噪声，大幅降低下游分析压力。
+        \end{block}
+
+        \column{0.48\textwidth}
+        \begin{block}{内存占用}
+            \begin{itemize}
+                \item bpftrace 进程 RSS 约 4MB
+                \item 相对推理引擎数 GB 内存占用可忽略
+            \end{itemize}
+        \end{block}
+
+        \begin{block}{追踪进程资源}
+            eBPF 程序运行于内核空间，无需在用户态额外占用推理进程的 CPU 和内存资源。
+        \end{block}
+    \end{columns}
+
+    \vspace{0.5em}
+    \textbf{结论：} HybriChain 在几乎不影响推理引擎性能的前提下完成跨语言调用链追踪。
+\end{frame}
+
+% =================================================
+% 15. 异常行为发现
+% =================================================
+\begin{frame}{异常行为发现}
+    基于调用链图谱实施规则驱动的异常检测：
+
+    \begin{alertblock}{异常检测结果}
+        在 Qwen2-0.5B 模型 23.83 秒采样中，发现 30 条 HIGH 级别 futex 阻塞告警：
+        \begin{itemize}
+            \item 最大单次阻塞 \textbf{15.2 秒}（TID=45633）
+            \item 并发峰值：9 条告警同时触发（9--10 秒区间）
+            \item 揭示了 CPU-only 环境下多线程同步的结构性瓶颈与 DoS 脆弱点
+        \end{itemize}
+    \end{alertblock}
+
+    \vspace{0.5em}
+    此外还检测到异常内存分配（mmap\_size）与敏感路径访问（sensitive\_path）事件，验证了调用链下游分析在多安全场景中的适用性。
+\end{frame}
+
+% =================================================
+% 16. 创新点
+% =================================================
+\section{本文创新点}
+\begin{frame}{本文创新点}
+    与现有跨语言追踪方案相比，HybriChain 的创新体现在：
+
+    \begin{block}{创新 1：eBPF + 静态符号表的动静结合方案}
+        首次将 eBPF 内核级动态追踪与静态二进制符号分析结合用于 AI 推理引擎，克服了纯静态方案（无法获取运行时行为）和纯动态方案（无法还原完整调用图）的各自局限。
+    \end{block}
+
+    \begin{block}{创新 2：五层符号分类体系（f$_0$–f$_4$）}
+        针对多语言混合架构中多种命名空间割裂的问题，提出统一的五层语义分类模型。更进一步，针对语言绑定层符号命名不确定的难题，设计了基于前缀特征的命名还原技术，将编译器生成的不可读符号（如含哈希后缀的语言绑定函数）还原为原始函数名，从而实现精确的跨语言符号分类。该技术不绑定特定引擎实现，适用于所有多语言混合推理框架。
+    \end{block}
+
+    \begin{block}{创新 3：时间戳对齐的置信度缝合算法}
+        将微秒精度（uprobe）与毫秒精度（tracepoint）异构事件流按时间窗对齐，自动判定 Confirmed/Inferred/Unknown 三种置信状态，解决了异构数据源无法直接拼接的难题。
+    \end{block}
+\end{frame}
+
+% =================================================
+% 17. 研究局限与展望
+% =================================================
+\section{总结与展望}
+\begin{frame}{研究局限与未来展望}
+    \textbf{当前局限性：}
+
+    \begin{itemize}
+        \item \textbf{未覆盖 GPU 推理路径。} 当前实验在 CPU-only 环境下进行，未涉及 CUDA kernel 调用与 GPU 内存分配的追踪。
+        \item \textbf{召回率受探针覆盖限制。} Confirmed 召回率仅 10\%，源于 uprobe 仅挂载 4 个核心函数，大量子函数未被覆盖。
+        \item \textbf{23 秒采样为 PoC 切片。} 长尾调用路径在采样窗口内未被触发，需延长采样时间。
+        \item \textbf{异常检测依赖人工规则。} 对未知异常类型缺乏自适应学习能力。
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{未来工作方向：}
+
+    \begin{itemize}
+        \item \textbf{GPU 路径覆盖。} 引入 CUPTI 追踪 CUDA API，建立 Python $\to$ CUDA kernel 完整调用链。
+        \item \textbf{提升探针覆盖率。} 增加 uprobe 目标函数数量，扩展采样窗口为生产级基准。
+        \item \textbf{智能化异常检测。} 引入自编码器 / LSTM 时序异常检测，减少对人工规则的依赖。
+    \end{itemize}
+\end{frame}
+
+% =================================================
+% 18. 谢谢页
+% =================================================
+\begin{frame}
+    \centering
+    \Huge \textcolor{blue}{谢谢！} \\
+    \vspace{20pt}
+    \large 感谢各位老师，请批评指正。
+\end{frame}
+
+\end{document}

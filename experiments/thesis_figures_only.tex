@@ -1,0 +1,616 @@
+% 图表纯净版
+% 只包含所有图表和代码，便于截图
+\documentclass[12pt,a4paper]{ctexbook}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.geometric,positioning}
+\usepackage{amsmath,amssymb}
+\usepackage{pifont}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  breaklines=true,
+  columns=flexible,
+  literate={->}{{$\rightarrow$}}1 {<-}{{$\leftarrow$}}1,
+}
+\usepackage[listings]{tcolorbox}
+
+\begin{document}
+
+\thispagestyle{empty}
+
+\vspace*{\fill}
+\begin{center}
+\Large\textbf{图表目录}
+\end{center}
+\vspace*{\fill}
+\newpage
+
+% 图2-1 Ollama混合编程架构
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=stealth, node distance=1.2cm and 0cm, font=\small]
+\node (go) [draw, rectangle, minimum width=10cm, fill=blue!10, rounded corners] {
+\begin{tabular}{c}
+\textbf{Go HTTP Handler 层} \\
+\texttt{Generate()} / \texttt{Chat()} / \texttt{PullModel()} \\
+\textit{C.llama\_model\_load\_from\_file}
+\end{tabular}
+};
+\node (cgo) [draw, rectangle, minimum width=10cm, fill=green!10, rounded corners, below=0.5cm of go] {
+\begin{tabular}{c}
+\textbf{CGO 绑定层（llama/llama.go）} \\
+\texttt{\_cgo\_Cfunc\_llama\_decode} / \texttt{\_cgoexp\_HASH\_...} \\
+\textit{Go 编译器自动生成的桥接函数}
+\end{tabular}
+};
+\node (cpp) [draw, rectangle, minimum width=10cm, fill=orange!10, rounded corners, below=0.5cm of cgo] {
+\begin{tabular}{c}
+\textbf{llama.cpp C++ 层（llama.cpp/src/）} \\
+\texttt{llama\_decode} / \texttt{ggml\_backend\_sched\_*} / \texttt{common\_*} \\
+\textit{核心推理逻辑}
+\end{tabular}
+};
+\draw[->, thick] (go.south) -- (cgo.north) node[midway, right] {\texttt{C.llama\_*}};
+\draw[->, thick] (cgo.south) -- (cpp.north) node[midway, right] {直接函数调用};
+\end{tikzpicture}
+\caption{Ollama 混合编程架构示意}
+\label{fig:ollama_architecture}
+\end{figure}
+\newpage
+
+% 表2-1 eBPF与其他追踪技术对比
+\begin{table}[htbp]
+\centering
+\caption{eBPF 与其他追踪技术对比}
+\label{tab:ebpf_comparison}
+\begin{tabular}{|p{2.2cm}|p{2.5cm}|p{2.2cm}|p{3.0cm}|p{2.2cm}|p{1.8cm}|}
+\hline
+\textbf{维度} & \textbf{strace} & \textbf{GDB} & \textbf{DBI (Pin)} & \textbf{eBPF} & \textbf{perf} \\
+\hline
+执行位置 & 用户态（ptrace）& 用户态 & 用户态（运行时注入）& 内核态（安全沙箱）& 内核态 \\
+\hline
+性能开销 & 高 & 极高 & 高 & \textbf{低} & 低 \\
+\hline
+安全验证 & 无 & 无 & 无 & \textbf{有（verifier）}& 有 \\
+\hline
+Go 1.17+ 兼容 & 可用 & 需调试信息 & \textbf{危险（ABI 不兼容）}& \textbf{推荐（无侵入）}& 可用 \\
+\hline
+学习曲线 & 低 & 高 & 高 & 中 & 中 \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表3-1 技术选型对比
+\begin{table}[htbp]
+\centering
+\caption{技术选型与对比}
+\label{tab:tech_stack}
+\begin{tabular}{|p{2.5cm}|p{2cm}|p{2cm}|p{1.8cm}|p{1.8cm}|p{2.2cm}|p{1.8cm}|}
+\hline
+\textbf{维度} & \textbf{nm 符号表} & \textbf{LLVM} & \textbf{strace} & \textbf{eBPF} & \textbf{bpftrace} & \textbf{Neo4j} \\
+\hline
+分析类型 & 静态 & 静态 & 动态 & 动态 & 动态 & 存储/查询 \\
+\hline
+适用层次 & L1$\sim$L5 & L1$\sim$L3 & L5 & L5 & L5 & 全层 \\
+\hline
+跨语言支持 & 全部 & 强 & 全部 & 全部 & 全部 & 无关 \\
+\hline
+性能开销 & 0（离线）& 0（离线）& 中（可感知）& 低（内核级）& 低 & 无关 \\
+\hline
+CGO 边界支持 & \checkmark & 部分 & 全部 & 全部 & 全部 & 无关 \\
+\hline
+本框架选择 & \checkmark & \checkmark & \checkmark（验证用）& \checkmark & \checkmark & \checkmark \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表3-2 Ollama与其他框架对比
+\begin{table}[htbp]
+\centering
+\caption{Ollama 与其他推理框架的审计难度对比}
+\label{tab:ollama_comparison}
+\begin{tabular}{|p{3cm}|p{4.5cm}|p{4.5cm}|p{4.5cm}|}
+\hline
+\textbf{维度} & \textbf{Ollama（本文目标）} & \textbf{PyTorch Serve} & \textbf{vLLM} \\
+\hline
+进程模型 & 双进程（daemon+runner） & 单进程 & 单进程 \\
+\hline
+语言栈 & Go+CGO+C/C++ & Python+C++ & Python+C+++CUDA \\
+\hline
+跨语言边界 & 多层（Go$\rightarrow$CGO$\rightarrow$C++） & PyBind11（标准） & PyBind11（标准） \\
+\hline
+审计难度 & 高（跨进程+跨语言+CGO哈希） & 中（仅跨语言） & 中（跨语言+GPU） \\
+\hline
+CGO 问题 & 严重（哈希加扰） & 无 & 无 \\
+\hline
+Daemon/Runner 分离 & 是 & 否 & 否 \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表4-1 8层分类体系
+\begin{table}[htbp]
+\centering
+\caption{静态调用图 8 层分类体系}
+\label{tab:layer_classification}
+\begin{tabular}{|p{1.5cm}|p{3cm}|p{7cm}|}
+\hline
+\textbf{层次} & \textbf{名称} & \textbf{说明} \\
+\hline
+L1 & go\_cgo\_bridge & Go $\rightarrow$ CGO 边界桥接函数 \\
+\hline
+L2 & llama\_api & Llama API 层（顶层推理接口） \\
+\hline
+L3 & batch\_sampler & 批处理与采样层 \\
+\hline
+L4 & sched\_compute & GGML 调度与计算层 \\
+\hline
+L5 & ggml\_backend & GGML 后端内存与调度 \\
+\hline
+L6 & ggml\_ops & GGML 张量运算 \\
+\hline
+L7 & vocab & 词表与分词/Detokenize \\
+\hline
+L8 & memory & 内存分配与 mmap/munmap \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 图4-1 静态调用图宏观架构
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{10cm}{\centering
+\textbf{图4-1：静态调用图宏观架构（4832 节点 / 52 边）}\\[4pt]
+\upshape\fontsize{9pt}{9pt}\selectfont
+建议在此插入 Gephi 生成的 ForceAtlas2 布局全景拓扑图。\newline
+节点按 L1$\sim$L8 分层着色，图中应清晰呈现各层之间的边分布密度。
+}}
+\caption{静态调用图分层架构全景}
+\label{fig:static_callgraph_overview}
+\end{figure}
+\newpage
+
+% 图4-2 跨语言调用链泳道图
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{10cm}{\centering
+\textbf{图4-2：跨语言调用链泳道图（Go$\rightarrow$CGO$\rightarrow$llama.cpp$\rightarrow$Syscall）}\\[4pt]
+\upshape\fontsize{9pt}{9pt}\selectfont
+建议在此插入泳道图（使用 Mermaid 或 PlantUML 绘制），\newline
+横向展示 Go HTTP Handler $\rightarrow$ CGO 桥接 $\rightarrow$ llama.cpp $\rightarrow$ Syscall $\rightarrow$ futex 的完整链路，\newline
+futex 阻塞节点使用红色边框高亮标注。
+}}
+\caption{跨语言调用链泳道图}
+\label{fig:cross_language_laned}
+\end{figure}
+\newpage
+
+% 表5-1 实验环境配置
+\begin{table}[htbp]
+\centering
+\caption{实验环境配置}
+\label{tab:exp_env}
+\begin{tabular}{|p{4cm}|p{11cm}|}
+\hline
+\textbf{项目} & \textbf{配置} \\
+\hline
+操作系统 & Arch Linux (Linux 7.0.2-arch1-1) \\
+\hline
+CPU & Intel（无 AVX-512，仅基础 x64 指令集） \\
+\hline
+内存 & 16GB 总，7GB 可用 \\
+\hline
+Ollama 版本 & 0.22.0（编译版本 ollama-debug，带符号表） \\
+\hline
+bpftrace 版本 & v0.25.1-e491811e5 \\
+\hline
+Go 版本 & 1.26.2 \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-2 符号提取结果
+\begin{table}[htbp]
+\centering
+\caption{符号提取结果统计}
+\label{tab:symbol_extraction}
+\begin{tabular}{|p{8cm}|p{4cm}|}
+\hline
+\textbf{指标} & \textbf{值} \\
+\hline
+总符号数 & 4871 \\
+\hline
+相关符号（llama/ggml/common 过滤后） & 4832 \\
+\hline
+静态边数 & 52 \\
+\hline
+CGO 绑定函数 & 9 个（全部识别）\\
+\hline
+\textbf{CGO 覆盖率} & \textbf{100\%} \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-3 跨语言边界识别
+\begin{table}[htbp]
+\centering
+\caption{跨语言边界识别准确率评估}
+\label{tab:cross_language_accuracy}
+\begin{tabular}{|p{6cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{动态捕获函数} & \textbf{匹配策略} & \textbf{静态节点} \\
+\hline
+\texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode} & CGO Wrapper 等价映射 & llama\_decode \\
+\hline
+\texttt{llama\_decode} & 精确匹配 & llama\_decode \\
+\hline
+\texttt{\_Z21common\_sampler\_sample...} & C++ demangling & common\_sampler\_sample \\
+\hline
+\texttt{common\_sampler\_csample} & 精确匹配 & common\_sampler\_csample \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-4 llama.cpp函数调用统计
+\begin{table}[htbp]
+\centering
+\caption{llama.cpp 函数调用统计（uprobe）}
+\label{tab:uprobe_stats}
+\begin{tabular}{|p{6cm}|p{4cm}|}
+\hline
+\textbf{函数} & \textbf{捕获次数} \\
+\hline
+llama\_decode & 40 \\
+\hline
+ggml\_backend\_sched\_graph\_compute\_async & 40 \\
+\hline
+common\_sampler\_csample & 40 \\
+\hline
+\_Z21common\_sampler\_sample & 40 \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-5 系统调用统计
+\begin{table}[htbp]
+\centering
+\caption{系统调用统计（tracepoint）}
+\label{tab:syscall_stats}
+\begin{tabular}{|p{2.5cm}|p{2cm}|p{2.5cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{系统调用} & \textbf{次数} & \textbf{总耗时} & \textbf{平均耗时} & \textbf{最大耗时} \\
+\hline
+futex & 290 & \textbf{244s} & 842ms & \textbf{15s} \\
+\hline
+read & 881 & 2.5ms & 2$\mu$s & 22$\mu$s \\
+\hline
+write & 96 & 3ms & 29$\mu$s & 87$\mu$s \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-6 缝合算法评估
+\begin{table}[htbp]
+\centering
+\caption{缝合算法准确率与召回率评估}
+\label{tab:stitching_accuracy}
+\begin{tabular}{|p{5cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{指标} & \textbf{confirmed only} & \textbf{含 inferred} \\
+\hline
+Precision & \textbf{100\%} & 100\% \\
+\hline
+Recall & 5\% & \textbf{40\%} \\
+\hline
+F1 Score & 9.5\% & \textbf{57.1\%} \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 表5-7 分层调用树还原
+\begin{table}[htbp]
+\centering
+\caption{分层调用树还原完整性分析}
+\label{tab:layer_completeness}
+\begin{tabular}{|p{3cm}|p{3.5cm}|p{3cm}|p{4cm}|}
+\hline
+\textbf{层次} & \textbf{层名} & \textbf{confirmed 边数} & \textbf{inferred 边数} \\
+\hline
+go\_cgo\_bridge & Go/CGO 边界 & 2 & 0 \\
+\hline
+llama\_api & Llama API & 1 & 4 \\
+\hline
+sched\_compute & GGML 调度 & 0 & 3 \\
+\hline
+ggml\_backend & GGML 后端 & 0 & 2 \\
+\hline
+vocab & 词表/分词 & 0 & 2 \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% 图5-1 futex阻塞时长分布
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{10cm}{\centering
+\textbf{图5-1：futex 阻塞时长分布}\\[4pt]
+\upshape\fontsize{9pt}{9pt}\selectfont
+建议在此插入直方图，横轴为阻塞时长（ms），纵轴为事件数。\newline
+图中应标注 1000ms 告警阈值和 15.2s 最大阻塞值。
+}}
+\caption{futex 阻塞时长分布}
+\label{fig:futex_distribution}
+\end{figure}
+\newpage
+
+% 表5-8 方法对比
+\begin{table}[htbp]
+\centering
+\caption{与现有方法的对比分析}
+\label{tab:method_comparison}
+\begin{tabular}{|p{2.5cm}|p{3cm}|p{4cm}|p{4.5cm}|}
+\hline
+\textbf{维度} & \textbf{strace} & \textbf{Android SplinterDB} & \textbf{本文方法} \\
+\hline
+跨语言支持 & 部分 & 部分 & \textbf{完整（CGO）} \\
+\hline
+CGO 边界处理 & \ding{55} & \ding{55} & \checkmark \\
+\hline
+调用链缝合 & \ding{55} & \checkmark（仅动态）& \checkmark（动静结合） \\
+\hline
+系统开销 & 中（可感知）& 高（DBI）& \textbf{低（eBPF）} \\
+\hline
+异常检测 & 手动 & 自动 & \textbf{自动} \\
+\hline
+置信度评估 & \ding{55} & 部分 & \textbf{完整} \\
+\hline
+\end{tabular}
+\end{table}
+\newpage
+
+% ==================== 代码部分 ====================
+
+% 代码4-1 extract_symbols.py（多语言静态符号提取）
+\begin{center}
+\textbf{代码 4.1：extract\_symbols.py（多语言静态符号提取）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/extract_symbols.py}
+\newpage
+
+% 代码4-2 trace_unified.bt（eBPF 统一追踪脚本）
+\begin{center}
+\textbf{代码 4.2：trace\_unified.bt（eBPF 统一追踪脚本）}
+\end{center}
+\lstinputlisting[language=C, firstline=1, lastline=80]{trace_unified.bt}
+\newpage
+
+% 代码4-3 trace_unify.py（事件解析）
+\begin{center}
+\textbf{代码 4.3：trace\_unify.py（事件解析）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{trace_unify.py}
+\newpage
+
+% 代码4-4 trace_unify.py（折叠栈）+ stitcher.py（缝合）
+\begin{center}
+\textbf{代码 4.4：trace\_unify.py（折叠栈）+ stitcher.py（缝合）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/stitcher.py}
+\newpage
+
+% 代码4-5 analyzer.py（异常分析引擎）
+\begin{center}
+\textbf{代码 4.5：analyzer.py（异常分析引擎）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/analyzer.py}
+\newpage
+
+% 代码5-1 call_graph_static.json（符号提取结果）
+\begin{center}
+\textbf{代码 5.1：call\_graph\_static.json（符号提取结果）}
+\end{center}
+\begin{lstlisting}[language=Python, numbers=none, frame=single]
+{
+  "version": "1.0",
+  "binary": "ollama-debug",
+  "total_symbols": 4871,
+  "layers": {
+    "go_cgo_bridge": {"description": "Go → CGO 边界桥接函数", "color": "#e74c3c"},
+    "llama_api":     {"description": "Llama API 层（顶层推理接口）", "color": "#e67e22"},
+    "sched_compute": {"description": "GGML 调度与计算层", "color": "#27ae60"}
+  },
+  "nodes": {
+    "_cgo_8aa400f2462b_Cfunc_llama_decode": {
+      "name": "_cgo_8aa400f2462b_Cfunc_llama_decode",
+      "layer": "go_cgo_bridge", "addr": "00000000019d1a90"
+    },
+    "llama_decode": {
+      "name": "llama_decode",
+      "layer": "llama_api", "addr": "0000000004c82a50"
+    }
+  },
+  "edges": [
+    {"from": "_cgo_8aa400f2462b_Cfunc_llama_decode",
+     "to": "llama_decode", "type": "static", "confidence": "inferred"}
+  ]
+}
+\end{lstlisting}
+\newpage
+
+% 代码5-2 trace_unified.txt（追踪原始输出）
+\begin{center}
+\textbf{代码 5.2：trace\_unified.txt（追踪原始输出）}
+\end{center}
+\begin{lstlisting}[language=Bash, numbers=none, frame=single]
+@UPROBE@ llama_decode 20560576967386 41062 156
+github.com/ollama/ollama/llama.(*SamplingContext).Sample.func1
+github.com/ollama/ollama/llama._Cfunc_common_sampler_csample.abi0
+runtime.cgocall
+_cgo_8aa400f2462b_Cfunc_common_sampler_csample
+@END@
+@SYSCALL@ read 20560577237885 41062 bytes=512 dur=1
+@END@
+@SYSCALL@ read 20560577971806 41079 bytes=32768 dur=3
+@END@
+@SYSCALL@ futex 20584073844710 45625 dur=7912848
+@END@
+@SYSCALL@ futex 20584073980911 45627 dur=7913095
+@END@
+\end{lstlisting}
+\newpage
+
+% 代码5-3 llama_folded.txt（折叠栈）
+\begin{center}
+\textbf{代码 5.3：llama\_folded.txt（折叠栈）}
+\end{center}
+\begin{lstlisting}[language=Bash, numbers=none, frame=single]
+_Z21common_sampler_sample;1043;runtime.goexit.abi0
+  ;github.com/ollama/ollama/runner/llamarunner.Execute.gowrap2
+  ;...;github.com/ollama/ollama/llama._Cfunc_common_sampler_csample.abi0
+  ;runtime.cgocall;_cgo_8aa400f2462b_Cfunc_common_sampler_csample 1
+common_sampler_csample;1066;...;runtime.cgocall
+  ;_cgo_8aa400f2462b_Cfunc_common_sampler_csample 1
+llama_decode;1423;runtime.goexit.abi0;...;_cgo_8aa400f2462b_Cfunc_llama_decode 1
+\end{lstlisting}
+\newpage
+
+% 代码5-4 stitched_result.json（缝合结果）
+\begin{center}
+\textbf{代码 5.4：stitched\_result.json（缝合结果）}
+\end{center}
+\begin{lstlisting}[language=Python, numbers=none, frame=single]
+{
+  "stitched_at": "2026-05-12T17:15:27",
+  "total_nodes": 4832,
+  "total_static_edges": 52,
+  "summary": {"confirmed": 3, "inferred": 11, "conflicting": 0, "unknown": 38},
+  "confirmed_edges": [
+    {"from": "_cgo_8aa400f2462b_Cfunc_llama_decode",
+     "to": "llama_decode",
+     "confidence": "confirmed",
+     "layer_from": "go_cgo_bridge",
+     "layer_to": "llama_api"},
+    {"from": "llama_decode",
+     "to": "ggml_backend_sched_graph_compute_async",
+     "confidence": "confirmed",
+     "layer_from": "llama_api",
+     "layer_to": "sched_compute"}
+  ],
+  "inferred_edges": [
+    {"from": "_cgoexp_8aa400f2462b_llamarunner_llama_Execute",
+     "to": "llama_decode", "confidence": "inferred",
+     "layer_from": "unknown", "layer_to": "llama_api"}
+  ]
+}
+\end{lstlisting}
+\newpage
+
+% 代码5-5 anomaly_report.json（异常分析报告）
+\begin{center}
+\textbf{代码 5.5：anomaly\_report.json（异常分析报告）}
+\end{center}
+\begin{lstlisting}[language=Python, numbers=none, frame=single]
+{
+  "generated_at": "2026-05-12T17:25:19",
+  "summary": {
+    "total_events": 1427,
+    "total_syscalls": 1267,
+    "total_uprobes": 160,
+    "total_alerts": 30,
+    "alerts_by_type": {"futex_block": 30},
+    "alerts_by_risk": {"high": 30}
+  },
+  "top_alerts": [
+    {"ts_ns": 20584108952430, "tid": 45631,
+     "type": "futex_block", "risk": "high",
+     "message": "futex 阻塞 15234ms（线程同步等待）",
+     "detail": {"duration_us": 15234000, "duration_ms": 15234.0}},
+    {"ts_ns": 20584073980911, "tid": 45627,
+     "type": "futex_block", "risk": "high",
+     "message": "futex 阻塞 7913ms（线程同步等待）",
+     "detail": {"duration_us": 7913095, "duration_ms": 7913.1}}
+  ]
+}
+\end{lstlisting}
+\newpage
+
+% 代码5-6 eval_report.json（缝合算法评估）
+\begin{center}
+\textbf{代码 5.6：eval\_report.json（缝合算法评估）}
+\end{center}
+\begin{lstlisting}[language=Python, numbers=none, frame=single]
+{
+  "evaluated_at": "2026-05-12T17:25:10",
+  "metrics": {
+    "precision": 1.0,
+    "recall": 0.05,
+    "recall_with_inferred": 0.40,
+    "f1": 0.095,
+    "tp": 1, "fp": 0,
+    "gt_size": 20,
+    "confirmed": 3,
+    "inferred": 11
+  },
+  "ground_truth": {
+    "('_cgo_..._Cfunc_llama_decode', 'llama_decode')":
+       "[CGO] Go CGO wrapper → llama_decode",
+    "('llama_decode', 'ggml_backend_sched_graph_compute_async')":
+       "[SRC] llama.cpp run.cpp — llama_decode 调用调度异步计算"
+  }
+}
+\end{lstlisting}
+\newpage
+
+% 附录C-1 锚点匹配器 anchor.py
+\begin{center}
+\textbf{附录 C.1：anchor.py（锚点匹配器）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/anchor.py}
+\newpage
+
+% 附录C-2 置信度计算器 confidence.py
+\begin{center}
+\textbf{附录 C.2：confidence.py（置信度计算器）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/confidence.py}
+\newpage
+
+% 附录C-3 异常分析规则引擎 analyzer.py（续）
+\begin{center}
+\textbf{附录 C.3：analyzer.py（异常分析规则引擎）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/analyzer.py}
+\newpage
+
+% 附录C-4 eBPF 统一追踪脚本 trace_unified.bt（续）
+\begin{center}
+\textbf{附录 C.4：trace\_unified.bt（eBPF 统一追踪脚本）}
+\end{center}
+\lstinputlisting[language=C, firstline=1, lastline=80]{trace_unified.bt}
+\newpage
+
+% 附录C-5 缝合评估脚本 eval_stitcher.py
+\begin{center}
+\textbf{附录 C.5：eval\_stitcher.py（缝合评估脚本）}
+\end{center}
+\lstinputlisting[language=Python, firstline=1, lastline=80]{src/stitcher/eval_stitcher.py}
+\newpage
+
+\end{document}

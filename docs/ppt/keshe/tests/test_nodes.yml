@@ -1,0 +1,46 @@
+version: 1.0
+nodes:
+  - id: "laptop_li"
+    identity: "7b5R...v1W0="
+    ipv4: "10.0.0.2"
+    endpoint: "1.2.3.4:51820"
+    attributes:
+      system:
+        os: "linux"
+        patch_level: 20251201
+      identity:
+        role: "developer"
+        owner: "li-ziqin"
+      network:
+        zone: "trusted"
+
+  - id: "nas_core"
+    identity: "9xY2...p8Z1="
+    ipv4: "10.0.0.100"
+    endpoint: "5.6.7.8:51820"
+    attributes:
+      system:
+        os: "linux"
+        patch_level: 20241201
+      identity:
+        role: "storage"
+        owner: "li-ziqin"
+      network:
+        zone: "trusted"
+
+  - id: "scu-lab-server"
+    identity: "peer_pubkey_A"
+    ipv4: "10.0.0.1"
+    endpoint: "10.0.0.1:51820"
+    attributes:
+      system:
+        os: "linux"
+        kernel: "6.1.0"
+        patch_level: 20251201
+      identity:
+        role: "server"
+        owner: "li-ziqin"
+      network:
+        zone: "trusted"
+        isp: "CERNET"
+

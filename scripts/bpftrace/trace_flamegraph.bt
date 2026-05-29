@@ -1,0 +1,139 @@
+#!/usr/bin/env bpftrace
+// trace_flamegraph.bt - Ollama 火焰图 / 调用树 eBPF 追踪
+//
+// 捕获 llama.cpp 全局符号的调用栈，用于生成火焰图
+//
+// 使用方法（不需要 -p PID，因为 uprobes 是全局的）:
+//   sudo bpftrace trace_flamegraph.bt > flamegraph.txt
+//   cat flamegraph.txt | FlameGraph/flamegraph.pl > llama_flame.svg
+//
+// 依赖:
+//   - ollama-debug 二进制（带完整符号表）
+//   - Brendan Gregg 的 FlameGraph 工具
+//     (git clone https://github.com/brendangregg/FlameGraph.git)
+//
+// 全局符号列表 (T):
+//   llama_decode                                - LLM 解码核心
+//   ggml_backend_sched_graph_compute_async      - GGML 计算调度
+//   llama_sampler_sample                        - Llama 官方采样器
+//   llama_batch_get_one                         - Batch 获取
+//   common_sampler_csample                     - Common 工具库采样（CGO C包装）
+//   _Z21common_sampler_sampleP14...            - Common 工具库采样（C++ 内部）
+
+BEGIN
+{
+    printf("Tracing Ollama llama.cpp call stacks...\n");
+    printf("Stop: Ctrl+C\n");
+    printf("Output format: func1;func2;func3... latency_us\n");
+    @start_ns = nsecs;
+}
+
+// ============================================================
+// llama_decode - 每个 token 推理的入口（火焰图的主干）
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_decode"
+{
+    @start_llama_decode[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_decode"
+{
+    $dur = (nsecs - @start_llama_decode[tid]) / 1000; // μs
+    delete(@start_llama_decode[tid]);
+    // ustack() 最多 32 层，; 分隔（火焰图标准格式）
+    printf("llama_decode;%s %d\n", ustack(32), $dur);
+}
+
+// ============================================================
+// ggml_backend_sched_graph_compute_async - GGML 计算调度
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"ggml_backend_sched_graph_compute_async"
+{
+    @start_ggml[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"ggml_backend_sched_graph_compute_async"
+{
+    $dur = (nsecs - @start_ggml[tid]) / 1000;
+    delete(@start_ggml[tid]);
+    printf("ggml_backend_sched_graph_compute_async;%s %d\n", ustack(32), $dur);
+}
+
+// ============================================================
+// llama_sampler_sample - Llama 官方采样器
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_sampler_sample"
+{
+    @start_sample[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_sampler_sample"
+{
+    $dur = (nsecs - @start_sample[tid]) / 1000;
+    delete(@start_sample[tid]);
+    printf("llama_sampler_sample;%s %d\n", ustack(32), $dur);
+}
+
+// ============================================================
+// llama_batch_get_one - Batch 获取
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_batch_get_one"
+{
+    @start_batch[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_batch_get_one"
+{
+    $dur = (nsecs - @start_batch[tid]) / 1000;
+    delete(@start_batch[tid]);
+    printf("llama_batch_get_one;%s %d\n", ustack(32), $dur);
+}
+
+// ============================================================
+// common_sampler_csample - Common 工具库采样（CGO C 包装）
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"common_sampler_csample"
+{
+    @start_csamp[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"common_sampler_csample"
+{
+    $dur = (nsecs - @start_csamp[tid]) / 1000;
+    delete(@start_csamp[tid]);
+    printf("common_sampler_csample;%s %d\n", ustack(32), $dur);
+}
+
+// ============================================================
+// _Z21common_sampler_sample... - Common 工具库采样（C++ 内部实现）
+// ============================================================
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"_Z21common_sampler_sampleP14common_samplerP13llama_contextib"
+{
+    @start_cpp_sample[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"_Z21common_sampler_sampleP14common_samplerP13llama_contextib"
+{
+    $dur = (nsecs - @start_cpp_sample[tid]) / 1000;
+    delete(@start_cpp_sample[tid]);
+    printf("_Z21common_sampler_sample;%s %d\n", ustack(32), $dur);
+}
+
+// 心跳
+interval:s:15
+{
+    printf("\n--- %s (elapsed %ds) ---\n",
+           strftime("%H:%M:%S", nsecs), (nsecs - @start_ns) / 1000000000);
+}
+
+end
+{
+    clear(@start_llama_decode);
+    clear(@start_ggml);
+    clear(@start_sample);
+    clear(@start_batch);
+    clear(@start_csamp);
+    clear(@start_cpp_sample);
+    clear(@start_ns);
+    printf("\n[TRACE END]\n");
+}

@@ -1,0 +1,343 @@
+#!/usr/bin/env bpftrace
+// trace_unified.bt - Ollama 统一追踪：uprobe + syscall
+//
+// 输出格式（纯文本，按行解析，Python 用标记识别）：
+//   @RUNNER@   func  ts_ns  pid  duration_us   [runner HTTP handler]
+//   @UPROBE@   func  ts_ns  tid  duration_us  [llama.cpp 函数]
+//   STACK_FRAME frame1
+//   STACK_FRAME frame2
+//   ...
+//   @END@
+//   @SYSCALL@ func ts_ns tid bytes duration_us
+//   @END@
+//
+// 架构说明（两个进程，同一个二进制）：
+//   Main process (ollama-debug, PID):  Go HTTP Handler → CGO → llama_model_load_from_file
+//   Runner subprocess (ollama-debug, PPID):  HTTP API → llama.cpp 推理循环
+//   两者通过内部 HTTP (127.0.0.1) 通信
+//
+// 使用方法:
+//   # 方式1：追踪所有 ollama-debug 进程（主进程+runner子进程）
+//   sudo bpftrace -o trace_unified.txt -B line trace_unified.bt
+//
+//   # 方式2：只追踪指定 PID（更精确，推荐）
+//   sudo bpftrace -o trace_unified.txt -B line trace_unified.bt -p $OLLAMA_PID
+//
+// 后处理:
+//   python3 trace_unify.py trace_unified.txt --both
+//
+
+BEGIN
+{
+    printf("Tracing Ollama: llama.cpp → syscall\n");
+    printf("Stop: Ctrl+C\n");
+}
+
+// ============================================================
+// 1. llama.cpp 函数层（Runner subprocess：推理循环）
+// ============================================================
+//
+// 注意：uprobe/uretprobe 在 Go 函数上不安全，会破坏 Go 的栈帧元数据
+//（Go 1.17+ segmented stack + jmp tail-call 跟 uretprobe trampoline 不兼容）。
+// 所有 llama.cpp 的 C/C++ 函数 uprobes 均可安全使用。
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_decode"
+{
+    @start_llama_decode[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_decode"
+{
+    $dur = (nsecs - @start_llama_decode[tid]) / 1000;
+    delete(@start_llama_decode[tid]);
+    printf("@UPROBE@ llama_decode %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"ggml_backend_sched_graph_compute_async"
+{
+    @start_ggml[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"ggml_backend_sched_graph_compute_async"
+{
+    $dur = (nsecs - @start_ggml[tid]) / 1000;
+    delete(@start_ggml[tid]);
+    printf("@UPROBE@ ggml_backend_sched_graph_compute_async %lu %d %lu\n", nsecs, tid, $dur);
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_synchronize"
+{
+    @start_llama_sync[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_synchronize"
+{
+    $dur = (nsecs - @start_llama_sync[tid]) / 1000;
+    delete(@start_llama_sync[tid]);
+    printf("@UPROBE@ llama_synchronize %lu %d %lu\n", nsecs, tid, $dur);
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_model_load_from_file"
+{
+    @start_model_load[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_model_load_from_file"
+{
+    $dur = (nsecs - @start_model_load[tid]) / 1000;
+    delete(@start_model_load[tid]);
+    printf("@UPROBE@ llama_model_load_from_file %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(16));
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_sampler_sample"
+{
+    @start_sample[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_sampler_sample"
+{
+    $dur = (nsecs - @start_sample[tid]) / 1000;
+    delete(@start_sample[tid]);
+    printf("@UPROBE@ llama_sampler_sample %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_batch_get_one"
+{
+    @start_batch[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llama_batch_get_one"
+{
+    $dur = (nsecs - @start_batch[tid]) / 1000;
+    delete(@start_batch[tid]);
+    printf("@UPROBE@ llama_batch_get_one %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"common_sampler_csample"
+{
+    @start_csamp[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"common_sampler_csample"
+{
+    $dur = (nsecs - @start_csamp[tid]) / 1000;
+    delete(@start_csamp[tid]);
+    printf("@UPROBE@ common_sampler_csample %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"_Z21common_sampler_sampleP14common_samplerP13llama_contextib"
+{
+    @start_cpp_sample[tid] = nsecs;
+}
+
+uretprobe:/home/typejetfire/graduation_thesis/ollama-debug:"_Z21common_sampler_sampleP14common_samplerP13llama_contextib"
+{
+    $dur = (nsecs - @start_cpp_sample[tid]) / 1000;
+    delete(@start_cpp_sample[tid]);
+    printf("@UPROBE@ common_sampler_sample_cpp %lu %d %lu\n", nsecs, tid, $dur);
+    print(ustack(32));
+    printf("@END@\n");
+}
+
+// ============================================================
+// 2. Go → Runner 内部 HTTP（Main process：通过 connect 建立连接）
+// ============================================================
+
+tracepoint:syscalls:sys_enter_connect
+/ comm == "ollama-debug" /
+{
+    $sa = (sockaddr_in*)args->uservaddr;
+    if ($sa->sin_family == 2) {
+        $port = $sa->sin_port >> 8 | (($sa->sin_port & 0xff) << 8);
+        if ($port > 10000) {
+            printf("@GOCALL@ connect_runner %lu %d port=%d\n", nsecs, pid, $port);
+            printf("@END@\n");
+        }
+    }
+}
+
+tracepoint:syscalls:sys_enter_accept4
+/ comm == "ollama-debug" /
+{
+    @start_accept[tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_accept4
+/ @start_accept[tid] /
+{
+    $fd = args->ret;
+    $dur = (nsecs - @start_accept[tid]) / 1000;
+    delete(@start_accept[tid]);
+    if ($fd >= 0 && $dur < 10000) {
+        printf("@RUNNER@ accept %lu %d fd=%d dur=%lu\n", nsecs, pid, $fd, $dur);
+        printf("@END@\n");
+    }
+}
+
+// ============================================================
+// 3. 系统调用追踪（所有 ollama-debug 进程）
+// ============================================================
+
+tracepoint:syscalls:sys_enter_sendto
+/ comm == "ollama-debug" /
+{
+    @enter_sendto[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_sendto
+/ @enter_sendto[pid, tid] /
+{
+    $dur = (nsecs - @enter_sendto[pid, tid]) / 1000;
+    $ret = args->ret;
+    delete(@enter_sendto[pid, tid]);
+    printf("@SYSCALL@ sendto %lu %d bytes=%d dur=%lu\n", nsecs, tid, $ret, $dur);
+    printf("@END@\n");
+}
+
+tracepoint:syscalls:sys_enter_recvfrom
+/ comm == "ollama-debug" /
+{
+    @enter_recvfrom[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_recvfrom
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_recvfrom[pid, tid]) / 1000;
+    $ret = args->ret;
+    delete(@enter_recvfrom[pid, tid]);
+    if ($ret > 0) {
+        printf("@SYSCALL@ recvfrom %lu %d bytes=%d dur=%lu\n", nsecs, tid, $ret, $dur);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_enter_write
+/ comm == "ollama-debug" /
+{
+    @enter_write[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_write
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_write[pid, tid]) / 1000;
+    $ret = args->ret;
+    delete(@enter_write[pid, tid]);
+    if ($ret > 0) {
+        printf("@SYSCALL@ write %lu %d bytes=%d dur=%lu\n", nsecs, tid, $ret, $dur);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_enter_read
+/ comm == "ollama-debug" /
+{
+    @enter_read[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_read
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_read[pid, tid]) / 1000;
+    $ret = args->ret;
+    delete(@enter_read[pid, tid]);
+    if ($ret > 0) {
+        printf("@SYSCALL@ read %lu %d bytes=%d dur=%lu\n", nsecs, tid, $ret, $dur);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_enter_epoll_wait
+/ comm == "ollama-debug" /
+{
+    @enter_epoll[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_epoll_wait
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_epoll[pid, tid]) / 1000;
+    $ret = args->ret;
+    delete(@enter_epoll[pid, tid]);
+    if ($ret >= 0) {
+        printf("@SYSCALL@ epoll_wait %lu %d events=%d dur=%lu\n", nsecs, tid, $ret, $dur);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_enter_clock_gettime
+/ comm == "ollama-debug" /
+{
+    @enter_clock[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_clock_gettime
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_clock[pid, tid]) / 1000;
+    delete(@enter_clock[pid, tid]);
+    if ($dur > 100) {
+        printf("@SYSCALL@ clock_gettime %lu %d dur=%lu\n", nsecs, tid, $dur);
+        printf("@END@\n");
+    }
+}
+
+tracepoint:syscalls:sys_enter_futex
+/ comm == "ollama-debug" /
+{
+    @enter_futex[pid, tid] = nsecs;
+}
+
+tracepoint:syscalls:sys_exit_futex
+/ comm == "ollama-debug" /
+{
+    $dur = (nsecs - @enter_futex[pid, tid]) / 1000;
+    delete(@enter_futex[pid, tid]);
+    if ($dur > 500) {
+        printf("@SYSCALL@ futex %lu %d dur=%lu\n", nsecs, tid, $dur);
+        printf("@END@\n");
+    }
+}
+
+// ============================================================
+// 心跳 + 清理
+// ============================================================
+
+interval:s:15
+{
+    printf("\n--- %s ---\n", strftime("%H:%M:%S", nsecs));
+}
+
+end
+{
+    clear(@start_llama_decode);
+    clear(@start_ggml);
+    clear(@start_llama_sync);
+    clear(@start_model_load);
+    clear(@start_sample);
+    clear(@start_batch);
+    clear(@start_csamp);
+    clear(@start_cpp_sample);
+    clear(@enter_sendto);
+    clear(@enter_recvfrom);
+    clear(@enter_write);
+    clear(@enter_read);
+    clear(@enter_epoll);
+    clear(@enter_clock);
+    clear(@enter_futex);
+    clear(@start_accept);
+    printf("[TRACE END]\n");
+}
