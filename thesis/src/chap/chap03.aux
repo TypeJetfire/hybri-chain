@@ -1,26 +1,31 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\@writefile{toc}{\contentsline {chapter}{\numberline {第3章\hspace  {.3em}}HybriChain 系统设计}{10}{chapter.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {3\hspace  {.3em}}HybriChain 系统设计}{10}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10.0pt}}
 \@writefile{lot}{\addvspace {10.0pt}}
 \newlabel{chap:design}{{3}{10}{HybriChain 系统设计}{chapter.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}问题定义与研究目标}{10}{section.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.1}核心问题}{10}{subsection.3.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.2}系统目标}{10}{subsection.3.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.2}系统总体架构}{11}{section.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces HybriChain 系统总体架构}}{12}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:system-arch}{{3.1}{12}{HybriChain 系统总体架构}{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}高效且完备的函数调用追踪}{12}{section.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}高效统一的调用链合成与降噪}{13}{section.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.5}准确的跨语言符号映射}{14}{section.3.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces 五层符号分类体系}}{15}{table.caption.6}\protected@file@percent }
-\newlabel{tab:layer_classification}{{3.1}{15}{五层符号分类体系}{table.caption.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.6}异常检测规则引擎设计}{15}{section.3.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3.7}本章小结}{16}{section.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}问题背景}{10}{section.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}设计目标}{10}{section.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}系统整体架构}{10}{section.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3-1}{\ignorespaces HybriChain 系统总体架构}}{11}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:system-arch}{{3-1}{11}{HybriChain 系统总体架构}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}函数调用追踪方案}{11}{section.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}追踪哪些东西}{11}{subsection.3.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.2}探针放置位置}{12}{subsection.3.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.3}eBPF 的优势}{12}{subsection.3.4.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3-2}{\ignorespaces uprobe/uretprobe 工作流程}}{13}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:uretprobe}{{3-2}{13}{uprobe/uretprobe 工作流程}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}数据降噪与事件解析}{13}{section.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}调用链缝合}{14}{section.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.7}跨语言符号分类体系}{15}{section.3.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3-1}{\ignorespaces 符号分类体系}}{15}{table.caption.5}\protected@file@percent }
+\newlabel{tab:layer_classification}{{3-1}{15}{符号分类体系}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.8}异常检测规则}{16}{section.3.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.9}本章小结}{16}{section.3.9}\protected@file@percent }
 \@setckpt{src/chap/chap03}{
 \setcounter{page}{17}
 \setcounter{equation}{0}
-\setcounter{enumi}{4}
+\setcounter{enumi}{5}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
 \setcounter{enumiv}{0}
@@ -28,32 +33,30 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{0}
 \setcounter{chapter}{3}
-\setcounter{section}{7}
+\setcounter{section}{9}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{1}
+\setcounter{figure}{2}
 \setcounter{table}{1}
 \setcounter{lofdepth}{1}
 \setcounter{lotdepth}{1}
 \setcounter{section@level}{0}
-\setcounter{Item}{22}
+\setcounter{Item}{5}
 \setcounter{Hfootnote}{0}
 \setcounter{Hy@AnnotLevel}{0}
-\setcounter{bookmark@seq@number}{33}
+\setcounter{bookmark@seq@number}{34}
 \setcounter{lstnumber}{1}
 \setcounter{caption@flags}{2}
 \setcounter{continuedfloat}{0}
 \setcounter{parentequation}{0}
-\setcounter{float@type}{16}
+\setcounter{float@type}{8}
 \setcounter{KVtest}{0}
 \setcounter{subfigure}{0}
 \setcounter{subfigure@save}{0}
 \setcounter{subtable}{0}
 \setcounter{subtable@save}{0}
-\setcounter{tcbbreakpart}{0}
-\setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{0}
+\setcounter{thm}{0}
 \setcounter{lstlisting}{0}
 }

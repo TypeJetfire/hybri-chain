@@ -1,0 +1,193 @@
+\begin{thebibliography}{10}
+
+\bibitem{gerganov2023llamacpp}
+Georgi Gerganov.
+\newblock \href{https://github.com/ggml-org/llama.cpp}{llama.cpp: Large
+  language models in pure C/C++}, 2023.
+
+\bibitem{gerganov2023ggml}
+Georgi Gerganov.
+\newblock \href{https://github.com/ggml-org/ggml}{ggml: Tensor library for
+  machine learning}, 2023.
+
+\bibitem{ma2026challenges}
+Xiaoyu Ma and David Patterson.
+\newblock Challenges and research directions for large language model inference
+  hardware.
+\newblock {\em IEEE Computer}, 59(5):55--64, 2026.
+
+\bibitem{jain2025scaling}
+Aditi~M. Jain and Ayush Jain.
+\newblock Scaling {LLM} inference architectures: A performance analysis for
+  chatbot applications.
+\newblock In {\em Proceedings of the 2025 6th International Conference on
+  Artificial Intelligence, Robotics and Control (AIRC)}, pages 8--16, 2025.
+
+\bibitem{kwon2023efficient}
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody~Hao Yu,
+  Joseph~E. Gonzalez, Hao Zhang, and Ion Stoica.
+\newblock Efficient memory management for large language model serving with
+  {PagedAttention}.
+\newblock In {\em Proceedings of the 29th Symposium on Operating Systems
+  Principles (SOSP '23)}, pages 611--626, 2023.
+
+\bibitem{pytorchserve2024}
+{PyTorch Team}.
+\newblock \href{https://github.com/pytorch/serve}{TorchServe: A flexible and
+  easy to use tool for serving deep learning models}, 2024.
+
+\bibitem{tzadik2024probllama}
+Sagi Tzadik and Valentin Lobstein.
+\newblock
+  \href{https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032}{Probllama:
+  Ollama remote code execution vulnerability (CVE-2024-37032)}, 2024.
+
+\bibitem{corbet2014bpf}
+Jonathan Corbet and Alexei Starovoitov.
+\newblock \href{https://lwn.net/Articles/599755}{{BPF}: the universal in-kernel
+  virtual machine}.
+\newblock {\em LWN.net}, 2014.
+
+\bibitem{gregg2020bpf}
+Brendan Gregg.
+\newblock {\em {BPF} Performance Tools: Linux System and Application
+  Observability}.
+\newblock Addison-Wesley Professional, 2020.
+
+\bibitem{calavera2019linux}
+David Calavera and Lorenzo Fontana.
+\newblock {\em Linux Observability with {BPF}}.
+\newblock O'Reilly Media, 2019.
+
+\bibitem{nakryiko2020ringbuf}
+Andrii Nakryiko.
+\newblock \href{https://www.kernel.org/doc/html/latest/bpf/ringbuf.html}{{BPF}
+  ring buffer}, 2020.
+
+\bibitem{ciliumebpf2024}
+{Cilium Authors}.
+\newblock \href{https://github.com/cilium/ebpf}{cilium/ebpf: {eBPF} library for
+  {Go}}, 2024.
+
+\bibitem{hu2025ebpf}
+Yinan Hu.
+\newblock
+  \href{https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056}{{eBPF}-based
+  Observability for Serverless {Wasm} Workloads}.
+\newblock Master's thesis, Aalto University, 2025.
+
+\bibitem{ibnath2026ebeemetrics}
+Muntaka Ibnath, Mohammadreza Rezvani, and Daniel Wong.
+\newblock \href{https://arxiv.org/abs/2603.25067}{{eBeeMetrics}: An
+  {eBPF}-based Library Framework for Feedback-free Observability of {QoS}
+  Metrics}.
+\newblock In {\em Proceedings of the 2026 IEEE International Symposium on
+  Performance Analysis of Systems and Software (ISPASS)}, 2026.
+
+\bibitem{zou2026profinfer}
+Bohua Zou, Debayan Roy, Dhimankumar~Yogesh Airao, Weihao Xu, Binqi Sun, Yutao
+  Liu, and Haibo Chen.
+\newblock \href{https://arxiv.org/abs/2601.20755}{{ProfInfer}: An {eBPF}-based
+  Fine-Grained {LLM} Inference Profiler}.
+\newblock In {\em Proceedings of the 9th Conference on Machine Learning and
+  Systems (MLSys)}, 2026.
+
+\bibitem{controlplane2024ebpf}
+{ControlPlane}.
+\newblock
+  \href{https://www.linuxfoundation.org/hubfs/eBPF/ControlPlane\%20eBPF\%20Security\%20Threat\%20Model.pdf}{{eBPF}
+  Security Threat Model}.
+\newblock Technical report, eBPF Foundation, 2024.
+
+\bibitem{linuxsecurity2026auditd}
+{LinuxSecurity}.
+\newblock
+  \href{https://linuxsecurity.com/features/auditd-vs-ebpf-linux-security-monitoring}{Auditd
+  vs {eBPF}: Modern Approaches to Linux System Monitoring}, 2026.
+
+\bibitem{groundcover2024ebpf}
+{Groundcover Team}.
+\newblock \href{https://www.groundcover.com/ebpf}{What is {eBPF}? common use
+  cases and best practices}, 2024.
+
+\bibitem{goauthorscgo}
+{The Go Authors}.
+\newblock \href{https://pkg.go.dev/cmd/cgo}{cgo command -- cmd/cgo}, 2024.
+
+\bibitem{chen2026empirical}
+Jinbao Chen, Boyao Ding, Yu~prestige Zhang, Qingwei Li, and Fugen Tang.
+\newblock An empirical study of {CGO} usage in {Go} projects: Distribution,
+  purposes, patterns and critical issues.
+\newblock {\em Journal of Systems and Software}, 231:112601, 2026.
+
+\bibitem{hu2023cross}
+Mingzhe Hu, Qi~Zhao, Yu~Zhang, and Yan Xiong.
+\newblock Cross-language call graph construction supporting different host
+  languages.
+\newblock In {\em Proceedings of the 2023 IEEE International Conference on
+  Software Analysis, Evolution and Reengineering (SANER)}, pages 155--166,
+  2023.
+
+\bibitem{zheng2023effective}
+Wenlong Zheng and Baojian Hua.
+\newblock
+  \href{https://csslab-ustc.github.io/publications/2023/call-graph.pdf}{Effective
+  Call Graph Construction for Multilingual Programs ({POLYCALL})}.
+\newblock In {\em Proceedings of the 2023 IEEE European Symposium on Security
+  and Privacy (EuroS\&P)}, 2023.
+
+\bibitem{sunil2026llms}
+Rose Sunil.
+\newblock
+  \href{https://digital.ub.uni-paderborn.de/hs/content/structure/8212050}{{LLMs}
+  for Call Graph Construction: Benchmarking and Evaluation Across Languages}.
+\newblock Master's thesis, Paderborn University, 2026.
+
+\bibitem{brucker2016static}
+Achim~D. Brucker and Michael Herzberg.
+\newblock On the static analysis of hybrid mobile apps.
+\newblock In {\em International Symposium on Engineering Secure Software and
+  Systems (ESSoS)}, pages 72--88, 2016.
+
+\bibitem{scholtes2025charon}
+Raoul Scholtes, Soheil Khodayari, Cristian-Alexandru Staicu, and Giancarlo
+  Pellegrino.
+\newblock {CHARON}: Polyglot code analysis for detecting vulnerabilities in
+  scripting languages native extensions.
+\newblock In {\em Proceedings of the 2025 IEEE European Symposium on Security
+  and Privacy (EuroS\&P)}, 2025.
+
+\bibitem{cheng2021deepwukong}
+Xiao Cheng, Haoyu Wang, Jiayi Hua, Guoai Xu, and Yulei Sui.
+\newblock {Deepwukong}: Statically detecting software vulnerabilities using
+  deep graph neural networks.
+\newblock {\em ACM Transactions on Software Engineering and Methodology
+  (TOSEM)}, 30(3):1--33, 2021.
+
+\bibitem{bruening2003dynamorio}
+Derek Bruening, Thomas Garnett, and Saman Amarasinghe.
+\newblock {DynamoRIO}: A framework for implementing dynamic analyses and
+  optimizations.
+\newblock In {\em Proceedings of the International Symposium on Code Generation
+  and Optimization (CGO)}, pages 265--275, 2003.
+
+\bibitem{lattner2004llvm}
+Chris Lattner and Vikram Adve.
+\newblock {LLVM}: A compilation framework for lifelong program analysis \&
+  transformation.
+\newblock In {\em Proceedings of the International Symposium on Code Generation
+  and Optimization (CGO)}, pages 75--86, 2004.
+
+\bibitem{nethercote2007valgrind}
+Nicholas Nethercote and Julian Seward.
+\newblock Valgrind: A framework for heavyweight dynamic binary instrumentation.
+\newblock {\em Proceedings of the 28th ACM SIGPLAN Conference on Programming
+  Language Design and Implementation (PLDI)}, 42(6):89--100, 2007.
+
+\bibitem{nethercote2007shadow}
+Nicholas Nethercote and Julian Seward.
+\newblock How to shadow every byte of memory used by a program.
+\newblock In {\em Proceedings of the 3rd ACM SIGPLAN/SIGOPS International
+  Conference on Virtual Execution Environments (VEE)}, pages 65--74, 2007.
+
+\end{thebibliography}

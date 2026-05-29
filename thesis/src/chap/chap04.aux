@@ -1,29 +1,26 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\@writefile{toc}{\contentsline {chapter}{\numberline {第4章\hspace  {.3em}}HybriChain 实现方案}{17}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4\hspace  {.3em}}HybriChain 实现方案}{17}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10.0pt}}
 \@writefile{lot}{\addvspace {10.0pt}}
 \newlabel{chap:implementation}{{4}{17}{HybriChain 实现方案}{chapter.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 推理引擎的目标特征}{17}{section.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}高效且完备的函数调用追踪的实现}{17}{section.4.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces uprobe/uretprobe 附加工作流程}}{18}{figure.caption.7}\protected@file@percent }
-\newlabel{fig:uretprobe}{{4.1}{18}{uprobe/uretprobe 附加工作流程}{figure.caption.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}高效统一的调用链合成与降噪的实现}{19}{section.4.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces trace\_unify.py 事件帧解析状态机}}{20}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:parse}{{4.2}{20}{trace\_unify.py 事件帧解析状态机}{figure.caption.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces confidence.py 置信度计算三阶段流程}}{21}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:confidence}{{4.3}{21}{confidence.py 置信度计算三阶段流程}{figure.caption.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.4}准确的跨语言符号映射的实现}{21}{section.4.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces classify\_func 分类决策流程}}{23}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:classify}{{4.4}{23}{classify\_func 分类决策流程}{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.5}异常检测规则的具体实现}{23}{section.4.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4.5}{\ignorespaces analyzer.py 规则引擎工作流程}}{24}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:ruleengine}{{4.5}{24}{analyzer.py 规则引擎工作流程}{figure.caption.11}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.6}本章小结}{24}{section.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 追踪的特殊问题}{17}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}eBPF 追踪脚本的具体实现}{17}{section.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}uprobe 挂载的具体函数}{17}{subsection.4.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}系统调用 tracepoint 的具体配置}{18}{subsection.4.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Go 函数不可挂 uretprobe 的处理方式}{19}{subsection.4.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}数据解析脚本的具体实现}{19}{section.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}静态符号提取的具体实现}{19}{section.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}缝合模块的具体实现}{20}{section.4.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4-1}{\ignorespaces 置信度计算流程}}{21}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:confidence}{{4-1}{21}{置信度计算流程}{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}异常检测规则的具体实现}{22}{section.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}完整追踪流程}{23}{section.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.8}本章小结}{24}{section.4.8}\protected@file@percent }
 \@setckpt{src/chap/chap04}{
-\setcounter{page}{26}
+\setcounter{page}{25}
 \setcounter{equation}{0}
-\setcounter{enumi}{4}
+\setcounter{enumi}{6}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
 \setcounter{enumiv}{0}
@@ -31,32 +28,30 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{0}
 \setcounter{chapter}{4}
-\setcounter{section}{6}
+\setcounter{section}{8}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{5}
+\setcounter{figure}{1}
 \setcounter{table}{0}
 \setcounter{lofdepth}{1}
 \setcounter{lotdepth}{1}
 \setcounter{section@level}{0}
-\setcounter{Item}{22}
+\setcounter{Item}{11}
 \setcounter{Hfootnote}{0}
 \setcounter{Hy@AnnotLevel}{0}
-\setcounter{bookmark@seq@number}{40}
+\setcounter{bookmark@seq@number}{46}
 \setcounter{lstnumber}{1}
 \setcounter{caption@flags}{2}
 \setcounter{continuedfloat}{0}
 \setcounter{parentequation}{0}
-\setcounter{float@type}{16}
+\setcounter{float@type}{8}
 \setcounter{KVtest}{0}
 \setcounter{subfigure}{0}
 \setcounter{subfigure@save}{0}
 \setcounter{subtable}{0}
 \setcounter{subtable@save}{0}
-\setcounter{tcbbreakpart}{0}
-\setcounter{tcblayer}{0}
-\setcounter{tcolorbox@number}{0}
+\setcounter{thm}{0}
 \setcounter{lstlisting}{0}
 }

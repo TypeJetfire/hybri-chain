@@ -15,6 +15,8 @@
 % 图表与排版辅助
 %\usepackage[all,cmtip]{xy}        % xy-pic 画交换图
 \usepackage{tikz}                  % tikz 绘图宏包
+\usetikzlibrary{positioning}       % 支持 "below=of node" 语法
+\usetikzlibrary{shapes.geometric}  % 支持 diamond 等几何形状
 \usepackage{float}                 % 固定图片位置
 \usepackage{subfig}                % 子图宏包
 \usepackage{booktabs}              % 三线表
@@ -56,8 +58,12 @@
 \input{src/toc}
 
 % 正文
-\include{src/chap01}
-\include{src/chap02}
+\include{src/chap/chap01}
+\include{src/chap/chap02}
+\include{src/chap/chap03}
+\include{src/chap/chap04}
+\include{src/chap/chap05}
+\include{src/chap/chap06}
 
 % 参考文献
 \SCUBackmatterChapter{参考文献}{参考文献}

@@ -1,0 +1,617 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{scuthesis}[2026/04/11 SCU thesis style]
+
+% ============================================================
+% 说明
+% ------------------------------------------------------------
+% 这个文件只负责“样式”与“通用命令”。
+%
+% 建议职责划分：
+% 1. main.tex
+%    只负责文档顺序，比如封面、摘要、目录、各章、参考文献、声明、致谢。
+% 2. scuthesis.sty
+%    只负责字体字号、页边距、目录样式、标题样式、封面命令、摘要环境等。
+% 3. src/*.tex
+%    只负责页面内容本身，不再夹杂全局排版控制。
+%
+% 这样做的好处：
+% - 改目录位置时，不会误伤摘要页
+% - 改封面时，不会连带改正文逻辑
+% - 想在 Overleaf 上改某一类格式时，可以更快定位
+% ============================================================
+
+% ============================================================
+% 基础宏包
+% ------------------------------------------------------------
+% 这些是模板运行所需的基础包。
+% 如果删掉，可能导致目录、页眉、封面、图表标题等功能异常。
+% ============================================================
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{array}
+\RequirePackage{tabularx}
+\RequirePackage{geometry}
+\RequirePackage{setspace}
+\RequirePackage{fancyhdr}
+\RequirePackage{tocloft}
+\RequirePackage{fontspec}
+\RequirePackage{hyperref}
+\RequirePackage{listings}
+\RequirePackage{etoolbox}
+\RequirePackage{caption}
+\RequirePackage{needspace}
+
+\hypersetup{
+  CJKbookmarks=true,
+  pdfborder=0 0 1,
+  hidelinks
+}
+
+% ============================================================
+% 基本信息命令
+% ------------------------------------------------------------
+% 在 src/basic_info.tex 中填写：
+% \title{...}
+% \author{...}
+% \college{...}
+% 等等。
+%
+% 后续封面、摘要、页眉都会自动读取这些变量。
+% ============================================================
+\newcommand{\varTitle}{}
+\renewcommand{\title}[1]{\renewcommand{\varTitle}{#1}}
+
+\newcommand{\varTitleEng}{}
+\newcommand{\titleEng}[1]{\renewcommand{\varTitleEng}{#1}}
+
+\newcommand{\varAuthor}{}
+\renewcommand{\author}[1]{\renewcommand{\varAuthor}{#1}}
+
+\newcommand{\varAuthorEng}{}
+\newcommand{\authorEng}[1]{\renewcommand{\varAuthorEng}{#1}}
+
+\newcommand{\varDate}{}
+\renewcommand{\date}[1]{\renewcommand{\varDate}{#1}}
+
+\newcommand{\varAdviser}{}
+\newcommand{\adviser}[1]{\renewcommand{\varAdviser}{#1}}
+
+\newcommand{\varAdviserEng}{}
+\newcommand{\adviserEng}[1]{\renewcommand{\varAdviserEng}{#1}}
+
+\newcommand{\varCollege}{}
+\newcommand{\college}[1]{\renewcommand{\varCollege}{#1}}
+
+\newcommand{\varCollegeEng}{}
+\newcommand{\collegeEng}[1]{\renewcommand{\varCollegeEng}{#1}}
+
+\newcommand{\varMajor}{}
+\newcommand{\major}[1]{\renewcommand{\varMajor}{#1}}
+
+\newcommand{\varMajorEng}{}
+\newcommand{\majorEng}[1]{\renewcommand{\varMajorEng}{#1}}
+
+\newcommand{\varID}{}
+\newcommand{\id}[1]{\renewcommand{\varID}{#1}}
+
+\newcommand{\varGrade}{}
+\newcommand{\grade}[1]{\renewcommand{\varGrade}{#1}}
+
+% ============================================================
+% 西文字体设置
+% ------------------------------------------------------------
+% 这里只设置西文主字体，不强行指定中文主字体。
+%
+% 原因：
+% - 本地 TeX Live 和 Overleaf 可用中文字体名不完全一致
+% - 如果这里强绑某个 Fandol 字体名，反而更容易报“找不到字体”
+%
+% 当前策略：
+% Times New Roman -> TeX Gyre Termes -> Liberation Serif
+%
+% 如果将来只想改英文/数字外观，优先改这里。
+% ============================================================
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {
+    \IfFontExistsTF{TeX Gyre Termes}
+      {\setmainfont{TeX Gyre Termes}}
+      {\setmainfont{Liberation Serif}}
+  }
+
+% ============================================================
+% 样式总开关区
+% ------------------------------------------------------------
+% 以后大部分格式需求都优先在这里改。
+%
+% 常见例子：
+% - 正文字号：改 \StyleBodyFont
+% - 一级标题字体：改 \StyleChapterFont
+% - “目录”字号：改 \StyleTocTitleFont
+% - 目录标题和正文距离：改 \StyleTocAfterTitleSkip
+% - 封面标签/内容字体：改 \StyleCoverLabelFont / \StyleCoverValueFont
+% ============================================================
+
+% ----------------------------
+% 正文
+% ----------------------------
+\newcommand{\StyleBodyFont}{\songti\zihao{-4}}
+\newcommand{\StyleBodyStretch}{1.35}
+\newcommand{\StyleBodyIndent}{2em}
+
+% ----------------------------
+% 封面
+% ----------------------------
+\newcommand{\StyleCoverTitleFont}{\songti\zihao{-2}\bfseries}
+\newcommand{\StyleCoverLabelFont}{\fangsong\zihao{4}\bfseries}
+\newcommand{\StyleCoverValueFont}{\fangsong\zihao{4}\bfseries}
+\newcommand{\StyleCoverBottomFont}{\fangsong\zihao{4}}
+
+% ----------------------------
+% 页眉页脚
+% ----------------------------
+\newcommand{\StyleHeaderFont}{\zihao{5}}
+\newcommand{\StyleFooterFont}{\zihao{5}}
+
+% ----------------------------
+% 目录
+% ----------------------------
+\newcommand{\StyleTocTitleFont}{\heiti\zihao{-3}}
+\newcommand{\StyleTocEntryFont}{\songti\zihao{-4}}
+\newcommand{\StyleTocPageFont}{\songti\zihao{-4}}
+\newcommand{\StyleTocBeforeTitleSkip}{-20pt}
+\newcommand{\StyleTocAfterTitleSkip}{-6pt}
+\newcommand{\StyleTocStretch}{1.5}
+
+% ----------------------------
+% 标题
+% ----------------------------
+\newcommand{\StyleChapterFont}{\heiti\zihao{-3}}
+\newcommand{\StyleSectionFont}{\heiti\zihao{4}}
+\newcommand{\StyleSubsectionFont}{\kaishu\zihao{-4}}
+\newcommand{\StyleSubsubsectionFont}{\StyleSubsectionFont}
+
+% ----------------------------
+% 摘要
+% ----------------------------
+\newcommand{\StyleAbsTitleFont}{\songti\zihao{-2}}
+\newcommand{\StyleAbsTitleEngFont}{\rmfamily\zihao{-2}}
+\newcommand{\StyleAbsMetaFont}{\kaishu\zihao{4}}
+\newcommand{\StyleAbsBodyFont}{\kaishu\zihao{5}}
+\newcommand{\StyleAbsStretch}{1.55}
+
+% ----------------------------
+% 独立页标题
+% ----------------------------
+\newcommand{\StyleBackmatterTitleFont}{\heiti\zihao{-3}}
+\newcommand{\StyleReferenceTitleFont}{\songti\zihao{-3}}
+\newcommand{\StyleReferenceBodyFont}{\songti\zihao{5}}
+
+% ----------------------------
+% 图表与表格
+% ----------------------------
+\newcommand{\StyleCaptionFont}{\heiti\zihao{5}}
+\newcommand{\StyleTableFont}{\songti\zihao{5}}
+\newcommand{\StyleTableHeadFont}{\songti\zihao{5}\bfseries}
+\newcommand{\StyleEquationFont}{\rmfamily\fontsize{12pt}{15.6pt}\selectfont}
+\newcommand{\StyleEquationBeforeSkip}{0pt}
+\newcommand{\StyleEquationAfterSkip}{0.5\baselineskip}
+\newcommand{\StyleEquationTagSep}{\quad}
+
+% ============================================================
+% 页面版式
+% ------------------------------------------------------------
+% 这里控制页边距、页眉高度、页脚距离。
+%
+% 想改页面整体松紧时，优先改这里。
+% 例如：
+% - 左右页边距：left/right
+% - 页眉离正文距离：headsep
+% ============================================================
+\geometry{
+  a4paper,
+  top=2.5cm,
+  bottom=2.5cm,
+  left=2.5cm,
+  right=2.0cm,
+  headheight=14pt,
+  headsep=0.6cm,
+  footskip=1.0cm
+}
+
+\setstretch{\StyleBodyStretch}
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{\StyleBodyIndent}
+\setlength{\abovedisplayskip}{\StyleEquationBeforeSkip}
+\setlength{\abovedisplayshortskip}{\StyleEquationBeforeSkip}
+\setlength{\belowdisplayskip}{\StyleEquationAfterSkip}
+\setlength{\belowdisplayshortskip}{\StyleEquationAfterSkip}
+
+\AtBeginDocument{%
+  \AtBeginEnvironment{equation}{\StyleEquationFont\setstretch{1}\setlength{\jot}{4pt}}%
+  \AtBeginEnvironment{equation*}{\StyleEquationFont\setstretch{1}\setlength{\jot}{4pt}}%
+  \AtBeginEnvironment{table}{\StyleTableFont\setstretch{1}}%
+  \AtBeginEnvironment{longtable}{\StyleTableFont\setstretch{1}}%
+  \AtBeginEnvironment{tabular}{\StyleTableFont\setstretch{1}}%
+  \AtBeginEnvironment{tabularx}{\StyleTableFont\setstretch{1}}%
+  \makeatletter
+  \renewcommand\tagform@[1]{\maketag@@@{\StyleEquationTagSep(\normalfont #1)}}%
+  \makeatother
+}
+
+% ============================================================
+% 页眉页脚
+% ------------------------------------------------------------
+% 左页眉：四川大学本科毕业论文
+% 右页眉：当前论文题目
+% 页脚：页码
+%
+% 如果只想改颜色/字号，不用碰 main.tex，改这里即可。
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor[gray]{0.5}{{\StyleHeaderFont 四川大学本科毕业论文}}}
+\rhead{\textcolor[gray]{0.5}{{\StyleHeaderFont \varTitle}}}
+\fancyfoot[C]{\textcolor[gray]{0.5}{{\StyleFooterFont \thepage}}}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \lhead{\textcolor[gray]{0.5}{{\StyleHeaderFont 四川大学本科毕业论文}}}
+  \rhead{\textcolor[gray]{0.5}{{\StyleHeaderFont \varTitle}}}
+  \fancyfoot[C]{\textcolor[gray]{0.5}{{\StyleFooterFont \thepage}}}
+}
+
+% ============================================================
+% 目录样式
+% ------------------------------------------------------------
+% 目录页的控制集中在这里，不要再散落到摘要页里。
+%
+% 如果目录整体太靠上，改：
+%   \StyleTocBeforeTitleSkip
+%
+% 如果“目录”与下面正文距离太大或太小，改：
+%   \StyleTocAfterTitleSkip
+%
+% 如果只想改“目录”两个字的字体字号，改：
+%   \StyleTocTitleFont
+% ============================================================
+\renewcommand{\contentsname}{目录}
+\renewcommand{\cfttoctitlefont}{\hfill\StyleTocTitleFont}
+\renewcommand{\cftaftertoctitle}{\hfill}
+
+\renewcommand{\cftchapfont}{\StyleTocEntryFont}
+\renewcommand{\cftchappagefont}{\StyleTocPageFont}
+\renewcommand{\cftsecfont}{\StyleTocEntryFont}
+\renewcommand{\cftsecpagefont}{\StyleTocPageFont}
+\renewcommand{\cftsubsecfont}{\StyleTocEntryFont}
+\renewcommand{\cftsubsecpagefont}{\StyleTocPageFont}
+
+\renewcommand{\cftdotsep}{0.3}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+\setlength{\cftbeforetoctitleskip}{\StyleTocBeforeTitleSkip}
+\setlength{\cftaftertoctitleskip}{\StyleTocAfterTitleSkip}
+
+\setlength{\cftbeforechapskip}{0pt}
+\setlength{\cftbeforesecskip}{0pt}
+\setlength{\cftbeforesubsecskip}{0pt}
+\setlength{\cftchapindent}{0em}
+\setlength{\cftsecindent}{2em}
+\setlength{\cftsubsecindent}{4em}
+\setlength{\cftchapnumwidth}{1.6em}
+\setlength{\cftsecnumwidth}{2.1em}
+\setlength{\cftsubsecnumwidth}{2.5em}
+
+% ============================================================
+% 各级标题
+% ------------------------------------------------------------
+% 当前设置：
+% - chapter 显示为“1 标题”
+% - 不显示“第1章”
+% - chapter / section / subsection / subsubsection 全部左对齐
+%
+% 如果以后想恢复“第1章”，把 chapter 里的 name 改成 {第,章}。
+% ============================================================
+\ctexset{
+  today = big,
+  chapter = {
+    beforeskip = -10pt,
+    afterskip = 10pt,
+    name = {},
+    number = \arabic{chapter},
+    format = \raggedright,
+    titleformat = \StyleChapterFont,
+    numberformat = \StyleChapterFont
+  },
+  section = {
+    beforeskip = 10pt,
+    afterskip = 5pt,
+    format = \raggedright,
+    titleformat = \StyleSectionFont,
+    numberformat = \StyleSectionFont
+  },
+  subsection = {
+    beforeskip = 0pt,
+    afterskip = 1pt,
+    format = \raggedright,
+    titleformat = \StyleSubsectionFont,
+    numberformat = \StyleSubsectionFont
+  },
+  subsubsection = {
+    beforeskip = 0pt,
+    afterskip = 1pt,
+    format = \raggedright,
+    titleformat = \StyleSubsubsectionFont,
+    numberformat = \StyleSubsubsectionFont
+  }
+}
+
+\renewcommand\thechapter{\arabic{chapter}}
+\renewcommand\thesection{\thechapter.\arabic{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+% ============================================================
+% 摘要环境
+% ------------------------------------------------------------
+% 中文摘要和英文摘要都统一在这里定义。
+%
+% 关键词问题说明：
+% 以前摘要页里关键词偶尔不显示，根因通常是关键词定义落在局部作用域。
+% 这里使用 \gdef 全局保存关键词，确保环境结束后“关键词 / Key Words”还能正常取到。
+% ============================================================
+\newcommand{\varKeyword}{}
+\newcommand{\keyword}[1]{\gdef\varKeyword{#1}}
+
+\renewenvironment{abstract}[1]
+{
+  \gdef\varKeyword{}
+  \pagenumbering{Roman}
+  \vspace*{1cm}
+  \centerline{
+    \begin{tabular}{>{\centering\arraybackslash}p{\textwidth}}
+      {\StyleAbsTitleFont \varTitle} \\
+    \end{tabular}
+  }
+  \vspace{0.9cm}
+  \centerline{{\StyleAbsMetaFont 专业\hspace{1em}\varMajor}}
+  \vspace{\baselineskip}
+  \centerline{{\StyleAbsMetaFont 学生\hspace{1em}\varAuthor \hspace{3em} 指导教师\hspace{1em}\varAdviser}}
+  \vspace{1.2cm}
+  \begingroup
+  \StyleAbsBodyFont
+  \setstretch{\StyleAbsStretch}
+  \textbf{摘要:}\keyword{#1}
+}
+{
+  \par
+  \textbf{关键词:} \varKeyword
+  \endgroup
+  \clearpage
+}
+
+\newenvironment{abstractEng}[1]
+{
+  \gdef\varKeyword{}
+  \vspace*{1cm}
+  \centerline{
+    \begin{tabular}{>{\centering\arraybackslash}p{\textwidth}}
+      {\StyleAbsTitleEngFont \varTitleEng} \\
+    \end{tabular}
+  }
+  \vspace{1cm}
+  \centerline{{\StyleAbsMetaFont \varMajorEng}}
+  \vspace{1cm}
+  \centerline{{\StyleAbsMetaFont Student:\varAuthorEng \hspace{1cm} Adviser:\varAdviserEng}}
+  \vspace{1.2cm}
+  \begingroup
+  \StyleAbsBodyFont
+  \setstretch{\StyleAbsStretch}
+  \textbf{Abstract:}\keyword{#1}
+}
+{
+  \par
+  \textbf{Key Words:} \varKeyword
+  \endgroup
+  \clearpage
+}
+
+% ============================================================
+% 封面辅助参数
+% ------------------------------------------------------------
+% 这里控制封面表格布局。
+%
+% 可改项：
+% - \coverLabelWidth：左侧标签列宽
+% - \coverRowGap：每行线条后的垂直间距
+% - coverDoubleRow 的列宽：主要影响“学号 / 年级”这一行
+% ============================================================
+\newlength{\coverLabelWidth}
+\setlength{\coverLabelWidth}{2.5cm}
+
+\newlength{\coverSingleValueWidth}
+\setlength{\coverSingleValueWidth}{9.2cm}
+
+\newlength{\coverRowGap}
+\setlength{\coverRowGap}{0.20cm}
+
+\newcommand{\coverLabel}[1]{%
+  \makebox[\coverLabelWidth][c]{{\StyleCoverLabelFont #1}}%
+}
+
+\newcommand{\coverValue}[1]{%
+  {{\StyleCoverValueFont #1}}%
+}
+
+\newcommand{\coverSingleRow}[2]{%
+  \noindent
+  \begin{tabular}{b{\coverLabelWidth} >{\centering\arraybackslash}m{\coverSingleValueWidth}}
+    \coverLabel{#1} & \coverValue{#2} \\[-3pt]
+    \cline{2-2} \\[\coverRowGap]
+  \end{tabular}%
+}
+
+\newcommand{\coverDoubleRow}[4]{%
+  \noindent
+  \begin{tabular}{b{\coverLabelWidth} >{\centering\arraybackslash}m{3.95cm} b{1.55cm} >{\centering\arraybackslash}m{2.70cm}}
+    \coverLabel{#1} & \coverValue{#2} & \coverLabel{#3} & \coverValue{#4} \\[-3pt]
+    \cline{2-2} \cline{4-4} \\[\coverRowGap]
+  \end{tabular}%
+}
+
+% ============================================================
+% 封面页
+% ------------------------------------------------------------
+% 如果你想改：
+% - “本科生毕业论文(设计)”：改 \StyleCoverTitleFont
+% - 左右字段字体：改 \StyleCoverLabelFont / \StyleCoverValueFont
+% - “年级”位置：改下面 coverDoubleRow 调用里的第三个参数
+%
+% 当前仅做了非常轻微的左移：
+%   \hspace{-0.06cm}年级
+% 比之前更克制，减少“偏得太多”的问题。
+% ============================================================
+\newcommand{\makecover}{
+  \thispagestyle{empty}
+  \addtocounter{page}{-1}
+
+  \vspace*{0cm}
+  \centerline{\includegraphics[width=6.92cm,height=2.11cm]{images/scu-bw.png}}
+  \vspace*{1.15cm}
+
+  \centerline{{\StyleCoverTitleFont 本科生毕业论文(设计)}} \par
+  \vspace*{0.95cm}
+
+  \centerline{\includegraphics[width=4.14cm,height=4.14cm]{images/logo-bw.png}}
+  \vspace*{0.55cm}
+
+  \begin{center}
+    \coverSingleRow{题\hspace{1.1cm}目}{\varTitle}
+    \coverSingleRow{学\hspace{1.1cm}院}{\varCollege}
+    \coverSingleRow{专\hspace{1.1cm}业}{\varMajor}
+    \coverSingleRow{学生姓名}{\varAuthor}
+    \coverDoubleRow{学\hspace{1.1cm}号}{\varID}{\hspace{-1.1cm}年级}{\varGrade}
+    \noindent
+    \begin{tabular}{b{\coverLabelWidth} >{\centering\arraybackslash}m{\coverSingleValueWidth}}
+      \coverLabel{指导教师} & \coverValue{\varAdviser} \\[-3pt]
+      \cline{2-2}
+    \end{tabular}
+  \end{center}
+
+  \vspace*{3cm}
+  \centerline{{\StyleCoverBottomFont 教务处制表}}
+  \centerline{{\StyleCoverBottomFont \varDate}}
+  \clearpage
+}
+
+% ============================================================
+% 独立页标题命令
+% ------------------------------------------------------------
+% 用法：
+% \SCUBackmatterChapter{页面显示标题}{目录中的标题}
+%
+% 这样 main.tex 就不需要重复写一整段：
+% clearpage / phantomsection / addcontentsline / center 标题 / vspace
+%
+% 以后如果想统一修改“参考文献 / 声明 / 致谢”这一类页面标题样式，
+% 只改这里或 \StyleBackmatterTitleFont 即可。
+% ============================================================
+\newcommand{\SCUBackmatterChapterStyled}[3]{%
+  \clearpage
+  \phantomsection
+  \addcontentsline{toc}{chapter}{#3}
+  \begin{center}
+    {#1 #2}
+  \end{center}
+  \vspace{1em}
+}
+
+\newcommand{\SCUBackmatterChapter}[2]{%
+  \SCUBackmatterChapterStyled{\StyleBackmatterTitleFont}{#1}{#2}%
+}
+
+% ============================================================
+% 参考文献样式
+% ------------------------------------------------------------
+% 这里只控制参考文献正文的字体字号，不控制标题文字。
+% 标题由 \SCUBackmatterChapter 在 main.tex 里调用。
+% ============================================================
+\AtBeginEnvironment{thebibliography}{\StyleReferenceBodyFont}
+
+\makeatletter
+\patchcmd{\thebibliography}{\chapter*{\bibname}}{}{}{}
+\makeatother
+
+% ============================================================
+% 上标引用
+% ------------------------------------------------------------
+% 把 \cite 改成上标形式。
+% 如果以后想恢复普通引用，把下面两句删掉即可。
+% ============================================================
+\let\oldcite\cite
+\renewcommand{\cite}[1]{\textsuperscript{\oldcite{#1}}}
+\newcommand{\upcite}[1]{\textsuperscript{\oldcite{#1}}}
+
+% ============================================================
+% 图表标题、编号和表格默认字体
+% ------------------------------------------------------------
+% 这里统一控制图标题 / 表标题 / 表格内容。
+%
+% 这样 main.tex 就不用再放图表样式相关代码了。
+% ============================================================
+\DeclareCaptionFont{heitiwu}{\StyleCaptionFont}
+
+\makeatletter
+\@addtoreset{figure}{chapter}
+\@addtoreset{table}{chapter}
+\makeatother
+\renewcommand{\thefigure}{\arabic{chapter}-\arabic{figure}}
+\renewcommand{\thetable}{\arabic{chapter}-\arabic{table}}
+
+\captionsetup[figure]{
+  name=图,
+  labelsep=space,
+  font=heitiwu,
+  labelfont=heitiwu,
+  textfont=heitiwu
+}
+
+\captionsetup[table]{
+  name=表,
+  labelsep=space,
+  font=heitiwu,
+  labelfont=heitiwu,
+  textfont=heitiwu
+}
+
+\captionsetup[longtable]{
+  name=表,
+  labelsep=space,
+  font=heitiwu,
+  labelfont=heitiwu,
+  textfont=heitiwu
+}
+
+\newcommand{\SCUTableTitle}[1]{%
+  \Needspace{6\baselineskip}%
+  \begin{center}
+    {\StyleCaptionFont #1}
+  \end{center}
+}
+
+% ============================================================
+% 代码环境
+% ------------------------------------------------------------
+% 如果正文几乎不用代码块，这部分可以保持默认不动。
+% ============================================================
+\lstset{
+  numbers=left,
+  numberstyle=\tiny,
+  breaklines=true,
+  xleftmargin=2em,
+  xrightmargin=2em,
+  aboveskip=1em
+}
