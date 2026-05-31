@@ -296,11 +296,7 @@ $R \leftarrow$ 分析模块对 $E$ 执行六条异常检测规则\;
 \Return $G_c$, $R$
 \end{algorithm}
 
-实测数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $
-ightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。
 
 \section{本章小结}
 
-本章以 Ollama 开源推理框架为靶点，完整实现了第三章设计的 HybriChain 调用链追踪方案。Ollama 的多进程架构（daemon 与 runner 分离）和 Go/CGO/C++ 异构语言层给追踪带来了一系列特殊挑战：Go 运行时不支持 uretprobe、CGO 边界处的符号不匹配、daemon 与 runner 之间 TID 空间完全隔离。针对这些问题，本章分别给出了对应的工程解决方案：用 uprobe 替代 uretprobe 以保证探针兼容性、用五级锚点加哈希等价映射实现 CGO 边界处的符号匹配、用注入轻量级 traceID 机制实现跨进程的请求关联。整体追踪流程经端到端实测验证，在 TinyLlama-1.1B 与 Qwen2-0.5B 两个模型上均能正确采集事件并完成调用链缝合，为下一章的系统评估提供了完整的实验数据。
-
-下一章用这些实测数据来评估 HybriChain 的追踪准确性、性能开销和异常检测能力。
+本章以 Ollama 开源推理框架为靶点，完整实现了第三章设计的 HybriChain 调用链追踪方案。Ollama 的多进程架构（daemon 与 runner 分离）和 Go/CGO/C++ 异构语言层给追踪带来了一系列特殊挑战：Go 运行时不支持 uretprobe、CGO 边界处的符号不匹配、daemon 与 runner 之间 TID 空间完全隔离。针对这些问题，本章分别给出了对应的工程解决方案：用 uprobe 替代 uretprobe 以保证探针兼容性、用五级锚点加哈希等价映射实现 CGO 边界处的符号匹配、用注入轻量级 traceID 机制实现跨进程的请求关联。
