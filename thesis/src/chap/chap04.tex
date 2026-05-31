@@ -387,19 +387,42 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 \section{完整追踪流程}
 
-把以上所有模块串起来，完整的追踪流程如下：
+算法~\ref{fig:trace-pipeline} 给出了完整追踪流程的步骤。
 
-第一步，准备带调试信息的二进制文件。需要从源码编译 Ollama，启用调试符号（Go 编译时加 -ldflags=“-s” 来保留符号表），生成 ollama-debug 文件。这是后续 bpftrace uprobe 挂载的前提——没有调试信息，bpftrace 无法定位函数地址。
+\begin{algorithm}[H]
+\caption{追踪流程算法}
+\label{fig:trace-pipeline}
+\KwIn{待追踪推理引擎}
+\KwOut{跨语言调用链 JSON，异常报告 JSON}
 
-第二步，运行追踪采集。依次启动 Ollama 服务、后台运行 bpftrace 追踪、发送推理请求，最后终止 bpftrace 进程完成采集。
+\BlankLine
+\tcp{第一步：准备阶段}
+$bin\_dbg \leftarrow$ 编译带调试符号的推理引擎二进制\;
+$static\_graph \leftarrow$ 符号提取工具解析 $bin\_dbg$，生成静态调用图\;
 
-第三步，数据解析和缝合。依次运行解析脚本将原始文本转换为结构化 JSON，运行缝合脚本完成跨语言调用链缝合，最后运行分析脚本生成异常报告。
+\BlankLine
+\tcp{第二步：追踪采集}
+$pid \leftarrow$ 启动推理引擎服务\;
+$bt\_pid \leftarrow$ 后台启动 bpftrace 追踪，绑定 $bin\_dbg$\;
+向推理接口发送测试 prompt 请求\;
+终止 bpftrace 进程，输出原始追踪文件 $F_{raw}$\;
 
-第四步，查看结果。运行缝合脚本可查看缝合摘要与锚点统计；格式化查看 JSON 报告可获取异常告警详情。整个流程在实测中的运行数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经 trace\_unify.py 解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。解析时间在毫秒级别，远快于推理过程本身。
+\BlankLine
+\tcp{第三步：数据解析}
+$E \leftarrow$ 解析器将 $F_{raw}$ 转换为结构化事件列表\;
+$G_s \leftarrow$ 缝合模块加载静态调用图 $static\_graph$\;
+$G_c \leftarrow$ 缝合模块对事件列表 $E$ 执行跨语言调用链缝合\;
+$R \leftarrow$ 分析模块对 $E$ 执行六条异常检测规则\;
 
-缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $\rightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。
+\BlankLine
+\tcp{第四步：结果输出}
+输出缝合摘要（Confirmed / Inferred / Unknown 边统计）\;
+输出异常告警报告（按风险级别降序）\;
 
-\section{本章小结}
+\Return $G_c$, $R$
+\end{algorithm}
+
+实测数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $\rightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。\section{本章小结}
 
 本章给出了第三章各节设计方案在 Ollama 推理框架上的具体实现。
 
