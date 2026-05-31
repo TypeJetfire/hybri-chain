@@ -3,7 +3,7 @@
 \chapter{HybriChain 在 Ollama 上的实现}
 \label{chap:implementation}
 
-上一章阐述了 HybriChain 面向任意多语言推理引擎的通用设计方法。本章以 Ollama 开源推理框架为具体靶点，说明各设计方案的具体实现。内容包括：第三章各节设计在 Ollama 上的对应实现、Ollama 工程特性带来的特殊挑战及其处理方案、以及完全源自 Ollama 自身架构特点的独门方法。
+上一章阐述了 HybriChain 面向任意多语言推理引擎的通用设计方法。本章以 Ollama 开源推理框架为具体靶点，说明各设计方案的具体实现。内容包括：第三章各节设计在 Ollama 上的对应实现、Ollama 工程特性带来的特殊挑战及其处理方案、以及完全源自 Ollama 自身架构特点的特有方法。
 
 \section{Ollama 的工程特性}
 
@@ -299,7 +299,7 @@ Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端�
 
 Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
-针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法~\ref{fig:traceid-inject} 所示。
+针对这一 Ollama 的问题，HybriChain 的解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法~\ref{fig:traceid-inject} 所示。
 
 \begin{algorithm}[H]
 \caption{traceID 注入：三文件具体改动}
@@ -413,7 +413,7 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 \S 4.5 给出了缝合模块的置信度计算算法（按 TID 分组请求树，检查两端节点共同出现次数）和 AnchorMatcher 的等价映射表。
 
-\S 4.6 是本章的独门方法：完全针对 Ollama 的多进程 HTTP 通信架构设计的 traceID 注入方案（withTraceID 函数 + X-Request-ID header + 双侧 uprobe），解决 daemon 和 runner TID 空间隔离的核心挑战。
+\S 4.6 是本章针对 Ollama 多进程 HTTP 通信架构设计的 traceID 注入方案（withTraceID 函数 + X-Request-ID header + 双侧 uprobe），解决 daemon 和 runner TID 空间隔离的核心挑战。
 
 \S 4.7 实现了六条异常检测规则，说明每条规则的触发条件、阈值选择依据（参考实测数据）和风险级别判定逻辑。
 
