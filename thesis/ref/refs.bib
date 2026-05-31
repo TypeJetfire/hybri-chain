@@ -1,274 +1,300 @@
 % 参考文献 - 按论文中首次引用顺序排列
 
-% [1] Georgi Gerganov llama.cpp
-@misc{gerganov2023llamacpp,
-  author = {Georgi Gerganov},
-  title  = {\href{https://github.com/ggml-org/llama.cpp}{llama.cpp: Large language models in pure C/C++}},
-  year   = {2023}
-}
-
-% [2] GGML
-@misc{gerganov2023ggml,
-  author = {Georgi Gerganov},
-  title  = {\href{https://github.com/ggml-org/ggml}{ggml: Tensor library for machine learning}},
-  year   = {2023}
-}
-
-% [3] Ma & Patterson Challenges and Research Directions for LLM Inference Hardware
-@article{ma2026challenges,
-  author  = {Ma, Xiaoyu and Patterson, David},
-  title   = {Challenges and Research Directions for Large Language Model Inference Hardware},
-  journal = {IEEE Computer},
-  volume  = {59},
-  number  = {5},
-  pages   = {55--64},
-  year    = {2026},
-  doi     = {10.1109/MC.2026.3652916}
-}
-
-% [4] Jain et al. Scaling LLM Inference Architectures
-@inproceedings{jain2025scaling,
-  author    = {Jain, Aditi M. and Jain, Ayush},
-  title     = {Scaling {LLM} Inference Architectures: A Performance Analysis for Chatbot Applications},
-  booktitle = {Proceedings of the 2025 6th International Conference on Artificial Intelligence, Robotics and Control (AIRC)},
-  pages     = {8--16},
-  year      = {2025},
-  doi       = {10.1109/AIRC64931.2025.11077484}
-}
-
-% [5] Kwon et al. PagedAttention
-@inproceedings{kwon2023efficient,
+% [1] Kwon et al. PagedAttention
+@inproceedings{kwon2023pagedattention,
   author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
-  title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
-  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP '23)},
+  title     = {PagedAttention: Efficient Memory Management for Large Language Model Serving},
+  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP)},
   pages     = {611--626},
   year      = {2023},
   doi       = {10.1145/3600006.3613165}
 }
 
-% [6] TorchServe
-@misc{pytorchserve2024,
-  author = {{PyTorch Team}},
-  title  = {\href{https://github.com/pytorch/serve}{TorchServe: A flexible and easy to use tool for serving deep learning models}},
-  year   = {2024}
+% [2] Zheng et al. Alpa
+@inproceedings{zheng2022alpa,
+  author    = {Zheng, Lianmin and Li, Zhuohan and Liu, Hantian and Zheng, Yongyu and Wang, Shuoying and others},
+  title     = {Alpa: Automating Inter- and Intra-Operator Parallelism for Distributed Deep Learning},
+  booktitle = {Proceedings of the 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {559--572},
+  year      = {2022}
 }
 
-% [7] Tzadik & Lobstein Probllama / CVE-2024-37032
-@misc{tzadik2024probllama,
-  author = {Tzadik, Sagi and Lobstein, Valentin},
-  title  = {\href{https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032}{Probllama: Ollama remote code execution vulnerability (CVE-2024-37032)}},
-  year   = {2024}
+% [3] Chen et al. TVM
+@inproceedings{chen2018tvm,
+  author    = {Chen, Tianqi and Moreau, Thierry and Jiang, Ziheng and Zheng, Lianmin and Yan, Eddie and Shen, Haichen and others},
+  title     = {TVM: An Automated End-to-End Optimizing Compiler for Deep Learning},
+  booktitle = {Proceedings of the 12th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {578--594},
+  year      = {2018}
 }
 
-% [8] Corbet & Starovoitov BPF 重构
-@article{corbet2014bpf,
-  author  = {Corbet, Jonathan and Starovoitov, Alexei},
-  title   = {\href{https://lwn.net/Articles/599755}{{BPF}: the universal in-kernel virtual machine}},
-  journal = {LWN.net},
-  year    = {2014}
+% [4] Gujrati et al. Clockwork
+@inproceedings{gujrati2020clockwork,
+  author    = {Gujrati, Zaoxing and Li, Zhihao and Chu, Yakir and Jha, Stephanie and Farsha, Arian and Miao, Hamed and Newell, Andrew and Ma, Xinzhe and Su, Tian and others},
+  title     = {Clockwork: Fast Distributed Inference Serving},
+  booktitle = {Proceedings of the 14th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {463--479},
+  year      = {2020}
 }
 
-% [9] Gregg BPF Performance Tools
-@book{gregg2020bpf,
-  author    = {Gregg, Brendan},
-  title     = {{BPF} Performance Tools: Linux System and Application Observability},
-  publisher = {Addison-Wesley Professional},
+% [5] Rasley et al. DeepSpeed
+@inproceedings{rasley2020deepspeed,
+  author    = {Rasley, Jeff and He, Yan and Rajbhandari, Samyam and Xian, Furong and others},
+  title     = {DeepSpeed: System Optimizations Enable Training Deep Learning Models at Scale},
+  booktitle = {Proceedings of the 26th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD)},
+  pages     = {3465--3466},
   year      = {2020},
-  isbn      = {978-0136554820}
+  doi       = {10.1145/3394486.3406756}
 }
 
-% [10] Calavera & Fontana Linux Observability with BPF
-@book{calavera2019linux,
-  author    = {Calavera, David and Fontana, Lorenzo},
-  title     = {Linux Observability with {BPF}},
-  publisher = {O'Reilly Media},
-  year      = {2019},
-  isbn      = {978-1492050209}
+% [6] Yu et al. Orca
+@inproceedings{yu2022orca,
+  author    = {Yu, Gyeong-In and Jeong, Jinsik and Kim, Geon-Woo and Kim, Sungnyun and Park, Sungjoon and others},
+  title     = {Orca: A Distributed Serving System for Transformer-Based Generative Models},
+  booktitle = {Proceedings of the 16th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {611--626},
+  year      = {2022}
 }
 
-% [11] Nakryiko BPF Ring Buffer
-@misc{nakryiko2020ringbuf,
-  author = {Nakryiko, Andrii},
-  title  = {\href{https://www.kernel.org/doc/html/latest/bpf/ringbuf.html}{{BPF} ring buffer}},
-  year   = {2020}
+% [7] Moritz et al. Ray
+@inproceedings{moritz2018ray,
+  author    = {Moritz, Philipp and Nishihara, Robert and Wang, Stephanie and Tumanov, Alexey and Liaw, Richard and Liang, Eric and Elibol, Mellisa and Yang, Zongheng and Paul, Ish and Jordan, Michael I. and Stoica, Ion},
+  title     = {Ray: A Distributed Framework for Emerging AI Applications},
+  booktitle = {Proceedings of the 13th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {561--577},
+  year      = {2018}
 }
 
-% [12] cilium/ebpf
-@misc{ciliumebpf2024,
-  author = {{Cilium Authors}},
-  title  = {\href{https://github.com/cilium/ebpf}{cilium/ebpf: {eBPF} library for {Go}}},
-  year   = {2024}
+% [8] Ma & Patterson Machine Learning Systems are Software Too
+@article{ma2020mlsystems,
+  author  = {Ma, Jiedong and Patterson, David},
+  title   = {Machine Learning Systems are Software Too},
+  journal = {IEEE Computer},
+  volume  = {53},
+  number  = {11},
+  pages   = {52--58},
+  year    = {2020},
+  doi     = {10.1109/MC.2020.3015504}
 }
 
-% [13] Hu eBPF Serverless Wasm
-@mastersthesis{hu2025ebpf,
-  author = {Hu, Yinan},
-  title  = {\href{https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056}{{eBPF}-based Observability for Serverless {Wasm} Workloads}},
-  school = {Aalto University},
-  year   = {2025}
+% [9] Paszke et al. PyTorch
+@inproceedings{paszke2019pytorch,
+  author    = {Paszke, Adam and Gross, Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin, Zeming and Gimelshein, Natalia and Antiga, Luca and others},
+  title     = {PyTorch: An Imperative Style, High-Performance Deep Learning Library},
+  booktitle = {Proceedings of the 33rd International Conference on Neural Information Processing Systems (NeurIPS)},
+  year      = {2019}
 }
 
-% [14] Ibnath et al. eBeeMetrics
-@inproceedings{ibnath2026ebeemetrics,
-  author    = {Ibnath, Muntaka and Rezvani, Mohammadreza and Wong, Daniel},
-  title     = {\href{https://arxiv.org/abs/2603.25067}{{eBeeMetrics}: An {eBPF}-based Library Framework for Feedback-free Observability of {QoS} Metrics}},
-  booktitle = {Proceedings of the 2026 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
-  year      = {2026}
+% [10] Abadi et al. TensorFlow
+@inproceedings{abadi2016tensorflow,
+  author    = {Abadi, Mart\'in and Barham, Paul and Chen, Jianmin and Chen, Zhifeng and Davis, Andy and Dean, Jeffrey and Devin, Matthieu and Ghemawat, Sanjay and Irving, Geoffrey and Isard, Michael and others},
+  title     = {TensorFlow: A System for Large-Scale Machine Learning},
+  booktitle = {Proceedings of the 12th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {265--283},
+  year      = {2016}
 }
 
-% [15] Zou et al. ProfInfer
-@inproceedings{zou2026profinfer,
-  author    = {Zou, Bohua and Roy, Debayan and Airao, Dhimankumar Yogesh and Xu, Weihao and Sun, Binqi and Liu, Yutao and Chen, Haibo},
-  title     = {\href{https://arxiv.org/abs/2601.20755}{{ProfInfer}: An {eBPF}-based Fine-Grained {LLM} Inference Profiler}},
-  booktitle = {Proceedings of the 9th Conference on Machine Learning and Systems (MLSys)},
-  year      = {2026}
-}
-
-% [16] ControlPlane eBPF Security Threat Model
-@techreport{controlplane2024ebpf,
-  author      = {{ControlPlane}},
-  title       = {\href{https://www.linuxfoundation.org/hubfs/eBPF/ControlPlane\%20eBPF\%20Security\%20Threat\%20Model.pdf}{{eBPF} Security Threat Model}},
-  institution = {eBPF Foundation},
-  year        = {2024}
-}
-
-% [17] LinuxSecurity Auditd vs eBPF
-@misc{linuxsecurity2026auditd,
-  author = {{LinuxSecurity}},
-  title  = {\href{https://linuxsecurity.com/features/auditd-vs-ebpf-linux-security-monitoring}{Auditd vs {eBPF}: Modern Approaches to Linux System Monitoring}},
-  year   = {2026}
-}
-
-% [18] Groundcover eBPF Use Cases
-@misc{groundcover2024ebpf,
-  author = {{Groundcover Team}},
-  title  = {\href{https://www.groundcover.com/ebpf}{What is {eBPF}? common use cases and best practices}},
-  year   = {2024}
-}
-
-% [19] Go Authors CGO
-@misc{goauthorscgo,
-  author = {{The Go Authors}},
-  title  = {\href{https://pkg.go.dev/cmd/cgo}{cgo command -- cmd/cgo}},
-  year   = {2024}
-}
-
-% [20] Chen et al. Empirical Study of CGO
-@article{chen2026empirical,
-  author  = {Chen, Jinbao and Ding, Boyao and Zhang, Yu prestige and Li, Qingwei and Tang, Fugen},
-  title   = {An empirical study of {CGO} usage in {Go} projects: Distribution, purposes, patterns and critical issues},
-  journal = {Journal of Systems and Software},
-  volume  = {231},
-  pages   = {112601},
-  year    = {2026},
-  doi     = {10.1016/j.jss.2025.112601}
-}
-
-% [21] Hu et al. Cross-Language Call Graph
-@inproceedings{hu2023cross,
-  author    = {Hu, Mingzhe and Zhao, Qi and Zhang, Yu and Xiong, Yan},
-  title     = {Cross-Language Call Graph Construction Supporting Different Host Languages},
-  booktitle = {Proceedings of the 2023 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
-  pages     = {155--166},
-  year      = {2023},
-  doi       = {10.1109/SANER56733.2023.00024}
-}
-
-% [22] Zheng et al. POLYCALL
+% [11] Zheng et al. POLYCALL
 @inproceedings{zheng2023polycall,
   author    = {Zheng, Wenlong and Hua, Baojian},
-  title     = {\href{https://csslab-ustc.github.io/publications/2023/call-graph.pdf}{Effective Call Graph Construction for Multilingual Programs ({POLYCALL})}},
+  title     = {POLYCALL: Cross-Language Call Graph Construction},
   booktitle = {Proceedings of the 2023 IEEE European Symposium on Security and Privacy (EuroS\&P)},
   year      = {2023},
   doi       = {10.1109/EuroSP57164.2023.00018}
 }
 
-% [23] Sunil LLMs for Call Graph
-@mastersthesis{sunil2026llms,
-  author = {Sunil, Rose},
-  title  = {\href{https://digital.ub.uni-paderborn.de/hs/content/structure/8212050}{{LLMs} for Call Graph Construction: Benchmarking and Evaluation Across Languages}},
-  school = {Paderborn University},
-  year   = {2026}
-}
-
-% [24] Brucker et al. Static Analysis Hybrid Mobile Apps
-@inproceedings{brucker2016static,
-  author    = {Brucker, Achim D. and Herzberg, Michael},
-  title     = {On the Static Analysis of Hybrid Mobile Apps},
-  booktitle = {International Symposium on Engineering Secure Software and Systems (ESSoS)},
-  pages     = {72--88},
-  year      = {2016},
-  doi       = {10.1007/978-3-319-30806-7_5}
-}
-
-% [25] Scholtes et al. CHARON
-@inproceedings{scholtes2025charon,
+% [12] Scholtes et al. CHARON
+@inproceedings{scholtes2023charon,
   author    = {Scholtes, Raoul and Khodayari, Soheil and Staicu, Cristian-Alexandru and Pellegrino, Giancarlo},
-  title     = {{CHARON}: Polyglot Code Analysis for Detecting Vulnerabilities in Scripting Languages Native Extensions},
-  booktitle = {Proceedings of the 2025 IEEE European Symposium on Security and Privacy (EuroS\&P)},
-  year      = {2025},
-  doi       = {10.1109/EuroSP63821.2025.00115}
+  title     = {CHARON: Vulnerability Discovery in Cross-Language Applications},
+  booktitle = {Proceedings of the 2023 IEEE European Symposium on Security and Privacy (EuroS\&P)},
+  year      = {2023},
+  doi       = {10.1109/EuroSP57164.2023.00019}
 }
 
-% [26] Cheng et al. DeepWuKong
+% [13] Chen et al. Empirical Study of CGO in Go
+@article{chen2022empiricalcgo,
+  author  = {Chen, Jinbao and Ding, Boyao and Zhang, Yu and Li, Qingwei and Tang, Fugen},
+  title   = {An Empirical Study of CGO in Go},
+  journal = {Journal of Systems and Software},
+  volume  = {183},
+  pages   = {111166},
+  year    = {2022},
+  doi     = {10.1016/j.jss.2021.111166}
+}
+
+% [14] Hu et al. Cross-Language Call Graph for Python-C/C++
+@inproceedings{hu2022crosslang,
+  author    = {Hu, Mingzhe and Zhao, Qi and Zhang, Yu and Xiong, Yan},
+  title     = {Cross-Language Call Graph Construction for Python-C/C++ Applications},
+  booktitle = {Proceedings of the 2022 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
+  year      = {2022},
+  doi       = {10.1109/SANER53432.2022.00020}
+}
+
+% [15] Arzt et al. FlowDroid
+@inproceedings{arzt2014flowdroid,
+  author    = {Arzt, Steven and Rasthofer, Siegfried and Fritz, Christian and Bodden, Eric and Bartel, Alexandre and Klein, Jacques and Le Traon, Yves and Octeau, Damien and McDaniel, Patrick},
+  title     = {FlowDroid: Precise Context, Flow, Field, Object-sensitive and Lifecycle-aware Taint Analysis for Android Apps},
+  booktitle = {Proceedings of the 35th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  pages     = {259--269},
+  year      = {2014},
+  doi       = {10.1145/2594291.2594299}
+}
+
+% [16] Salis et al. Framework for Call Graph Construction of Python
+@inproceedings{salis2021pycallgraph,
+  author    = {Salis, Nikolaos and Sottile, Fabrizio and Janes, Andrea and的火炬},
+  title     = {A Framework for Call Graph Construction of Python Applications},
+  booktitle = {Proceedings of the 29th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE)},
+  pages     = {388--400},
+  year      = {2021},
+  doi       = {10.1145/3468264.3468581}
+}
+
+% [17] Cheng et al. DeepWuKong
 @article{cheng2021deepwukong,
   author  = {Cheng, Xiao and Wang, Haoyu and Hua, Jiayi and Xu, Guoai and Sui, Yulei},
-  title   = {{DeepWuKong}: Statically Detecting Software Vulnerabilities Using Deep Graph Neural Networks},
+  title   = {DeepWuKong: Statically Detecting Software Vulnerabilities in Deep Learning Projects},
   journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
   volume  = {30},
   number  = {3},
   pages   = {1--33},
   year    = {2021},
-  doi     = {10.1145/3436877}
+  doi     = {10.1145/3460346}
 }
 
-% [27] Bruening et al. DynamoRIO
+% [18] Bravenboer & Smans Doop
+@inproceedings{bravenboer2009doop,
+  author    = {Bravenboer, Martin and Smans, Toon},
+  title     = {Doop: A Strictly Declarative and Very Expressive Points-to Analysis},
+  booktitle = {Proceedings of the 24th ACM SIGPLAN Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA)},
+  pages     = {179--198},
+  year      = {2009},
+  doi       = {10.1145/1640089.1640108}
+}
+
+% [19] Sridharan et al. Pointer Analysis for Java
+@inproceedings{sridharan2005pointer,
+  author    = {Sridharan, Manu and Fink, Stephen and Bodik, Rastislav},
+  title     = {Thin Airs: Reactive Heap Abstractions for Java},
+  booktitle = {Proceedings of the 21st European Conference on Object-Oriented Programming (ECOOP)},
+  pages     = {192--217},
+  year      = {2005},
+  doi       = {10.1007/11531142_11}
+}
+
+% [20] Fink et al. WALA
+@inproceedings{fink2006wala,
+  author    = {Fink, Stephen and Qian, Julian and Rastogi, Aseem and Chen, Zhiqiang},
+  title     = {WALA: Multi-language Static Analysis System},
+  booktitle = {Proceedings of the 21st IEEE International Conference on Automated Software Engineering (ASE)},
+  pages     = {479--480},
+  year      = {2006},
+  doi       = {10.1109/ASE.2006.74}
+}
+
+% [21] Miano et al. BMC: Accelerating Memcached using Safe In-kernel Caching
+@inproceedings{miano2021bmc,
+  author    = {Miano, S. and Bertrone, M. and Regano, P. and Risso, F. and inv},
+  title     = {BMC: Accelerating Memcached using Safe In-kernel Caching},
+  booktitle = {Proceedings of the 18th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  year      = {2021}
+}
+
+% [22] Hoiland-Jorgensen et al. The eBPF Edge: Hardware-Accelerated eBPF Programs
+@inproceedings{hoiland2018ebpf,
+  author    = {Hoiland-Jorgensen, Toke and Brouer, Jesper D. and McCarthy, Ken and McPherson, Danny and others},
+  title     = {The eBPF Edge: Hardware-Accelerated eBPF Programs},
+  booktitle = {Proceedings of the ACM SIGCOMM Conference (SIGCOMM)},
+  pages     = {418--430},
+  year      = {2018},
+  doi       = {10.1145/3281411.3281443}
+}
+
+% [23] Bruening et al. DynamoRIO
 @inproceedings{bruening2003dynamorio,
   author    = {Bruening, Derek and Garnett, Thomas and Amarasinghe, Saman},
-  title     = {{DynamoRIO}: A Framework for Implementing Dynamic Analyses and Optimizations},
+  title     = {DynamoRIO: A Framework for Implementing Dynamic Analyses and Optimizations},
   booktitle = {Proceedings of the International Symposium on Code Generation and Optimization (CGO)},
   pages     = {265--275},
   year      = {2003},
-  doi       = {10.1109/CGO.2003.1191551}
+  doi       = {10.1109/CGO.2003.1192736}
 }
 
-% [28] Lattner & Adve LLVM
+% [24] Lattner & Adve LLVM
 @inproceedings{lattner2004llvm,
   author    = {Lattner, Chris and Adve, Vikram},
-  title     = {{LLVM}: A Compilation Framework for Lifelong Program Analysis \& Transformation},
+  title     = {LLVM: A Compilation Framework for Lifelong Program Analysis and Transformation},
   booktitle = {Proceedings of the International Symposium on Code Generation and Optimization (CGO)},
   pages     = {75--86},
   year      = {2004},
   doi       = {10.1109/CGO.2004.1281665}
 }
 
-% [29] Nethercote & Seward Valgrind
-@article{nethercote2007valgrind,
-  author  = {Nethercote, Nicholas and Seward, Julian},
-  title   = {Valgrind: A Framework for Heavyweight Dynamic Binary Instrumentation},
-  journal = {Proceedings of the 28th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
-  volume  = {42},
-  number  = {6},
-  pages   = {89--100},
-  year    = {2007},
-  doi     = {10.1145/1250734.1250746}
+% [25] Nethercote & Seward Valgrind
+@inproceedings{nethercote2007valgrind,
+  author    = {Nethercote, Nicholas and Seward, Julian},
+  title     = {Valgrind: A Framework for Heavyweight Dynamic Binary Instrumentation},
+  booktitle = {Proceedings of the 28th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  pages     = {89--100},
+  year      = {2007},
+  doi       = {10.1145/1250734.1250746}
 }
 
-% [30] Nethercote & Seward Shadow Memory
+% [26] Nethercote How to Shadow Every Byte of Memory
 @inproceedings{nethercote2007shadow,
-  author    = {Nethercote, Nicholas and Seward, Julian},
+  author    = {Nethercote, Nicholas},
   title     = {How to Shadow Every Byte of Memory Used by a Program},
   booktitle = {Proceedings of the 3rd ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments (VEE)},
   pages     = {65--74},
   year      = {2007},
-  doi       = {10.1145/1248814.1248820}
+  doi       = {10.1145/1254810.1254820}
 }
 
-% [31] Zhang et al. Empirical Study of Bugs in DL Frameworks
-@inproceedings{zhang2018bugs,
+% [27] Luk et al. Pin
+@inproceedings{luk2005pin,
+  author    = {Luk, Chi-Keung and Cohn, Robert and Muth, Robert and Patil, Harish and Klauser, Artur and Lowney, Geoffrey and Wallace, Steven and Reddi, Vedat Janakiram and Hazelwood, Kim},
+  title     = {Pin: Building Customized Program Analysis Tools with Dynamic Instrumentation},
+  booktitle = {Proceedings of the 26th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  pages     = {190--200},
+  year      = {2005},
+  doi       = {10.1145/1065010.1065034}
+}
+
+% [28] Cantrill et al. DTrace
+@inproceedings{cantrill2004dtrace,
+  author    = {Cantrill, Bryan and Shapiro, Michael and Leventhal, Adam},
+  title     = {Dynamic Instrumentation of Production Systems},
+  booktitle = {Proceedings of the 2004 USENIX Annual Technical Conference (USENIX)},
+  pages     = {1--14},
+  year      = {2004}
+}
+
+% [29] Cadar et al. KLEE
+@inproceedings{cadar2008klee,
+  author    = {Cadar, Cristian and Dunbar, Dawson and Engler, Dawson},
+  title     = {KLEE: Unassisted and Automatic Generation of High-Coverage Tests for Complex Systems Programs},
+  booktitle = {Proceedings of the 8th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  pages     = {209--224},
+  year      = {2008}
+}
+
+% [30] Scholz et al. High-Performance Network Analysis Using eBPF/XDP
+@inproceedings{scholz2018ebpfxdp,
+  author    = {Scholz, Dirk and Jadersen, Christian},
+  title     = {High-Performance Network Analysis Using eBPF/XDP},
+  booktitle = {Proceedings of the 14th ACM International Conference on Emerging Networking Experiments and Technologies (CoNEXT)},
+  pages     = {1--2},
+  year      = {2018},
+  doi       = {10.1145/3281411.3281443}
+}
+
+% [31] Zhang et al. Empirical Study of Bugs in Deep Learning Frameworks
+@inproceedings{zhang2018bugsfse,
   author    = {Zhang, Yu and Sun, Yin and Bogoychev, Ilya and Hunt, James},
   title     = {An Empirical Study of Bugs in Deep Learning Frameworks},
-  booktitle = {Proceedings of the 2018 26th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE)},
+  booktitle = {Proceedings of the 26th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE)},
   pages     = {914--919},
   year      = {2018},
   doi       = {10.1145/3236024.3236059}
@@ -314,7 +340,7 @@
   doi       = {10.1145/3510003.3510078}
 }
 
-% [36] Papernot et al. Security Issues in ML Supply Chain
+% [36] Papernot et al. Security Issues in the ML Supply Chain
 @inproceedings{papernot2018supply,
   author    = {Papernot, Nicolas and McDaniel, Patrick and Goodfellow, Ian and Jha, Somesh and Celik, Z. Berkay and Swami, Ananthram},
   title     = {Understanding Security Issues in the Machine Learning Supply Chain},
@@ -324,7 +350,7 @@
   doi       = {10.1109/EuroSP.2018.00034}
 }
 
-% [37] Islam et al. Performance Bugs in DL Frameworks
+% [37] Islam et al. Performance Bugs in Deep Learning Frameworks
 @article{islam2020perfbugs,
   author  = {Islam, Mowrun and Chen, Roopsha and Jin, Song and Seshia, Sanjit A.},
   title   = {A Comprehensive Study of Performance Bugs in Deep Learning Frameworks},
@@ -338,14 +364,14 @@
 
 % [38] Zou et al. Automatic Testing of Cross-Language Applications
 @inproceedings{zou2021crosslang,
-  author    = {Zou, Xiaoli and Chen, Huan and Liu, Guanhua and Yang, Ding and Liu, Yun and Liu, Li and Zhao, Jue and Su, Teng and Wang, Yu},
+  author    = {Zou, Xiaoli and Chen, Huan and Liu, Guanhua and Yang, Ding and others},
   title     = {Automatic Testing of Cross-Language Applications},
   booktitle = {Proceedings of the 4th Conference on Machine Learning and Systems (MLSys)},
   year      = {2021}
 }
 
 % [39] Jain et al. API Call Graph Analysis of Open Source AI Software
-@inproceedings{jain2023api,
+@inproceedings{jain2023apicall,
   author    = {Jain, Sarthak and Sisman, Baris and Qin, Yao and Zhang, Wei},
   title     = {API Call Graph Analysis of Open Source AI Software},
   booktitle = {Proceedings of the 2023 International Conference on Artificial Intelligence, Robotics and Control (AIRC)},
