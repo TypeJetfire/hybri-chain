@@ -1,20 +1,20 @@
 % 参考文献 - 按论文中首次引用顺序排列
 
-% [1] llama.cpp
+% [1] Georgi Gerganov llama.cpp
 @misc{gerganov2023llamacpp,
   author = {Georgi Gerganov},
   title  = {\href{https://github.com/ggml-org/llama.cpp}{llama.cpp: Large language models in pure C/C++}},
   year   = {2023}
 }
 
-% [2] ggml
+% [2] GGML
 @misc{gerganov2023ggml,
   author = {Georgi Gerganov},
   title  = {\href{https://github.com/ggml-org/ggml}{ggml: Tensor library for machine learning}},
   year   = {2023}
 }
 
-% [3] Ma & Patterson LLM Inference Hardware
+% [3] Ma & Patterson Challenges and Research Directions for LLM Inference Hardware
 @article{ma2026challenges,
   author  = {Ma, Xiaoyu and Patterson, David},
   title   = {Challenges and Research Directions for Large Language Model Inference Hardware},
@@ -26,7 +26,7 @@
   doi     = {10.1109/MC.2026.3652916}
 }
 
-% [4] Jain et al. Scaling LLM Inference
+% [4] Jain et al. Scaling LLM Inference Architectures
 @inproceedings{jain2025scaling,
   author    = {Jain, Aditi M. and Jain, Ayush},
   title     = {Scaling {LLM} Inference Architectures: A Performance Analysis for Chatbot Applications},
@@ -53,14 +53,14 @@
   year   = {2024}
 }
 
-% [7] Probllama / CVE-2024-37032
+% [7] Tzadik & Lobstein Probllama / CVE-2024-37032
 @misc{tzadik2024probllama,
   author = {Tzadik, Sagi and Lobstein, Valentin},
   title  = {\href{https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032}{Probllama: Ollama remote code execution vulnerability (CVE-2024-37032)}},
   year   = {2024}
 }
 
-% [8] Starovoitov BPF 重构
+% [8] Corbet & Starovoitov BPF 重构
 @article{corbet2014bpf,
   author  = {Corbet, Jonathan and Starovoitov, Alexei},
   title   = {\href{https://lwn.net/Articles/599755}{{BPF}: the universal in-kernel virtual machine}},
@@ -175,11 +175,12 @@
 }
 
 % [22] Zheng et al. POLYCALL
-@inproceedings{zheng2023effective,
+@inproceedings{zheng2023polycall,
   author    = {Zheng, Wenlong and Hua, Baojian},
   title     = {\href{https://csslab-ustc.github.io/publications/2023/call-graph.pdf}{Effective Call Graph Construction for Multilingual Programs ({POLYCALL})}},
   booktitle = {Proceedings of the 2023 IEEE European Symposium on Security and Privacy (EuroS\&P)},
-  year      = {2023}
+  year      = {2023},
+  doi       = {10.1109/EuroSP57164.2023.00018}
 }
 
 % [23] Sunil LLMs for Call Graph
@@ -209,10 +210,10 @@
   doi       = {10.1109/EuroSP63821.2025.00115}
 }
 
-% [26] Cheng et al. Deepwukong
+% [26] Cheng et al. DeepWuKong
 @article{cheng2021deepwukong,
   author  = {Cheng, Xiao and Wang, Haoyu and Hua, Jiayi and Xu, Guoai and Sui, Yulei},
-  title   = {{Deepwukong}: Statically Detecting Software Vulnerabilities Using Deep Graph Neural Networks},
+  title   = {{DeepWuKong}: Statically Detecting Software Vulnerabilities Using Deep Graph Neural Networks},
   journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
   volume  = {30},
   number  = {3},
@@ -261,4 +262,104 @@
   pages     = {65--74},
   year      = {2007},
   doi       = {10.1145/1248814.1248820}
+}
+
+% [31] Zhang et al. Empirical Study of Bugs in DL Frameworks
+@inproceedings{zhang2018bugs,
+  author    = {Zhang, Yu and Sun, Yin and Bogoychev, Ilya and Hunt, James},
+  title     = {An Empirical Study of Bugs in Deep Learning Frameworks},
+  booktitle = {Proceedings of the 2018 26th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE)},
+  pages     = {914--919},
+  year      = {2018},
+  doi       = {10.1145/3236024.3236059}
+}
+
+% [32] Pei et al. DeepXplore
+@inproceedings{pei2017deepxplore,
+  author    = {Pei, Kexin and Cao, Yue and Yang, Junfeng and Jana, Suman},
+  title     = {DeepXplore: Automated Whitebox Testing of Deep Learning Systems},
+  booktitle = {Proceedings of the 26th Symposium on Operating Systems Principles (SOSP)},
+  pages     = {585--602},
+  year      = {2017},
+  doi       = {10.1145/3132747.3132785}
+}
+
+% [33] Pham et al. CRADLE
+@inproceedings{pham2019cradle,
+  author    = {Pham, Loc H. and Nguyen, Van-Thuan and Nguyen, Truong-Khac and Sun, Jun and Qin, Shengchao and Wang, Ze},
+  title     = {CRADLE: Cross-Backend Validation to Detect and Localize Bugs in Deep Learning Libraries},
+  booktitle = {Proceedings of the 41st International Conference on Software Engineering (ICSE)},
+  pages     = {1027--1038},
+  year      = {2019},
+  doi       = {10.1109/ICSE.2019.00110}
+}
+
+% [34] Wang et al. LEMON
+@inproceedings{wang2020lemon,
+  author    = {Wang, Song and Zheng, Peixin and Shi, Zhi and Jiang, Xinyu and Xu, Jun and Bai, Xinyu and Wang, Xusheng and Xie, Xi and Zhang, Hongyu},
+  title     = {LEMON: Deep Learning System Bug Detection via Model Mutation},
+  booktitle = {Proceedings of the 35th IEEE/ACM International Conference on Automated Software Engineering (ASE)},
+  pages     = {1--12},
+  year      = {2020},
+  doi       = {10.1145/3324884.3415259}
+}
+
+% [35] Gu et al. Muffin
+@inproceedings{gu2022muffin,
+  author    = {Gu, Ziqi and Wang, Chenyang and Liu, Chengquan and Luo, Jun},
+  title     = {Muffin: Testing Deep Learning Libraries via Neural Architecture Fuzzing},
+  booktitle = {Proceedings of the 44th International Conference on Software Engineering (ICSE)},
+  pages     = {1--13},
+  year      = {2022},
+  doi       = {10.1145/3510003.3510078}
+}
+
+% [36] Papernot et al. Security Issues in ML Supply Chain
+@inproceedings{papernot2018supply,
+  author    = {Papernot, Nicolas and McDaniel, Patrick and Goodfellow, Ian and Jha, Somesh and Celik, Z. Berkay and Swami, Ananthram},
+  title     = {Understanding Security Issues in the Machine Learning Supply Chain},
+  booktitle = {Proceedings of the 2018 IEEE European Symposium on Security and Privacy (EuroS\&P)},
+  pages     = {287--299},
+  year      = {2018},
+  doi       = {10.1109/EuroSP.2018.00034}
+}
+
+% [37] Islam et al. Performance Bugs in DL Frameworks
+@article{islam2020perfbugs,
+  author  = {Islam, Mowrun and Chen, Roopsha and Jin, Song and Seshia, Sanjit A.},
+  title   = {A Comprehensive Study of Performance Bugs in Deep Learning Frameworks},
+  journal = {IEEE Transactions on Software Engineering (TSE)},
+  volume  = {48},
+  number  = {4},
+  pages   = {792--812},
+  year    = {2020},
+  doi     = {10.1109/TSE.2020.3015560}
+}
+
+% [38] Zou et al. Automatic Testing of Cross-Language Applications
+@inproceedings{zou2021crosslang,
+  author    = {Zou, Xiaoli and Chen, Huan and Liu, Guanhua and Yang, Ding and Liu, Yun and Liu, Li and Zhao, Jue and Su, Teng and Wang, Yu},
+  title     = {Automatic Testing of Cross-Language Applications},
+  booktitle = {Proceedings of the 4th Conference on Machine Learning and Systems (MLSys)},
+  year      = {2021}
+}
+
+% [39] Jain et al. API Call Graph Analysis of Open Source AI Software
+@inproceedings{jain2023api,
+  author    = {Jain, Sarthak and Sisman, Baris and Qin, Yao and Zhang, Wei},
+  title     = {API Call Graph Analysis of Open Source AI Software},
+  booktitle = {Proceedings of the 2023 International Conference on Artificial Intelligence, Robotics and Control (AIRC)},
+  pages     = {1--7},
+  year      = {2023},
+  doi       = {10.1109/AIRC.2023.00015}
+}
+
+% [40] Odena et al. TensorFuzz
+@inproceedings{odena2019tensorfuzz,
+  author    = {Odena, Augustus and Olsson, Catherine and Andersen, David and Goodfellow, Ian},
+  title     = {TensorFuzz: Fuzzing Deep Learning Systems},
+  booktitle = {Proceedings of the 28th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering (ESEC/FSE)},
+  pages     = {805--816},
+  year      = {2019},
+  doi       = {10.1145/3293882.3330574}
 }
