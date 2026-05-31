@@ -7,7 +7,11 @@
 % 模板样式
 \usepackage[T1]{fontenc}      % T1 编码：LaTeX 自动把 "..." 映射为「"..."」（中文引号）
 \usepackage{scuthesis}
-\usepackage{hyperref}    % 生成 PDF 超链接（自动被 bookmark 使用）
+% 图表编号格式：图5.6 表2.1（点号代替连字符）
+\AtBeginDocument{
+  \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+  \renewcommand{\thetable}{\thechapter.\arabic{table}}
+}
 \usepackage{bookmark}    % 生成 PDF 书签大纲（侧边栏目录）
 
 % 数学与定理
@@ -50,8 +54,6 @@
 % 基本信息
 \input{src/basic_info}
 
-%-----------------------------------------------------------------
-% 正文区
 \begin{document}
 \StyleBodyFont
 
