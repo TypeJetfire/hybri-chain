@@ -5,47 +5,46 @@
 
 \section{问题背景}
 
-在 Ollama 这类推理引擎里，一次 HTTP API 请求进入系统后，数据会在多层语言之间来回传递：Go 接收请求 → CGO 桥接层把数据发给 C++ → llama.cpp 做实际推理 → 内核接收系统调用。整个过程涉及 Go 运行时、CGO 桥接函数、llama.cpp C++ 库和 Linux 内核四个完全不同的执行环境。
+大语言模型推理引擎是 AI 应用的核心基础设施。与传统 Web 服务不同，推理引擎内部采用多语言混合编程架构：高层用 Python 或 Go 编写 HTTP 接口和调度逻辑，性能关键路径用 C/C++ 实现，底层通过 GGML 等张量计算库完成实际的矩阵运算。整个推理过程横跨多个完全不同的运行时环境：API 接收层、FFI/CGO 桥接层、推理计算层、内核系统调用层。
 
-但问题是：HTTP 层只能看到请求进来、响应出去，中间发生了什么完全看不见。比如，某个请求触发了一次 mmap 大块内存分配，这个 mmap 是在模型加载阶段发生的，还是在推理计算过程中发生的？再比如，某个线程在 futex 上等了十几秒，这对应的是哪一步推理操作？这些在生产环境里非常重要的问题，目前没有工具能回答。
+以典型的开源推理引擎为例，外部 API 请求进入后的内部处理流程如下：HTTP 层接收请求，通过 FFI/CGO 机制调用 C++ 推理引擎，执行矩阵运算，最终触发 mmap 分配 KV Cache、futex 同步多线程等内核系统调用。
 
-更具体地说，安全分析人员关心的核心问题是：
+但现有的可观测性工具存在根本性盲区：HTTP 层只能看到请求进来和响应出去，中间每一层语言里发生了什么完全不可见。比如，一次 mmap 大块内存分配，到底是发生在模型加载阶段还是推理计算过程中？某个线程在 futex 上等待十几秒，具体对应推理的哪一步？这些在生产环境和安全分析中至关重要的问题，目前没有工具能够回答。
 
+安全分析人员关心的核心问题是：
 \begin{itemize}
     \item 一次 API 请求触发后，推理引擎内部跑了哪些函数？这些函数分别在哪一层语言里？
     \item 推理引擎向内核发了哪些系统调用？这些调用和推理的哪个阶段对应？
     \item 如果推理过程出现异常（内存分配失败、文件访问错误、线程长时间阻塞），根源在哪一层代码？
 \end{itemize}
 
-要回答这些问题，需要三个能力：第一，能追踪函数调用；第二，能把不同来源的数据合在一起；第三，能把函数符号翻译成可以理解的层次。这些是本章要解决的核心问题。
+要回答这些问题，需要三种能力：能追踪跨语言的函数调用，能把不同来源的数据合并，能把函数符号翻译成可理解的层次。这些是本章要解决的核心问题。
 
 \section{设计目标}
 
 HybriChain 要做到以下几件事：
 
 \begin{enumerate}[(1)]
-    \item \textbf{跨语言调用链追踪。} 从 API 请求到内核系统调用，把整个调用链串起来。
-    \item \textbf{轻量级追踪注入。} 为了实现跨进程的完整调用链缝合，需要在 Ollama 的 daemon 和 runner 进程里各注入一个轻量级的跟踪函数（\texttt{withTraceID}），生成 UUID 作为请求追踪 ID，并通过 HTTP header（\texttt{X-Request-ID}）在两个进程间传递。这个注入仅涉及函数入口处的一行调用，不改变推理逻辑，不影响推理性能。
-    \item \textbf{低开销。} eBPF 追踪本身不能把推理引擎拖慢太多。
-    \item \textbf{结果可读。} 追踪到的函数符号要让分析人员能看懂，知道是哪一层在做什么。
-    \item \textbf{异常检测。} 在调用链上发现异常行为，比如 futex 长等待、大块 mmap 分配、敏感文件访问等。
+    \item \textbf{跨语言调用链追踪。} 从 API 请求到内核系统调用，把整个调用链串起来，覆盖多语言边界。
+    \item \textbf{跨进程完整缝合。} 推理引擎若采用多进程架构（如 daemon + worker 分离），各进程的 TID 编号空间相互独立，需要引入跨进程关联机制才能缝合出完整的端到端调用链。
+    \item \textbf{低开销零侵入。} eBPF 追踪本身不能对推理引擎的性能产生显著影响，也不应修改被追踪程序的代码。
+    \item \textbf{结果可读。} 追踪到的函数符号要能翻译成有语义的层次信息，让分析人员理解每层在做什么。
+    \item \textbf{异常行为检测。} 在调用链上发现异常行为，如 futex 长等待、大块 mmap 分配、敏感路径访问等。
 \end{enumerate}
 
 \section{系统整体架构}
 
-图~\ref{fig:system-arch} 是 HybriChain 的系统架构。整体分为两部分：左边是被追踪的靶点（Ollama 推理引擎），右边是 HybriChain 分析系统。
-
-Ollama 推理引擎本身是一个双进程架构：daemon 进程（Ollama 主服务）接收 HTTP 请求，runner 子进程（实际执行推理）负责跑模型。两者通过 HTTP over TCP（127.0.0.1 随机端口）通信，而非传统的 Unix Domain Socket。daemon 和 runner 是独立进程，拥有各自独立的线程 ID（TID）编号空间，因此同一推理请求在 daemon 侧和 runner 侧会出现在完全不同的 TID 中——这给跨进程调用链缝合带来了根本性挑战。
+图~\ref{fig:system-arch} 是 HybriChain 的系统架构。整体分为两部分：左边是 HybriChain 的追踪目标——任意多语言推理引擎，右边是 HybriChain 分析系统本身。
 
 HybriChain 包含三个核心模块：
 
 \begin{itemize}
-    \item \textbf{静态符号提取模块。} 用 \texttt{nm} 工具从 ollama-debug 二进制里提取 llama.cpp 函数符号表，按层次分类。这一步是离线的，在追踪开始前做一次就够了。
-    \item \textbf{eBPF 内核追踪模块。} 用 bpftrace 在内核层挂载 tracepoint 和 uprobe，实时捕获推理引擎的系统调用和函数调用。追踪的数据写入文件供后续处理。
-    \item \textbf{缝合与分析引擎模块。} 用 Python 脚本把静态符号表和动态追踪数据合在一起，生成带层次标注的统一调用链，并在上面跑异常检测规则。
+    \item \textbf{静态符号提取模块。} 用 \texttt{nm} 工具从推理引擎的带调试信息二进制文件中提取函数符号表，按层次分类。这一步是离线的，在追踪开始前做一次就够了。
+    \item \textbf{eBPF 内核追踪模块。} 用 bpftrace 在内核层挂载 tracepoint 和 uprobe，实时捕获推理引擎的系统调用和函数调用，输出原始事件文件供后续处理。
+    \item \textbf{缝合与分析引擎模块。} 用 Python 脚本把静态符号表和动态追踪数据合在一起，生成带层次标注的统一调用链，并在上面运行异常检测规则。
 \end{itemize}
 
-数据流向是：bpftrace 采集原始事件 → trace\_unify.py 解析并过滤 → stitcher.py 缝合调用链 → analyzer.py 检测异常。
+数据流向是：bpftrace 采集原始事件 $\rightarrow$ trace\_unify.py 解析并过滤 $\rightarrow$ stitcher.py 缝合调用链 $\rightarrow$ analyzer.py 检测异常。
 
 \begin{figure}[H]
     \centering
@@ -60,28 +59,28 @@ HybriChain 包含三个核心模块：
 
 推理引擎运行时会产生两类事件：
 
-\textbf{用户态函数调用（uprobe）。} 在 llama.cpp 的关键函数入口和返回处挂载探针，记录函数名、进入时间戳、线程 ID、返回后的耗时。这些探针能直接拿到函数级别的调用关系，是缝合跨语言边界的直接证据。
+\textbf{用户态函数调用（uprobe）。} 在推理引擎二进制文件的关键函数入口和返回处挂载探针，记录函数名、进入时间戳、线程 ID、返回后的耗时。uprobe 是缝合跨语言边界的直接证据。
 
 \textbf{内核态系统调用（tracepoint）。} 在系统调用的入口和返回处挂载探针，记录系统调用名、时间戳、线程 ID 和耗时。系统调用是推理引擎和内核之间的接口，能反映内存分配、文件读写、线程同步等底层行为。
 
-不是所有事件都要记录。推理引擎每秒能产生数万次调用，如果全部记下来，数据量太大，后续处理会很慢。HybriChain 的策略是只追踪最有分析价值的事件，具体见下文。
+推理引擎每秒能产生数万次调用，并非全部需要记录。HybriChain 的策略是只追踪最有分析价值的事件。
 
-\subsection{探针放置位置}
+\subsection{探针放置策略}
 
-在哪些函数上挂探针是整个追踪方案的核心设计决策。挂得太多，性能开销大；挂得太少，调用链会断裂。HybriChain 采用"只挂关键节点"的原则，在 llama.cpp 的以下四个核心函数上挂 uprobe/uretprobe：
+挂探针的位置是整个方案的核心设计决策。HybriChain 遵循"只挂关键节点"原则——每个层次选一个代表性入口点，通过调用栈自然关联上下游。
+
+具体而言，在推理引擎的以下类型函数上挂 uprobe/uretprobe：
 
 \begin{itemize}
-    \item \texttt{llama\_decode}：推理主循环入口，每生成一个 token 都会调用一次，是整个推理过程的中心节点；
-    \item \texttt{ggml\_backend\_sched\_graph\_compute\_async}：底层张量计算的调度入口，代表算子级别的执行触发点；
-    \item \texttt{llama\_synchronize}：同步等待点，代表推理过程中等待前序操作完成的等待节点；
-    \item \texttt{llama\_sampler\_sample}（以及 \texttt{common\_sampler\_csample}）：token 采样函数，代表输出生成的关键节点。
+    \item \textbf{推理主循环入口：} 每生成一个 token 必然调用一次，是整个推理过程的中心节点；
+    \item \textbf{张量计算调度入口：} 底层算子执行的触发点，代表计算密集型的调度节点；
+    \item \textbf{同步等待节点：} 推理过程中等待前序操作完成的等待点；
+    \item \textbf{输出采样节点：} token 采样函数，代表推理输出的生成节点。
 \end{itemize}
 
-这四个函数覆盖了推理过程从"计算触发"到"输出生成"的完整路径，是跨语言边界上出现最多的位置。
+这四类节点覆盖了推理过程从"计算触发"到"输出生成"的完整路径。只要它们被观测到，就能覆盖推理的全流程。
 
 在内核系统调用层面，追踪以下类型：read/write（文件和网络 I/O）、futex（线程同步和阻塞等待）、mmap/munmap（内存分配释放）、clone3（线程创建）、openat/close（文件打开关闭）。brk、mprotect、madvise、clock\_gettime 等高频但语义价值低的调用直接排除。
-
-为什么选择这四个函数而不是更多？因为 llama.cpp 的推理主循环就是围绕这四个节点展开的——decode 触发计算调度，计算调度触发 GGML 算子执行，算子执行完要 synchronize，synchronize 完成后 sampler 生成 token。只要这四个节点被观测到，就能覆盖推理的全流程。挂更多函数会引入大量中间层细节，反而增加数据处理难度。
 
 \subsection{eBPF 的优势}
 
@@ -133,17 +132,17 @@ $L \leftarrow \emptyset$ \tcp*[r]{输出列表}
 \end{algorithm}
 \end{figure}
 
-需要特别说明的是：Go 函数上不能挂 uretprobe。Go 1.17+ 使用的 segmented stack 和 jmp tail-call 机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会破坏 Go 的栈帧元数据，导致进程崩溃。因此 HybriChain 的 uprobe 只挂在 llama.cpp 的 C++ 函数上，不碰 Go 函数。这是正确的工程选择，而不是功能缺失。
+需要特别说明的是：在某些运行时环境（如 Go 1.17+）上不能挂 uretprobe，因为该版本的栈管理机制与 uretprobe 的 trampoline 实现不兼容，挂载会导致进程崩溃。因此 HybriChain 的探针只挂在推理引擎的 C/C++ 函数上，不挂 Go 函数。这是正确的工程选择，而不是功能缺失。
 
 \section{数据降噪与事件解析}
 
-bpftrace 的原始输出不是干净的 JSON，而是一行一行的文本，里面混杂了追踪元信息（如 "Tracing... Stop: Ctrl+C"）、事件行和调用栈帧。必须先把这些文本解析成结构化数据，才能做后续分析。
+bpftrace 的原始输出是一行一行的文本，里面混杂了追踪元信息、事件行和调用栈帧。必须先把这些文本解析成结构化数据，才能做后续分析。
 
 trace\_unify.py 的解析流程如下：
 
 \textbf{第一步：识别事件类型。} bpftrace 的输出用标记前缀来区分事件类型：
 \begin{itemize}
-    \item \texttt{@TRACEID@} 开头的是跨进程追踪 ID 事件（daemon 或 runner 侧 \texttt{withTraceID} 入口），后跟角色（\texttt{daemon\_entry} 或 \texttt{runner\_entry}）、时间戳（纳秒）、线程 ID、traceID 值；
+    \item \texttt{@TRACEID@} 开头的是跨进程追踪 ID 事件（由推理引擎内部注入的跟踪函数触发），后跟角色（daemon\_entry 或 runner\_entry）、时间戳（纳秒）、线程 ID、traceID 值；
     \item \texttt{@UPROBE@} 开头的是用户态函数调用事件，后跟函数名、时间戳（纳秒）、线程 ID、耗时（微秒）；
     \item \texttt{@SYSCALL@} 开头的是系统调用事件，后跟调用名、时间戳、线程 ID、耗时和参数（如 bytes=、fd=）；
     \item \texttt{@END@} 标记当前事件的结束。
@@ -151,13 +150,13 @@ trace\_unify.py 的解析流程如下：
 
 \textbf{第二步：维护 traceID 映射表。} 解析过程中维护一个 \texttt{active\_trace\_id[tid] $\to$ traceID} 的映射。当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件继承这个 traceID 作为其 \texttt{trace\_id} 字段。
 
-\textbf{第三步：提取调用栈。} uprobe 事件在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间会输出调用栈帧。调用栈帧里既有可读的函数符号名，也有以 \texttt{0x} 开头的内存地址。地址没有分析价值，直接过滤掉，只保留函数符号名。同时还要对 C++ mangled 符号做 demangle（比如 \texttt{\_Z21common\_sampler\_sampleP14common\_sampler...} 还原成 \texttt{common\_sampler\_sample(common\_sampler*)})。
+\textbf{第三步：提取调用栈。} uprobe 事件在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间会输出调用栈帧。调用栈帧里既有可读的函数符号名，也有以 \texttt{0x} 开头的内存地址。地址没有分析价值，直接过滤掉，只保留函数符号名。同时还要对 C++ mangled 符号做 demangle，还原后的符号名方可与静态符号表匹配。
 
-\textbf{第三步：按时间戳排序。} 所有事件按纳秒级时间戳排序，形成一个统一的时间序列。
+\textbf{第四步：按时间戳排序。} 所有事件按纳秒级时间戳排序，形成一个统一的时间序列。
 
 解析后的数据以 JSON 格式保存，每个事件包含字段：ts\_ns（纳秒时间戳）、tid（线程 ID）、type（traceid、uprobe 或 syscall）、func（函数名）、duration\_us（耗时，微秒）、stack（调用栈帧列表）、extra（额外参数）、\textbf{trace\_id（跨进程追踪 ID）}。
 
-原始 bpftrace 输出通常有大量无效行（启动提示、停止提示、空行），这些在解析阶段直接跳过。
+原始 bpftrace 输出通常有大量无效行（启动提示、停止提示，空行），这些在解析阶段直接跳过。
 
 \section{调用链缝合}
 
@@ -167,18 +166,18 @@ trace\_unify.py 的解析流程如下：
 
 缝合的基本思路是"按线程分组 + 时间窗口切分"。具体来说：
 
-\textbf{按 TID 分组。} 同一线程内的事件按时间戳顺序排列，构成一棵"请求树"——请求树的根节点是一次 HTTP 请求的发起（clone3 系统调用），树的每个节点是一次函数调用或系统调用。
+\textbf{按 TID 分组。} 同一线程内的事件按时间戳顺序排列，构成一棵"请求树"——请求树的根节点是一次 API 请求的发起（clone3 系统调用），树的每个节点是一次函数调用或系统调用。
 
-\textbf{锚点匹配。} 把动态追踪事件中的函数名与静态符号表里的函数名做匹配。比如 bpftrace 捕获到的 \texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode} 对应静态符号表里的 \texttt{llama\_decode}，匹配成功后，\texttt{llama\_decode} 就成了一个"锚点"——它是连接动态轨迹和静态符号图的桥梁。
+\textbf{锚点匹配。} 把动态追踪事件中的函数名与静态符号表里的函数名做匹配。FFI/CGO 桥接层会产生带哈希后缀的桥接函数名（如 \texttt{\_cgo\_HASH\_Cfunc\_xxx}），需要专门处理后才能与目标语言层的原始函数名对应。匹配成功后，该函数就成了"锚点"——它是连接动态轨迹和静态符号图的桥梁。
 
 匹配分几种情况：
 \begin{itemize}
     \item 精确匹配：函数名完全一样，直接对应；
-    \item CGO Wrapper 匹配：\texttt{\_cgo\_HASH\_Cfunc\_llama\_decode} 等价于 \texttt{llama\_decode}，因为 CGO 桥接函数只是 llama.cpp 函数的包装；
-    \item C++ demangle 匹配：C++ 编译器会对函数名做 mangling（如 \texttt{\_Z21common\_sampler\_sample...}），用 \texttt{c++filt} 工具还原后就能匹配。
+    \item FFI 桥接函数匹配：\texttt{\_cgo\_HASH\_Cfunc\_xxx} 等价于目标语言层的 \texttt{xxx}，因为桥接函数只是目标函数的包装；
+    \item C++ demangle 匹配：C++ 编译器对函数名做 mangling，用 \texttt{c++filt} 工具还原后就能匹配。
 \end{itemize}
 
-\textbf{置信度计算。} 每条静态调用边（caller → callee）的置信度由以下规则决定：
+\textbf{置信度计算。} 每条静态调用边（caller $\rightarrow$ callee）的置信度由以下规则决定：
 
 \begin{itemize}
     \item \textbf{Confirmed（确认）：} 这条边两端对应的函数在 $\ge 2$ 棵不同的请求树中同时出现，且 caller 的时间戳在 callee 之前。这意味着跨语言调用关系被多次独立观测到，最可靠。
@@ -192,60 +191,19 @@ trace\_unify.py 的解析流程如下：
 
 \subsection{跨进程调用链缝合}
 
-Ollama 的 daemon 和 runner 是独立进程，同一推理请求的两段（daemon 侧处理和 runner 侧推理）在 TID 编号空间上是完全隔离的。要把这两段缝合起来，需要一个跨进程的关联键。
+推理引擎若采用 daemon + worker 的多进程架构，daemon 进程和 worker 进程是独立的进程，拥有各自独立的线程 ID（TID）编号空间。同一次推理请求在 daemon 侧和 worker 侧会出现在完全不同的 TID 中——这给跨进程调用链缝合带来了根本性挑战。
 
-HybriChain 的方案是：在 daemon 的 HTTP Handler 入口处生成一个 UUID 作为 \texttt{traceID}，通过 HTTP 请求的 \texttt{X-Request-ID} header 传给 runner，runner 在接收请求时读取同一个 header。这两个进程中带有相同 traceID 的事件，属于同一次推理请求。
+HybriChain 的方案是：在 daemon 的 API Handler 入口处生成一个 UUID 作为 \texttt{traceID}，通过推理请求的传递机制（HTTP header 或进程间通信协议）将其传给 worker 进程。两个进程中带有相同 traceID 的事件，属于同一次推理请求。
 
-在实现上，daemon 和 runner 各有一个轻量级的 \texttt{withTraceID} 函数：
+具体实现上，daemon 和 worker 各有一个轻量级的跟踪函数。daemon 在 HTTP Handler 入口生成 traceID，worker 在接收推理任务时读取同一个标识符，两者都将 traceID 作为函数参数传入闭包，bpftrace 在该函数的入口处挂 uprobe 捕获 traceID 值。
 
-\begin{verbatim}
-// daemon: server/routes.go
-func withTraceID(traceID string, handler func()) { handler() }
-func (s *Server) GenerateHandler(c *gin.Context) {
-    traceID := uuid.NewString()  // 每次请求生成一个新 UUID
-    withTraceID(traceID, func() {
-        // 原来的 handler 逻辑，traceID 在闭包里可用
-        r.Completion(ctx, llm.CompletionRequest{
-            TraceID: traceID,  // 透传到发给 runner 的请求里
-            ...
-        })
-    })
-}
+缝合脚本在解析时维护一个 \texttt{active\_trace\_id[tid]} 映射表：遇到跟踪事件时更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件都继承这个 traceID。最后，按 traceID 分组即可将 daemon 侧事件和 worker 侧事件归并到同一条调用链中。
 
-// runner: runner/llamarunner/runner.go
-func withTraceID(traceID string, handler func()) { handler() }
-func (s *Server) completion(w http.ResponseWriter, r *http.Request) {
-    traceID := r.Header.Get("X-Request-ID")
-    withTraceID(traceID, func() {
-        s.runCompletion(w, r, req)  // traceID 在闭包里可用
-    })
-}
-\end{verbatim}
-
-在 bpftrace 脚本中，分别在 daemon 侧和 runner 侧的 \texttt{withTraceID} 入口处挂 uprobe，记录 \texttt{@TRACEID@ daemon\_entry} 和 \texttt{@TRACEID@ runner\_entry} 事件：
-
-\begin{verbatim}
-uprobe:ollama-debug:"server.withTraceID"
-{
-    $ptr = *(uint64)$arg1;   // string data pointer
-    $len = *(uint64)($arg1+8); // string length
-    printf("@TRACEID@ daemon_entry %lu %d %s\n", nsecs, pid, $ptr);
-}
-uprobe:ollama-debug:"llamarunner.withTraceID"
-{
-    $ptr = *(uint64)$arg1;
-    $len = *(uint64)($arg1+8);
-    printf("@TRACEID@ runner_entry %lu %d %s\n", nsecs, pid, $ptr);
-}
-\end{verbatim}
-
-缝合脚本在解析时维护一个 \texttt{active\_trace\_id[tid]} 映射表：当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件都继承这个 traceID。最后，按 traceID 分组即可将 daemon 侧事件和 runner 侧事件归并到同一条调用链中。
-
-同一 traceID 下所有事件按时间戳排序，构成完整的跨进程调用链：\texttt{daemon entry} $\to$ \texttt{llama.cpp function} $\to$ \texttt{syscall} $\to$ \texttt{runner entry} $\to$ \texttt{llama.cpp function} $\to$ \texttt{syscall}。
+同一 traceID 下所有事件按时间戳排序，构成完整的跨进程调用链：\texttt{daemon entry} $\to$ \texttt{推理引擎内部函数} $\to$ \texttt{syscall} $\to$ \texttt{worker entry} $\to$ \texttt{推理引擎内部函数} $\to$ \texttt{syscall}。
 
 \section{跨语言符号分类体系}
 
-缝合后的调用链里，每个节点是函数符号。这些符号来自三个完全不同的命名空间：Go 运行时（runtime.*）、CGO 桥接层（\_cgo\_*）、llama.cpp C++ 库（llama\_*、ggml\_*）。如果直接把这些符号名展示给分析人员，他们很难理解一条调用链从哪一层跨越到哪一层。
+缝合后的调用链里，每个节点是函数符号。这些符号来自完全不同的命名空间：高层运行时（Python/Go）、FFI 桥接层、C/C++ 推理库、内核系统调用。如果直接把这些符号名展示给分析人员，他们很难理解一条调用链从哪一层跨越到哪一层。
 
 HybriChain 按语义把推理引擎内部函数划分为八个层次，每个层次对应一类明确的职责：
 
@@ -257,17 +215,17 @@ HybriChain 按语义把推理引擎内部函数划分为八个层次，每个层
         \hline
         \textbf{层次} & \textbf{名称} & \textbf{说明} \\
         \hline
-        L1 & go\_cgo\_bridge & Go 调用 C++ 的桥接函数，带 \texttt{\_cgo\_} 前缀，由 Go 编译器自动生成 \\
+        L1 & ffi\_bridge & FFI/CGO 桥接函数，带特定前缀，由编译器或 FFI 生成器自动生成 \\
         \hline
-        L2 & llama\_api & llama.cpp 的顶层 API，如 \texttt{llama\_decode}、\texttt{llama\_model\_load\_from\_file}，是外部调用的入口函数 \\
+        L2 & inference\_api & 推理引擎的顶层 API，如主循环入口、模型加载函数，是外部调用的入口函数 \\
         \hline
-        L3 & batch\_sampler & 批处理和 token 采样相关函数，如 \texttt{llama\_batch\_add}、\texttt{llama\_sampler\_sample} \\
+        L3 & batch\_sampler & 批处理和 token 采样相关函数，如 \texttt{sampler\_sample} \\
         \hline
-        L4 & sched\_compute & GGML 调度与计算入口，如 \texttt{ggml\_backend\_sched\_graph\_compute\_async} \\
+        L4 & sched\_compute & 张量计算调度入口，如 \texttt{backend\_sched\_graph\_compute\_async} \\
         \hline
-        L5 & ggml\_backend & GGML 后端管理，如内存分配器初始化 \\
+        L5 & backend & 推理库后端管理，如内存分配器初始化 \\
         \hline
-        L6 & ggml\_ops & GGML 张量运算，如矩阵乘法、Softmax 等具体算子 \\
+        L6 & ops & 张量运算，如矩阵乘法、Softmax、位置编码等具体算子 \\
         \hline
         L7 & vocab & 词表相关，如分词（tokenize）和反分词（detokenize） \\
         \hline
@@ -276,22 +234,9 @@ HybriChain 按语义把推理引擎内部函数划分为八个层次，每个层
     \end{tabular}
 \end{table}
 
-分类的依据是函数名前缀和命名规范。例如，以 \texttt{\_cgo\_} 开头的函数一定是桥接层（L1）；以 \texttt{llama\_} 开头且包含 decode/model/context 的属于 API 层（L2）；以 \texttt{ggml\_} 开头且包含 sched/graph\_compute 的属于调度层（L4）。
+分类的依据是函数名前缀和命名规范。例如，带 FFI 桥接特定前缀的函数属于 L1；以推理引擎名（llama、mamba 等）为前缀且包含主循环关键词的属于 L2；以张量库名（ggml、flash-attn 等）为前缀且包含调度关键词的属于 L4。
 
-分类的用途是：当缝合结果显示一条边是 L1 $\to$ L4 时，分析人员立刻知道"Go 层通过 CGO 桥接调用了 GGML 调度函数"。这个语义信息是原始函数符号名给不了的。
-
-从 ollama-debug 二进制中提取的实际函数名示例如下（用 \texttt{nm -C --defined-only ollama-debug | grep} 获取）：
-
-\begin{itemize}
-    \item \textbf{L1（go\_cgo\_bridge）}：\texttt{\_cgoexp\_8aa400f2462b\_llama\_model\_load\_from\_file}、\texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode}，即 Go 调用 C++ 的桥接函数；
-    \item \textbf{L2（llama\_api）}：\texttt{llama\_decode}、\texttt{llama\_model\_load\_from\_file}、\texttt{llama\_new\_context\_with\_model}；
-    \item \textbf{L3（batch\_sampler）}：\texttt{llama\_batch\_add}、\texttt{llama\_sampler\_sample}、\texttt{common\_sampler\_csample}；
-    \item \textbf{L4（sched\_compute）}：\texttt{ggml\_backend\_sched\_graph\_compute\_async}、\texttt{ggml\_backend\_sched\_synchronize}；
-    \item \textbf{L5（ggml\_backend）}：\texttt{ggml\_backend\_cpu\_init}、\texttt{ggml\_backend\_buffer\_type\_init}；
-    \item \textbf{L6（ggml\_ops）}：\texttt{ggml\_mul\_mat}（矩阵乘法）、\texttt{ggml\_soft\_max}（Softmax）、\texttt{ggml\_rope}（RoPE 位置编码）；
-    \item \textbf{L7（vocab）}：\texttt{llama\_token\_to\_str}、\texttt{llama\_tokenize}、\texttt{llama\_detokenize}；
-    \item \textbf{L8（memory）}：对应 \texttt{mmap/munmap} 系统调用，在 uprobe 层没有独立函数，属于系统调用层面的行为。
-\end{itemize}
+分类的用途是：当缝合结果显示一条边是 L1 $\to$ L4 时，分析人员立刻知道"FFI 桥接层调用了张量调度函数"。这个语义信息是原始函数符号名给不了的。
 
 分类算法本身用前缀匹配实现（见 4.4 节），每次处理一个符号时，从 L1 到 L8 依次检查前缀规则，命中即停止。这保证了分类的确定性——每个函数只属于一个层次。
 
@@ -328,17 +273,17 @@ $]$
 
 共实现了六条规则，每条规则的触发条件、阈值选择依据和实测数据支撑如下：
 
-\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，llama.cpp 使用多线程推理时大量使用 futex 来协调各工作线程。当一个线程在 futex 上等待超过 1 秒，说明存在线程同步瓶颈。阈值 1 秒的选取依据是：正常情况下 llama.cpp 的 futex 等待时间一般在几毫秒到几百毫秒之间，超过 1 秒意味着存在锁竞争或线程死锁。实测数据：在 Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒，发生在 GGML 张量计算调度阶段，属于 CPU-only 环境下 llama.cpp 多线程同步的性能瓶颈。超过 5 秒触发高风险告警，1\~5 秒触发中风险告警。
+\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，推理引擎使用多线程推理时大量使用 futex 来协调各工作线程。当一个线程在 futex 上等待超过 1 秒，说明存在线程同步瓶颈。阈值 1 秒的选取依据是：正常情况下推理引擎的 futex 等待时间一般在几毫秒到几百毫秒之间，超过 1 秒意味着存在锁竞争或线程死锁。超过 5 秒触发高风险告警，1\~5 秒触发中风险告警。
 
-\textbf{规则 2：read 大小异常检测。} 正常的 read 系统调用通常是 512B（HTTPS 元数据传输）或 4KB（页对齐读取）。如果一次 read 的返回值超过 128KB，说明正在读取大块数据——这在正常推理过程中不应该出现。触发场景包括：超长 prompt 注入（攻击者通过 API 传入超长字符串，导致模型文件被重新加载或大块内存被分配）、异常文件读取（读取非预期的大文件）。超过 128KB 触发高风险告警。
+\textbf{规则 2：read 大小异常检测。} 正常的 read 系统调用通常是 512B（HTTPS 元数据传输）或 4KB（页对齐读取）。如果一次 read 的返回值超过 128KB，说明正在读取大块数据——这在正常推理过程中不应该出现。触发场景包括：超长 prompt 注入（攻击者通过 API 传入超长字符串，导致大块内存被分配）、异常文件读取。超过 128KB 触发高风险告警。
 
-\textbf{规则 3：HTTP socket 非标准写入检测。} Ollama 的 daemon 进程通过 HTTP 与 runner 通信，HTTP socket 的文件描述符固定为 3。当向 fd=3 写入超过 1KB 数据时，说明推理结果正在通过 HTTP 响应返回，这是正常行为。但如果写入数据量异常大（比如一个超长模型推理输出），可以作为数据外传监控的起点。规则还监控向其他非标准 fd（既不是 0/1/2 也不是 3）的写入，这类行为可能是非预期的网络外联或文件写入。fd=3 且超过 1KB 触发中风险告警，其他异常 fd 触发低风险告警。
+\textbf{规则 3：推理结果外传检测。} 推理引擎通常通过固定的通信 socket（文件描述符 3）返回推理结果。当向该 socket 写入超过 1KB 时，属于正常行为；但如果写入数据量异常大，可能意味着数据外传。规则还监控向其他非标准 fd（既不是 0/1/2 也不是 3）的写入，这类行为可能是非预期的网络外联或文件写入。超过阈值触发中风险告警。
 
-\textbf{规则 4：mmap 大小异常检测。} KV Cache 分配通常在几百 MB 到 1GB 之间（取决于模型大小和上下文长度）。如果 mmap 映射超过 1GB，可能意味着配置错误或遭受攻击（如尝试映射整个磁盘）。超过 1GB 触发 CRITICAL 告警，512MB\~1GB 触发高风险告警。实测中观察到 TinyLlama-1.1B 的 KV Cache 分配约为 256MB，Qwen2-0.5B 约为 512MB，这两个值可作为正常参考基准。
+\textbf{规则 4：mmap 大小异常检测。} KV Cache 分配通常在几百 MB 到 1GB 之间（取决于模型大小和上下文长度）。如果 mmap 映射超过 1GB，可能意味着配置错误或遭受攻击（如尝试映射整个磁盘）。超过 1GB 触发 CRITICAL 告警，512MB\~1GB 触发 HIGH 告警。
 
-\textbf{规则 5：敏感路径访问检测。} 对特定路径的文件访问可能意味着安全风险。规则监控 openat 系统调用，检测以下模式：\texttt{blobs} 目录（中风险，Ollama 存放模型缓存的位置）、\texttt{.gguf} 和 \texttt{.ggml} 模型文件（高风险，检测模型文件异常访问），\texttt{server.json}（低风险，Ollama 配置文件）、\texttt{model.json}（中风险，模型元数据）。这一规则借鉴了 CVE-2024-37032（Probllama）的攻击特征——攻击者通过目录遍历访问模型存储路径。
+\textbf{规则 5：敏感路径访问检测。} 对特定路径的文件访问可能意味着安全风险。规则监控 openat 系统调用，检测以下模式：blob 存储目录（中风险）、模型文件（高风险，检测模型文件异常访问）、服务配置文件（低风险）、模型元数据（中风险）。这一规则借鉴了目录遍历类攻击（CVE-2024-37032）的攻击特征。
 
-\textbf{规则 6：HTTP socket 大量读入检测。} 与规则 3 对称，监控从 HTTP socket（fd=3）读入大量数据。正常的 HTTP 请求通常只有几 KB（prompt 和参数），如果一次 read 返回超过 1MB，说明收到了异常大的输入数据，可能面临 prompt 注入或 DoS 攻击。超过 1MB 触发高风险告警。
+\textbf{规则 6：大量数据读入检测。} 与规则 3 对称，监控从推理通信 socket 读入大量数据。正常的推理请求通常只有几 KB（prompt 和参数），如果一次 read 返回超过 1MB，说明收到了异常大的输入数据，可能面临 prompt 注入或 DoS 攻击。超过 1MB 触发高风险告警。
 
 各规则独立遍历事件序列，互不干扰。告警结果包含时间戳、线程 ID、告警类型、风险等级和详细上下文（触发阈值、实际值等），按 CRITICAL $\to$ HIGH $\to$ MEDIUM $\to$ LOW 的顺序聚合输出。
 
@@ -348,4 +293,4 @@ HybriChain 的设计围绕一个核心目标展开：把"API 请求进来了，�
 
 为了做到这一点，系统分三步走。第一步是追踪：用 eBPF 的 uprobe 和 tracepoint 在推理引擎的关键节点上采集事件，得到原始但分散的函数调用和系统调用记录。第二步是处理：把原始文本解析成结构化数据，过滤掉 brk、mprotect 等没有分析价值的噪声事件。第三步是缝合：把静态符号表和动态轨迹对齐，给每条跨语言调用边打上置信度标签，让原本割裂的符号空间变成可以理解的层次化调用链。最后，在缝合结果上跑异常检测规则，发现推理引擎中的潜在问题。
 
-下一章会详细说明这些设计方案在 Ollama 上的具体实现，包括 bpftrace 脚本怎么写、Python 脚本怎么解析缝合、以及每一步的参数和阈值是怎么定的。
+下一章将以具体开源推理引擎 Ollama 为例，说明这些设计方案的具体实现，包括针对其多进程架构和 FFI 桥接层特性的专门处理方案。
