@@ -224,55 +224,79 @@ python3 stitcher.py trace_events.json \
 
 Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端拥有完全不同的 TID 编号空间。这是第三章 3.5 节跨进程缝合方案在 Ollama 上必须解决的核心挑战。
 
-OLLAMA 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
+Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
-针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入一个轻量级的 \texttt{withTraceID} 函数，利用其作为 bpftrace uprobe 的挂载点，同时通过 HTTP 请求的 \texttt{X-Request-ID} header 在两个进程间传递 traceID。
+针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件。
 
-具体注入方式如下（已实际修改 Ollama 源码）：
+\textbf{改动一：llm/server.go。} 在 \texttt{CompletionRequest} 结构体中加入 \texttt{TraceID} 字段，并在向 runner 发起 HTTP 请求时将 traceID 写入 \texttt{X-Request-ID} header：
 
 \begin{verbatim}
-// daemon: server/routes.go
-func withTraceID(traceID string, handler func()) { handler() }
-func (s *Server) GenerateHandler(c *gin.Context) {
-    traceID := uuid.NewString()  // 每次请求生成一个新 UUID
-    withTraceID(traceID, func() {
-        r.Completion(ctx, llm.CompletionRequest{
-            TraceID: traceID,  // 透传到发给 runner 的请求里
-            ...
-        })
-    })
+// llm/server.go
+type CompletionRequest struct {
+    TraceID string  // HybriChain: trace ID for cross-process call chain stitching
+    Prompt  string
+    ...
 }
 
-// runner: runner/llamarunner/runner.go
+// 发起 HTTP 请求前：
+serverReq.Header.Set("Content-Type", "application/json")
+if req.TraceID != "" {
+    serverReq.Header.Set("X-Request-ID", req.TraceID)
+}
+\end{verbatim}
+
+\textbf{改动二：server/routes.go。} 在 \texttt{GenerateHandler} 和 \texttt{ChatHandler} 的推理入口处各注入一个 \texttt{withTraceID} 函数，在每次请求时生成新的 UUID 作为 traceID，并传入 \texttt{CompletionRequest.TraceID}：
+
+\begin{verbatim}
+// server/routes.go
+func withTraceID(traceID string, handler func()) {
+    handler()
+}
+
+func (s *Server) GenerateHandler(c *gin.Context) {
+    traceID := uuid.NewString()      // 每次请求生成一个新 UUID
+    ...
+    withTraceID(traceID, func() {
+        r.Completion(ctx, llm.CompletionRequest{
+            TraceID: traceID,        // 透传到发给 runner 的请求里
+            Prompt:  prompt,
+            ...
+        }, func(cr llm.CompletionResponse) { ... })
+    })
+}
+\end{verbatim}
+
+\texttt{withTraceID} 本身是空壳函数（仅执行 \texttt{handler()}），性能影响为零。它存在的唯一目的是为 bpftrace 提供一个安全的 uprobe 挂载点来捕获 traceID——在 Go 运行时上不能挂 uretprobe，但 uprobe 是安全的。
+
+\textbf{改动三：runner/llamarunner/runner.go。} 从 HTTP header 中读取 \texttt{X-Request-ID}，同样注入 \texttt{withTraceID}，将实际的推理逻辑封装为 \texttt{runCompletion}：
+
+\begin{verbatim}
+// runner/llamarunner/runner.go
 func withTraceID(traceID string, handler func()) { handler() }
+
 func (s *Server) completion(w http.ResponseWriter, r *http.Request) {
     traceID := r.Header.Get("X-Request-ID")
+    if traceID == "" {
+        traceID = "no-trace-id"
+    }
     withTraceID(traceID, func() {
         s.runCompletion(w, r, req)
     })
 }
-\end{verbatim}
 
-其中 \texttt{withTraceID} 本身是空壳函数（仅执行 \texttt{handler()}），性能影响为零，但它为 bpftrace 提供了一个安全的 uprobe 挂载点来捕获 traceID。
-
-在 bpftrace 脚本中，分别在 daemon 侧和 runner 侧的 \texttt{withTraceID} 入口处挂 uprobe：
-
-\begin{verbatim}
-uprobe:/path/to/ollama-debug:"server.withTraceID"
-{
-    $ptr = *(uint64)$arg1;   // string data pointer
-    $len = *(uint64)($arg1+8); // string length
-    printf("@TRACEID@ daemon_entry %lu %d %s\n", nsecs, pid, $ptr);
-}
-uprobe:/path/to/ollama-debug:"llamarunner.withTraceID"
-{
-    $ptr = *(uint64)$arg1;
-    $len = *(uint64)($arg1+8);
-    printf("@TRACEID@ runner_entry %lu %d %s\n", nsecs, pid, $ptr);
+func (s *Server) runCompletion(...) {
+    // 原 completion 函数的全部逻辑
 }
 \end{verbatim}
 
-脚本解析时维护 \texttt{active\_trace\_id[tid]} 映射表，遇到 \texttt{@TRACEID@} 事件时更新，后续 uprobe/syscall 事件继承该 traceID。最终按 traceID 分组，将 daemon 侧和 runner 侧的事件归并到同一条完整调用链中。
+至此，完整的数据流如下：
+
+\begin{enumerate}[(1)]
+    \item daemon 的 \texttt{GenerateHandler} 入口：\texttt{uuid.NewString()} 生成 traceID，调用 \texttt{withTraceID}，bpftrace 在此处捕获 \texttt{@TRACEID@ daemon\_entry}；
+    \item daemon 向 runner 发起 HTTP POST，\texttt{X-Request-ID: <traceID>} 随请求发出；
+    \item runner 的 \texttt{completion} 入口：读取 header 得到 traceID，调用 \texttt{withTraceID}，bpftrace 在此处捕获 \texttt{@TRACEID@ runner\_entry}；
+    \item 后续所有 uprobe/syscall 事件通过活跃的 traceID 继承关系，被归并到同一次推理请求的调用链中。
+\end{enumerate}
 
 这一方案完全针对 Ollama 的多进程 HTTP 通信架构量身定制，其他推理引擎若采用不同的进程间通信机制，需要设计相应的 traceID 传递方式。
 
