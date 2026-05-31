@@ -340,7 +340,7 @@ TinyLlama-1.1B 模型的推理执行阶段共包含约 119 次 llama\_decode 调
         \hline
         内存占用 (RSS) & 峰值 4.8GB & 稳定在 4.5–4.8GB & 稳态内存无持续增长 \\
         \hline
-        llama\_decode 调用次数 & 约 72 次 & 3941 次 & 按时间比例与请求数线性外推 \\
+        llama\_decode 调用次数 & 约 72 次 & 3941 次 & 30 分钟推理全程累计捕获 \\
         \hline
     \end{tabular}
 \end{table}
