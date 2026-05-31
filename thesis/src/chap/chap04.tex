@@ -9,11 +9,11 @@
 
 Ollama 不是普通的单进程程序，它有三个在实现第三章追踪方案时必须处理的特点，理解这些特点是后续各节实现的前提。
 
-\textbf{多进程架构。} Ollama 采用 daemon + runner 的双进程架构：daemon 进程负责接收外部 HTTP 请求，runner 子进程负责实际执行推理。两者通过 HTTP over TCP（127.0.0.1 随机端口）通信，而非传统的 Unix Domain Socket。daemon 和 runner 的 TID 编号空间各自独立，同一推理请求在两端的 TID 不同，这给跨进程缝合带来了根本性挑战。
+多进程架构。Ollama 采用 daemon + runner 的双进程架构：daemon 进程负责接收外部 HTTP 请求，runner 子进程负责实际执行推理。两者通过 HTTP over TCP（127.0.0.1 随机端口）通信，而非传统的 Unix Domain Socket。daemon 和 runner 的 TID 编号空间各自独立，同一推理请求在两端的 TID 不同，这给跨进程缝合带来了根本性挑战。
 
-\textbf{Go-CGO 混合层。} Ollama 的 API 层用 Go 编写，通过 CGO 调用底层的 llama.cpp C++ 推理库。Go 编译器生成的 CGO 桥接函数名并非直接对应源码中的函数名，而是包含哈希后缀，如 \texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode}。这种名字无法与 llama.cpp 的 \texttt{llama\_decode} 直接对应，需要专门处理。
+Go-CGO 混合层。Ollama 的 API 层用 Go 编写，通过 CGO 调用底层的 llama.cpp C++ 推理库。Go 编译器生成的 CGO 桥接函数名并非直接对应源码中的函数名，而是包含哈希后缀，如 \texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode}。这种名字无法与 llama.cpp 的 \texttt{llama\_decode} 直接对应，需要专门处理。
 
-\textbf{Go 运行时与探针兼容性。} Go 1.17+ 的栈管理机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会导致进程崩溃。因此第三章的 uprobe 策略在 Ollama 上需要做出调整：Go 层的事件采集依赖第三章设计的轻量级注入方案，C/C++ 层则直接挂载 uprobe/uretprobe。
+Go 运行时与探针兼容性。Go 1.17+ 的栈管理机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会导致进程崩溃。因此第三章的 uprobe 策略在 Ollama 上需要做出调整：Go 层的事件采集依赖第三章设计的轻量级注入方案，C/C++ 层则直接挂载 uprobe/uretprobe。
 
 \section{eBPF 追踪脚本的具体实现}
 
@@ -326,17 +326,17 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 六条规则的具体实现逻辑与第三章通用设计一致，Ollama 场景下的阈值设定参考了实测数据：
 
-\textbf{futex\_block 规则。} 条件是 ev.type == “syscall”且 ev.func == “futex”且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。实测：Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒。
+futex\_block 规则。 条件是 ev.type == “syscall”且 ev.func == “futex”且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。实测：Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒。
 
-\textbf{mmap\_size 规则。} 条件是 ev.func 匹配 mmap/mmap2 且从 extra 字典中取 length 字段。如果 length > 1GB，级别为 CRITICAL；如果 512MB < length <= 1GB，级别为 HIGH。实测基准：TinyLlama-1.1B KV Cache 约为 256MB，Qwen2-0.5B 约为 512MB。
+mmap\_size 规则。 条件是 ev.func 匹配 mmap/mmap2 且从 extra 字典中取 length 字段。如果 length > 1GB，级别为 CRITICAL；如果 512MB < length <= 1GB，级别为 HIGH。实测基准：TinyLlama-1.1B KV Cache 约为 256MB，Qwen2-0.5B 约为 512MB。
 
-\textbf{sensitive\_path 规则。} 条件是 ev.func == “openat”且打开的路径匹配敏感模式。敏感模式包括：blobs（中风险，Ollama 存放模型缓存的位置）、.gguf/.ggml（高风险）、server.json（低风险）、model.json（中风险）。路径字符串用 lower() 统一大小写后做子串匹配。
+sensitive\_path 规则。 条件是 ev.func == “openat”且打开的路径匹配敏感模式。敏感模式包括：blobs（中风险，Ollama 存放模型缓存的位置）、.gguf/.ggml（高风险）、server.json（低风险）、model.json（中风险）。路径字符串用 lower() 统一大小写后做子串匹配。
 
-\textbf{read\_size\_anomaly 规则。} 条件是 ev.func == “read”且返回值（bytes 字段）> 128KB。一次正常的 read 通常是 512B（HTTPS buffer）或 4KB（页对齐），超过 128KB 说明在读大块数据，可能是 prompt 注入或异常数据传输。
+read\_size\_anomaly 规则。 条件是 ev.func == “read”且返回值（bytes 字段）> 128KB。一次正常的 read 通常是 512B（HTTPS buffer）或 4KB（页对齐），超过 128KB 说明在读大块数据，可能是 prompt 注入或异常数据传输。
 
-\textbf{write\_non\_stdout 规则。} 条件是 ev.func 匹配 write/sendto/send 且 fd 不在标准描述符（0, 1, 2）范围内。如果 fd == 3（Ollama HTTP socket）且写入超过 1KB，级别是中风险，表示可能有推理结果外传。
+write\_non\_stdout 规则。 条件是 ev.func 匹配 write/sendto/send 且 fd 不在标准描述符（0, 1, 2）范围内。如果 fd == 3（Ollama HTTP socket）且写入超过 1KB，级别是中风险，表示可能有推理结果外传。
 
-\textbf{http\_socket\_read\_anomaly 规则。} 条件是 fd == 3 的 read 调用且 bytes > 1MB。Ollama HTTP socket 上的大块读入可能表示收到了大量输入数据，存在注入风险。
+http\_socket\_read\_anomaly 规则。 条件是 fd == 3 的 read 调用且 bytes > 1MB。Ollama HTTP socket 上的大块读入可能表示收到了大量输入数据，存在注入风险。
 
 规则引擎的设计考虑是：每条规则独立运行，互不依赖，也不共享状态。这样做的好处是新规则的添加不影响现有逻辑，只需要把新函数加入规则列表即可。
 

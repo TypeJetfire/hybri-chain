@@ -154,7 +154,7 @@ trace\_unify.py 的解析流程如下：
 
 \textbf{第四步：按时间戳排序。} 所有事件按纳秒级时间戳排序，形成一个统一的时间序列。
 
-解析后的数据以 JSON 格式保存，每个事件包含字段：ts\_ns（纳秒时间戳）、tid（线程 ID）、type（traceid、uprobe 或 syscall）、func（函数名）、duration\_us（耗时，微秒）、stack（调用栈帧列表）、extra（额外参数）、\textbf{trace\_id（跨进程追踪 ID）}。
+解析后的数据以 JSON 格式保存，每个事件包含字段：\texttt{ts\_ns}（纳秒时间戳）、\texttt{tid}（线程 ID）、\texttt{type}（traceid、uprobe 或 syscall）、\texttt{func}（函数名）、\texttt{duration\_us}（耗时，微秒）、\texttt{stack}（调用栈帧列表）、\texttt{extra}（额外参数）、\texttt{trace\_id}（跨进程追踪 ID）。
 
 原始 bpftrace 输出通常有大量无效行（启动提示、停止提示，空行），这些在解析阶段直接跳过。
 
