@@ -79,11 +79,11 @@ Ground Truth 由源码级调用关系构建。通过对 llama.cpp 源码中的�
 
 精确率做到了全部确认——缝合模块认定的每一条边均真实可靠，不存在误报。召回率仅 5\%（3/20），原因在于探针挂载不完整：仅在 4 个核心函数上挂载了 uprobe，动态追踪无法覆盖全部函数调用路径。加入 Inferred 边后，召回率提升至 40\%（12/20），说明时间窗口启发式推断确实能补充一部分直接观测遗漏的调用关系。Confirmed 边全部落在 CGO 桥接层（Go $\rightarrow$ llama.cpp），这正是 uprobe 探针挂载的位置所在。
 
-\subsection{缝合结果 Listing}
+\subsection{缝合结果}
 
-代码~\ref{lst:confirmed} 列出了缝合输出的三条 Confirmed 边，每条记录包含源节点、目标节点、置信状态与层间跨越关系。
+示例~\ref{ex:confirmed} 列出了缝合输出的三条 Confirmed 边，每条记录包含源节点、目标节点、置信状态与层间跨越关系。
 
-\begin{lstlisting}[caption={Confirmed 缝合边输出（JSON 片段）}, label={lst:confirmed}]
+\begin{lstlisting}[caption={Confirmed 缝合边输出（JSON 片段）}, label={ex:confirmed}]
 {“from”:“_cgo_*_Cfunc_llama_decode”,“to”:“llama_decode”,
  “confidence”:“confirmed”,“layer_from”:“go_cgo_bridge”,“layer_to”:“llama_api”}
 {“from”:“_cgo_*_Cfunc_common_sampler_csample”,“to”:“common_sampler_csample”,
@@ -243,9 +243,9 @@ TinyLlama-1.1B 模型的推理执行阶段共包含约 119 次 llama\_decode 调
     \end{tabular}
 \end{table}
 
-代码~\ref{lst:alerts} 展示了前 10 条阻塞时长最长的 futex 告警（按阻塞时长降序）。
+示例~\ref{ex:alerts} 展示了前 10 条阻塞时长最长的 futex 告警（按阻塞时长降序）。
 
-\begin{lstlisting}[caption={Top 10 futex 阻塞告警（JSON 片段）}, label={lst:alerts}]
+\begin{lstlisting}[caption={Top 10 futex 阻塞告警（JSON 片段）}, label={ex:alerts}]
 {“tid”:45633,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:15186.0}
 {“tid”:41060,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9791.7}
 {“tid”:41122,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9790.5}

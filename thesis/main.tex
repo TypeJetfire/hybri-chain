@@ -28,7 +28,22 @@
 \usepackage{subfig}                % 子图宏包
 \usepackage{booktabs}              % 三线表
 \usepackage{enumerate}             % 有序列表宏包
-\usepackage[linesnumbered,ruled,commentsnumbered]{algorithm2e}  % 伪代码环境
+\usepackage[linesnumbered,ruled,commentsnumbered]{algorithm2e}
+\SetAlgorithmName{算法}{算法}{算法清单}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  captionpos=b,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  breaklines=true,
+  columns=flexible,
+  language=Python,
+}
+\AtBeginDocument{
+  \renewcommand{\thelstlisting}{\thechapter.\arabic{lstlisting}}
+}
 
 % 兼容旧写法 \subfigure[标题]{...}
 \providecommand{\subfigure}[2][]{\subfloat[#1]{#2}}
