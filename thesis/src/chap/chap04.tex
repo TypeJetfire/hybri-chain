@@ -34,26 +34,37 @@ Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下
     \item \texttt{llama\_batch\_get\_one}：批处理函数。
 \end{enumerate}
 
-每个探针的工作方式是：用 per-thread 哈希表记录进入时刻，uretprobe 取出时刻计算耗时，然后输出事件行。
+具体探针配置用算法~\ref{fig:uprobe-config} 描述。其中哈希表记录各线程的进入时刻，uretprobe 从哈希表取出时刻计算耗时后立即删除对应条目，避免哈希表无限增长：
 
-具体代码结构（以 \texttt{llama\_decode} 为例）：
+\begin{algorithm}[H]
+\caption{uprobe/uretprobe 配置（以 llama\_decode 为例）}
+\label{fig:uprobe-config}
+\DontPrintSemicolon
+\KwIn{binary path $B$；函数名 $F$；uprobe 事件流}
+\KwOut{带耗时的 uprobe 事件行列表 $L$}
 
-\begin{verbatim}
-uprobe:/path/to/ollama-debug:"llama_decode"
-{
-    @start_llama_decode[tid] = nsecs;
+\BlankLine
+\CommentSty{uprobe：函数入口}
+\texttt{uprobe:$B$:"$F$"}
+\BlankLine
+$T \leftarrow \texttt{tid}()$\;
+$\text{per\_tid\_start}[T] \leftarrow \texttt{nsecs}()$
+
+\BlankLine
+\CommentSty{uretprobe：函数返回点}
+\texttt{uretprobe:$B$:"$F$"}
+\BlankLine
+$T \leftarrow \texttt{tid}()$\;
+\If{$T \in \text{per\_tid\_start}$}{
+    $t_{\text{start}} \leftarrow \text{per\_tid\_start}[T]$\;
+    $t_{\text{end}} \leftarrow \texttt{nsecs}()$\;
+    $d \leftarrow (t_{\text{end}} - t_{\text{start}}) / 1000$\;
+    $\text{printf}("@UPROBE@$ F $t_{\text{end}}$ $T$ $d \backslash n")$\;
+    $\text{print}(\text{ustack}(32))$\;
+    $\text{printf}("@END@\backslash n")$\;
+    $\text{delete}(\text{per\_tid\_start}, T)$
 }
-
-uretprobe:/path/to/ollama-debug:"llama_decode"
-{
-    $dur = (nsecs - @start_llama_decode[tid]) / 1000;
-    delete(@start_llama_decode[tid]);
-    printf("@UPROBE@ llama_decode %lu %d %lu\n",
-           nsecs, tid, $dur);
-    print(ustack(32));
-    printf("@END@\n");
-}
-\end{verbatim}
+\end{algorithm}
 
 输出格式中，\texttt{@UPROBE@} 是标记前缀，依次是函数名、纳秒时间戳、线程 ID、耗时（微秒），然后是调用栈帧，最后是 \texttt{@END@} 标记。
 
@@ -84,27 +95,72 @@ read/write 的过滤条件是：返回值必须大于 0（失败的调用不记�
 
 本节对应第三章 3.3 节的通用解析方案在 Ollama 上的具体落地。
 
-trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。
-
-解析的核心是状态机逻辑：以 \texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@} 四个标记来识别事件边界。
-
-当遇到 \texttt{@TRACEID@} 时，提取角色（daemon\_entry 或 runner\_entry）、时间戳、线程 ID 和 traceID 值，同时更新解析器内部的 \texttt{active\_trace\_id[tid]} 映射表，后续事件继承这个 traceID。
-
-当遇到 \texttt{@UPROBE@} 时，提取函数名、时间戳（纳秒）、线程 ID 和耗时，同时清空调用栈缓冲区，状态切换为"正在读 uprobe 栈"。当前事件的 traceID 从 \texttt{active\_trace\_id} 映射表中取。
-
-在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间，所有非空行都是调用栈帧。如果是内存地址（以 \texttt{0x} 开头），直接跳过；如果是函数符号名，存入栈帧列表。
-
-当遇到 \texttt{@SYSCALL@} 时，提取系统调用名、时间戳、线程 ID，从参数字符串（如 \texttt{dur=1234 bytes=4096}）中解析出耗时和参数值，存入 extra 字典。
-
-当遇到 \texttt{@END@} 时，如果当前状态是 uprobe，把收集到的函数名、时间戳、线程 ID、耗时和调用栈帧打包成一个 Event 对象；如果状态是 syscall，打包成不含调用栈的 Event 对象。然后重置状态，读取下一行。
-
-所有 Event 对象按纳秒时间戳排序，输出为 JSON 列表。
-
-需要过滤的无效行包括：空行、以 "Tracing" 开头的启动提示、以 "Stop" 开头的停止提示、以 "Attaching" 开头的附加探针提示、以 "---" 开头的分隔线。
-
-调用栈的 demangle 处理：bpftrace 输出的是 C++ mangled 符号（如 \texttt{\_Z21common\_sampler\_sampleP14common\_sampler...}），直接用系统的 \texttt{c++filt} 工具还原成可读形式。
+trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。解析核心是状态机，以四种标记（\texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@}）驱动状态转换，如算法~\ref{fig:parser-fsm} 所示：
 
 trace\_unify.py 输出的 JSON 文件是后续所有处理脚本的数据来源，也是实验数据的基础。
+
+\begin{algorithm}[H]
+\caption{bpftrace 原始输出的解析状态机}
+\label{fig:parser-fsm}
+\DontPrintSemicolon
+\KwIn{bpftrace 原始文本行列表 $L$}
+\KwOut{事件对象列表 $E$，每个事件包含 $ts\_ns,\ tid,\ type,\ func,\ dur,\ stack,\ trace\_id,\ extra$}
+
+\BlankLine
+$\text{STATE} \leftarrow \text{IDLE}$\;
+$\text{active\_trace\_id} \leftarrow \emptyset$ \tcp*[r]{tid $\rightarrow$ traceID 映射表}
+$\text{cur\_stack} \leftarrow []$\;
+$\text{cur\_func} \leftarrow \text{""}$\;
+$\text{cur\_ts} \leftarrow 0$\;
+$\text{cur\_tid} \leftarrow 0$\;
+$\text{cur\_dur} \leftarrow 0$\;
+$E \leftarrow []$
+
+\BlankLine
+\ForEach{$\text{line} \in L$}{
+    \If{$\text{line} = \text{""}$} {$pass$ \tcp*{跳过空行}}
+    \ElseIf{$\text{line}.\text{startsWith}("@TRACEID@") \}$}{
+        $parts \leftarrow \text{line}.\text{split}()$\;
+        $T \leftarrow \text{int}(parts[3])$\;
+        $\text{active\_trace\_id}[T] \leftarrow parts[4]$
+    }
+    \ElseIf{$\text{line}.\text{startsWith}("@UPROBE@") \}$}{
+        $parts \leftarrow \text{line}.\text{split}()$\;
+        $\text{STATE} \leftarrow \text{BUILDING\_UPROBE}$\;
+        $\text{cur\_func} \leftarrow parts[1]$\;
+        $\text{cur\_ts} \leftarrow \text{int}(parts[2])$\;
+        $\text{cur\_tid} \leftarrow \text{int}(parts[3])$\;
+        $\text{cur\_dur} \leftarrow \text{int}(parts[4])$\;
+        $\text{cur\_stack} \leftarrow []$
+    }
+    \ElseIf{$\text{line}.\text{startsWith}("@SYSCALL@") \}$}{
+        $parts \leftarrow \text{line}.\text{split}()$\;
+        $T \leftarrow \text{int}(parts[3])$\;
+        $\text{extra} \leftarrow \text{parse\_params}(parts[4:])$\;
+        $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ "syscall",$
+        $parts[1],\ 0,\ [],\ \text{active\_trace\_id.get}(T,""),\ \text{extra})$\;
+        $E.\text{append}(e)$
+    }
+    \ElseIf{$\text{line}.\text{startsWith}("@END@") \}$}{
+        \If{$\text{STATE} = \text{BUILDING\_UPROBE}$}{
+            $T \leftarrow \text{cur\_tid}$\;
+            $\text{stack\_clean} \leftarrow [f \mid f \in \text{cur\_stack} \And \neg f.\text{startsWith}("0x")]$\;
+            $\text{stack\_dem} \leftarrow \text{map}(\text{c++filt},\ \text{stack\_clean})$\;
+            $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ "uprobe",$
+            $\text{cur\_func},\ \text{cur\_dur},\ \text{stack\_dem},$
+            $\text{active\_trace\_id.get}(T,""),\ \emptyset)$\;
+            $E.\text{append}(e)$
+        }
+        $\text{STATE} \leftarrow \text{IDLE}$
+    }
+    \ElseIf{$\text{STATE} = \text{BUILDING\_UPROBE}$}{
+        $\text{cur\_stack}.\text{append}(\text{line})$
+    }
+}
+
+\BlankLine
+\Return $\text{sort\_by\_ts}(E)$ \tcp*{按纳秒时间戳升序排序}
+\end{algorithm}
 
 \section{静态符号提取的具体实现}
 
@@ -116,32 +172,50 @@ extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构�
 
 过滤条件是：只保留符号类型为 T 或 t 的行（全局或本地符号），且符号名包含 llama、ggml、common、cgo、vocab 之一。这个过滤器会把大量 Go runtime 符号（如 sync.*、net.*）排除掉，只保留和推理相关的函数。
 
-Ollama 场景下的分类逻辑用前缀匹配：
+符号分类用算法~\ref{fig:classify-layer} 实现，按优先级从 L1 到 L8 依次检查前缀规则，命中即停止，保证每个符号唯一对应一个层次。\texttt{nm} 只能给出符号列表，调用关系由 KNOWN\_CALLS 手工建立（lla\_decode $\to$ \{ggml\_backend\_sched\_graph\_compute\_async, llama\_synchronize, ...\}）：
 
-\begin{itemize}
-    \item 含 \texttt{\_cgo\_} 或 \texttt{\_cgoexp\_} $\to$ ffi\_bridge（L1）
-    \item llama\_* 且含 decode/model/context $\to$ inference\_api（L2）
-    \item llama\_* 且含 batch/sampler/token $\to$ batch\_sampler（L3）
-    \item 含 sched 或 graph\_compute $\to$ sched\_compute（L4）
-    \item llama\_*/common\_* 且含 backend $\to$ backend（L5）
-    \item ggml\_* 但不含 sched/backend $\to$ ops（L6）
-    \item 含 vocab/tokenize/detokenize/piece $\to$ vocab（L7）
-    \item 含 mmap/munmap/malloc/buffer $\to$ memory（L8）
-\end{itemize}
+\begin{algorithm}[H]
+\caption{函数符号层次分类算法}
+\label{fig:classify-layer}
+\DontPrintSemicolon
+\KwIn{符号名 $s$}
+\KwOut{层次标签 $L \in \{L1,\dots,L8\}$ 或 $\bot$（未分类）}
 
-手工定义的调用关系（KNOWN\_CALLS）是另一个关键数据来源。\texttt{nm} 工具只能给出符号列表，不能给出函数之间的调用关系。调用关系需要通过源码分析手工建立，或者通过调用栈观测间接验证。KNOWN\_CALLS 里记录了 llama.cpp 中关键的调用链，例如：
-
-\begin{verbatim}
-"llama_decode": [
-    "ggml_backend_sched_graph_compute_async",
-    "llama_synchronize",
-    "ggml_backend_sched_synchronize",
-]
-\end{verbatim}
-
-这表示 \texttt{llama\_decode} 会调用这三个函数。这些调用关系是静态调用图的边。
-
-实际提取结果：ollama-debug 二进制包含约 4832 个相关符号（llama/ggml/common/cgo 命名空间），经过 KNOWN\_CALLS 定义的调用关系生成 52 条静态边，构成静态调用图。
+\BlankLine
+\uIf{$\text{contains}(s, "\_cgo\_") \lor \text{contains}(s, "\_cgoexp\_")$}{
+    \Return $L1$ \tcp*{ffi\_bridge}
+}
+\uElseIf{$\text{startsWith}(s, "llama\_") \land$
+        $(\text{contains}(s, "decode") \lor \text{contains}(s, "model") \lor \text{contains}(s, "context"))$}{
+    \Return $L2$ \tcp*{inference\_api}
+}
+\uElseIf{$\text{startsWith}(s, "llama\_") \land$
+        $(\text{contains}(s, "batch") \lor \text{contains}(s, "sampler") \lor \text{contains}(s, "token"))$}{
+    \Return $L3$ \tcp*{batch\_sampler}
+}
+\uElseIf{$\text{contains}(s, "sched") \lor \text{contains}(s, "graph\_compute")$}{
+    \Return $L4$ \tcp*{sched\_compute}
+}
+\uElseIf{$(\text{startsWith}(s, "llama\_") \lor \text{startsWith}(s, "common\_"))
+        \land \text{contains}(s, "backend")$}{
+    \Return $L5$ \tcp*{backend}
+}
+\uElseIf{$\text{startsWith}(s, "ggml\_") \land \neg\text{contains}(s, "sched")
+        \land \neg\text{contains}(s, "backend")$}{
+    \Return $L6$ \tcp*{ops}
+}
+\uElseIf{$\text{contains}(s, "vocab") \lor \text{contains}(s, "tokenize")
+        \lor \text{contains}(s, "detokenize") \lor \text{contains}(s, "piece")$}{
+    \Return $L7$ \tcp*{vocab}
+}
+\uElseIf{$\text{contains}(s, "mmap") \lor \text{contains}(s, "munmap")
+        \lor \text{contains}(s, "malloc") \lor \text{contains}(s, "buffer")$}{
+    \Return $L8$ \tcp*{memory}
+}
+\Else{
+    \Return $\bot$ \tcp*{不属于推理相关符号，跳过}
+}
+\end{algorithm}
 
 \section{缝合模块的具体实现}
 
@@ -149,23 +223,35 @@ Ollama 场景下的分类逻辑用前缀匹配：
 
 缝合模块由三个 Python 类协作完成：CGEdge（表示一条静态调用边）、CallGraph（加载静态调用图）、AnchorMatcher（做锚点匹配）、ConfidenceCalculator（计算置信度）。
 
-AnchorMatcher 的核心是维护一个"等价映射表"，把各种格式的 CGO 函数名映射到 llama.cpp 的原始函数名：
+AnchorMatcher 维护一个"等价映射表"，把各种格式的 CGO 函数名映射到 llama.cpp 的原始函数名，匹配策略按优先级递减执行（算法~\ref{fig:anchor-match}）。哈希值（8aa400f2462b）是 Ollama 版本的特征，和二进制文件强绑定。
 
-\begin{verbatim}
-CGO_EQUIV = {
-    "_cgo_8aa400f2462b_Cfunc_llama_decode":
-        "llama_decode",
-    "_cgo_8aa400f2462b_Cfunc_llama_sampler_sample":
-        "llama_sampler_sample",
-    ...
+\begin{algorithm}[H]
+\caption{锚点函数名匹配算法}
+\label{fig:anchor-match}
+\DontPrintSemicolon
+\KwIn{待匹配符号 $s$；CGO 等价映射表 $M_{\text{cgo}}$；静态符号集合 $S$}
+\KwOut{目标语言层的规范化函数名 $s'$ 或 $\bot$}
+
+\BlankLine
+\uIf{$s \in M_{\text{cgo}}$}{
+    \Return $M_{\text{cgo}}[s]$ \tcp*{优先级 1：CGO 等价表精确匹配}
 }
-\end{verbatim}
-
-这个映射是手工建立的，基于 bpftrace 实际捕获到的函数名和 llama.cpp 源码的对照。哈希值（8aa400f2462b）是 Ollama 版本的特征，和二进制文件强绑定。
-
-匹配策略按优先级递减执行：先查 CGO\_EQUIV 表（精确匹配）；再查静态符号表（精确匹配）；然后做 demangle 后匹配；最后做子串宽松匹配（长度至少 4 个字符）。
-
-ConfidenceCalculator 的计算逻辑是：遍历所有静态边（A $\rightarrow$ B），检查动态轨迹中是否观测到 A 和 B 同时出现在同一个请求树（同一个 TID 的时间窗口）里。
+\uElseIf{$s \in S$}{
+    \Return $s$ \tcp*{优先级 2：静态符号表精确匹配}
+}
+\uElseIf{$\text{contains}(s, "\_cgoexp\_")$}{
+    $s' \leftarrow \text{demangle}(s)$\;
+    \If{$s' \in S$}{\Return $s'$} \tcp*{优先级 3：C++ demangle 后匹配}
+}
+\uElseIf{$|s| \ge 4$}{
+    \ForEach{$f \in S$}{
+        \If{$\text{contains}(f, s) \lor \text{contains}(s, f)$}{
+            \Return $f$ \tcp*{优先级 4：子串宽松匹配}
+        }
+    }
+}
+\Return $\bot$ \tcp*{所有策略均未命中}
+\end{algorithm}
 
 具体步骤是：先把事件按 TID 分组，同一 TID 内时间间隔超过 50 毫秒的事件被认为是不同请求，分别构成独立的请求树。然后对每条静态边，检查它两端对应的函数是否在 $\ge 2$ 棵不同的请求树中共同出现。如果是，标记为 Confirmed；只在 1 棵请求树中共同出现，标记为 Inferred；都没出现，标记为 Unknown。
 
@@ -226,77 +312,67 @@ Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端�
 
 Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
-针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件。
+针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法~\ref{fig:traceid-inject} 所示。
 
-\textbf{改动一：llm/server.go。} 在 \texttt{CompletionRequest} 结构体中加入 \texttt{TraceID} 字段，并在向 runner 发起 HTTP 请求时将 traceID 写入 \texttt{X-Request-ID} header：
+\begin{algorithm}[H]
+\caption{tracelID 注入：三文件具体改动}
+\label{fig:traceid-inject}
+\DontPrintSemicolon
+\SetKwBlock{ChangeA}{改动一（llm/server.go）：}{}
+\SetKwBlock{ChangeB}{改动二（server/routes.go）：}{}
+\SetKwBlock{ChangeC}{改动三（runner/llamarunner/runner.go）：}{}
 
-\begin{verbatim}
-// llm/server.go
-type CompletionRequest struct {
-    TraceID string  // HybriChain: trace ID for cross-process call chain stitching
-    Prompt  string
-    ...
+\BlankLine
+\ChangeA{
+    \CommentSty{CompletionRequest 结构体新增字段：}
+    $\text{TraceID} \leftarrow \text{string}$
+    \BlankLine
+    \CommentSty{daemon 向 runner 发起 HTTP 请求前：}
+    $\text{serverReq.Header.Set}("X-Request-ID", \text{req.TraceID})$
 }
-
-// 发起 HTTP 请求前：
-serverReq.Header.Set("Content-Type", "application/json")
-if req.TraceID != "" {
-    serverReq.Header.Set("X-Request-ID", req.TraceID)
+\BlankLine
+\ChangeB{
+    \CommentSty{GenerateHandler / ChatHandler 推理入口处注入：}
+    $\text{traceID} \leftarrow \text{uuid.NewString}()$ \tcp*{每次请求生成新 UUID}
+    $\text{withTraceID}(\text{traceID},\ \lambda\ .\ \text{r.Completion}($
+        $\text{llm.CompletionRequest}\{\text{TraceID}: \text{traceID},\dots\})$
 }
-\end{verbatim}
-
-\textbf{改动二：server/routes.go。} 在 \texttt{GenerateHandler} 和 \texttt{ChatHandler} 的推理入口处各注入一个 \texttt{withTraceID} 函数，在每次请求时生成新的 UUID 作为 traceID，并传入 \texttt{CompletionRequest.TraceID}：
-
-\begin{verbatim}
-// server/routes.go
-func withTraceID(traceID string, handler func()) {
-    handler()
+\BlankLine
+\ChangeC{
+    \CommentSty{runner HTTP handler 入口处注入：}
+    $\text{traceID} \leftarrow r.\text{Header.Get}("X-Request-ID")$
+    $\text{withTraceID}(\text{traceID},\ \lambda\ .\ \text{runCompletion}(w, r, \text{req}))$
 }
+\end{algorithm}
 
-func (s *Server) GenerateHandler(c *gin.Context) {
-    traceID := uuid.NewString()      // 每次请求生成一个新 UUID
-    ...
-    withTraceID(traceID, func() {
-        r.Completion(ctx, llm.CompletionRequest{
-            TraceID: traceID,        // 透传到发给 runner 的请求里
-            Prompt:  prompt,
-            ...
-        }, func(cr llm.CompletionResponse) { ... })
-    })
-}
-\end{verbatim}
+其中 \texttt{withTraceID} 本身是空壳函数（仅执行闭包），性能影响为零。它存在的唯一目的是为 bpftrace 提供一个安全的 uprobe 挂载点来捕获 traceID——在 Go 运行时上不能挂 uretprobe，但 uprobe 是安全的。
 
-\texttt{withTraceID} 本身是空壳函数（仅执行 \texttt{handler()}），性能影响为零。它存在的唯一目的是为 bpftrace 提供一个安全的 uprobe 挂载点来捕获 traceID——在 Go 运行时上不能挂 uretprobe，但 uprobe 是安全的。
+\begin{algorithm}[H]
+\caption{traceID 跨进程数据流}
+\label{fig:traceid-flow}
+\DontPrintSemicolon
+\KwIn{一次推理请求}
+\KwOut{带统一 traceID 的完整调用链事件}
 
-\textbf{改动三：runner/llamarunner/runner.go。} 从 HTTP header 中读取 \texttt{X-Request-ID}，同样注入 \texttt{withTraceID}，将实际的推理逻辑封装为 \texttt{runCompletion}：
+\BlankLine
+\CommentSty{daemon 侧：}
+$\text{traceID} \leftarrow \text{uuid.NewString}()$ \tcp*{步骤 1：生成 UUID}
+$\text{uprobe}("server.withTraceID", \text{traceID})$ \tcp*{bpftrace 捕获 daemon\_entry}
+$\text{HTTP\_POST}(127.0.0.1:\text{runnerPort},\ \{$
+    $\text{body}: \text{CompletionRequest},\ $
+    $\text{header}: "X-Request-ID: \text{traceID}"$
+$\})$
 
-\begin{verbatim}
-// runner/llamarunner/runner.go
-func withTraceID(traceID string, handler func()) { handler() }
+\BlankLine
+\CommentSty{runner 侧：}
+$\text{traceID}' \leftarrow r.\text{Header.Get}("X-Request-ID")$ \tcp*{步骤 3：从 header 取出}
+$\text{uprobe}("llamarunner.withTraceID", \text{traceID}')$ \tcp*{bpftrace 捕获 runner\_entry}
 
-func (s *Server) completion(w http.ResponseWriter, r *http.Request) {
-    traceID := r.Header.Get("X-Request-ID")
-    if traceID == "" {
-        traceID = "no-trace-id"
-    }
-    withTraceID(traceID, func() {
-        s.runCompletion(w, r, req)
-    })
-}
-
-func (s *Server) runCompletion(...) {
-    // 原 completion 函数的全部逻辑
-}
-\end{verbatim}
-
-至此，完整的数据流如下：
-
-\begin{enumerate}[(1)]
-    \item daemon 的 \texttt{GenerateHandler} 入口：\texttt{uuid.NewString()} 生成 traceID，调用 \texttt{withTraceID}，bpftrace 在此处捕获 \texttt{@TRACEID@ daemon\_entry}；
-    \item daemon 向 runner 发起 HTTP POST，\texttt{X-Request-ID: <traceID>} 随请求发出；
-    \item runner 的 \texttt{completion} 入口：读取 header 得到 traceID，调用 \texttt{withTraceID}，bpftrace 在此处捕获 \texttt{@TRACEID@ runner\_entry}；
-    \item 后续所有 uprobe/syscall 事件通过活跃的 traceID 继承关系，被归并到同一次推理请求的调用链中。
-\end{enumerate}
+\BlankLine
+\CommentSty{缝合阶段：}
+$\text{active\_trace\_id}[\text{tid}] \leftarrow \text{traceID}'$ \tcp*{更新映射表}
+\CommentSty{后续所有 uprobe/syscall 事件继承该 traceID，按 traceID 分组归并}
+\end{algorithm}
 
 这一方案完全针对 Ollama 的多进程 HTTP 通信架构量身定制，其他推理引擎若采用不同的进程间通信机制，需要设计相应的 traceID 传递方式。
 
