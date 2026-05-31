@@ -173,7 +173,7 @@ Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端�
 
 Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
-针对这一 Ollama 的问题，HybriChain 的解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法 4 所示。
+针对这一 Ollama 的问题，HybriChain 的解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法 3 所示。
 
 \begin{algorithm}[H]
 \caption{traceID 注入：三文件具体改动}
@@ -261,7 +261,7 @@ http\_socket\_read\_anomaly 规则。 条件是 fd == 3 的 read 调用且 bytes
 
 \section{完整追踪流程}
 
-算法 6 给出了完整追踪流程的步骤。
+算法 5 给出了完整追踪流程的步骤。
 
 \begin{algorithm}[H]
 \caption{追踪流程算法}
