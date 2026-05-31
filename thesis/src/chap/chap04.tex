@@ -13,17 +13,17 @@ Ollama 不是普通的单进程程序，它有三个在实现第三章追踪方�
 
 \textbf{Go-CGO 混合层。} Ollama 的 API 层用 Go 编写，通过 CGO 调用底层的 llama.cpp C++ 推理库。Go 编译器生成的 CGO 桥接函数名并非直接对应源码中的函数名，而是包含哈希后缀，如 \texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode}。这种名字无法与 llama.cpp 的 \texttt{llama\_decode} 直接对应，需要专门处理。
 
-\textbf{Go 运行时与探针兼容性。} Go 1.17+ 的栈管理机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会导致进程崩溃。因此第三章的 uprobe 策略在 Ollama 上需要做出调整：Go 层的事件采集依赖第三章设计的轻量级注入方案（见 4.5 节），C/C++ 层则直接挂载 uprobe/uretprobe。
+\textbf{Go 运行时与探针兼容性。} Go 1.17+ 的栈管理机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会导致进程崩溃。因此第三章的 uprobe 策略在 Ollama 上需要做出调整：Go 层的事件采集依赖第三章设计的轻量级注入方案，C/C++ 层则直接挂载 uprobe/uretprobe。
 
 \section{eBPF 追踪脚本的具体实现}
 
-本节对应第三章 3.2 节的通用追踪方案在 Ollama 上的具体落地。
+本节对应第三章通用追踪方案在 Ollama 上的具体落地。
 
 追踪脚本使用 bpftrace 语言编写，共两个文件：\texttt{trace\_ollama.bt} 用纯 tracepoint，轻量级，适合初步观测；\texttt{trace\_unified.bt} 用 uprobe + tracepoint，功能完整，是实际使用的追踪脚本。
 
 \subsection{uprobe 挂载的具体函数}
 
-Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下函数是第三章 3.2.2 节所定义的四类关键节点的具体对应：
+Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下函数是第三章所定义的四类关键节点的具体对应：
 
 \begin{enumerate}[(1)]
     \item \texttt{llama\_decode}：推理主循环，每生成一个 token 必然调用一次。挂载在函数入口（uprobe）和返回点（uretprobe），记录进入时刻和耗时差值，并输出调用栈（ustack，32 层深度）。
@@ -87,7 +87,7 @@ read/write 的过滤条件是：返回值必须大于 0（失败的调用不记�
 
 \section{数据解析脚本的具体实现}
 
-本节对应第三章 3.3 节的通用解析方案在 Ollama 上的具体落地。
+本节对应第三章通用解析方案在 Ollama 上的具体落地。
 
 trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。解析核心是状态机，以四种标记（\texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@}）驱动状态转换，如算法~\ref{fig:parser-fsm} 所示：
 
@@ -158,7 +158,7 @@ $E \leftarrow []$
 
 \section{静态符号提取的具体实现}
 
-本节对应第三章 3.6 节的通用分类体系在 Ollama 上的具体落地。
+本节对应第三章通用分类体系在 Ollama 上的具体落地。
 
 extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构建静态调用图 JSON。
 
@@ -213,7 +213,7 @@ extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构�
 
 \section{缝合模块的具体实现}
 
-本节对应第三章 3.4 和 3.5 节的缝合算法在 Ollama 上的具体落地。
+本节对应第三章缝合算法在 Ollama 上的具体落地。
 
 缝合模块由三个 Python 类协作完成：CGEdge（表示一条静态调用边）、CallGraph（加载静态调用图）、AnchorMatcher（做锚点匹配）、ConfidenceCalculator（计算置信度）。
 
@@ -295,7 +295,7 @@ $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \t
 
 \section{跨进程 traceID 注入}
 
-Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端拥有完全不同的 TID 编号空间。这是第三章 3.5 节跨进程缝合方案在 Ollama 上必须解决的核心挑战。
+Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端拥有完全不同的 TID 编号空间。这是跨进程缝合方案在 Ollama 上必须解决的核心挑战。
 
 Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
@@ -367,7 +367,7 @@ $\text{active\_trace\_id}[\text{tid}] \leftarrow \text{traceID}'$ \tcp*{更新�
 
 analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每个事件依次执行所有检测规则。
 
-六条规则的具体实现逻辑与第三章 3.7 节的通用设计一致，Ollama 场景下的阈值设定参考了实测数据：
+六条规则的具体实现逻辑与第三章通用设计一致，Ollama 场景下的阈值设定参考了实测数据：
 
 \textbf{futex\_block 规则。} 条件是 ev.type == “syscall”且 ev.func == “futex”且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。实测：Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒。
 
@@ -422,7 +422,8 @@ $R \leftarrow$ 分析模块对 $E$ 执行六条异常检测规则\;
 \Return $G_c$, $R$
 \end{algorithm}
 
-实测数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $ightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。
+实测数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $
+ightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。
 
 \section{本章小结}
 
