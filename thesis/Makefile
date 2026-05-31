@@ -14,6 +14,19 @@ REF := ref/refs
 XELATEX_OPTS := -interaction=nonstopmode -halt-on-error -file-line-error
 BIB_OPTS := $(TARGET)
 
+# 超时秒数（单次 xelatex 超过此时间则中止）
+TIMEOUT := timeout --signal=KILL 20
+
+# 运行 xelatex 并检查错误
+define RUN_XELATEX
+	@echo "=== XeLaTeX $(1) 遍 ===" ; \
+	$(TIMEOUT) $(TEX) $(XELATEX_OPTS) $(TARGET).tex 2>&1 | tee $(TARGET).log ; \
+	if grep -q "^! " $(TARGET).log; then \
+		echo "*** 编译出错，见上方 ***" ; \
+		exit 1 ; \
+	fi
+endef
+
 .PHONY: all clean pdf view
 
 all: pdf
@@ -21,14 +34,13 @@ all: pdf
 pdf: $(TARGET).pdf
 
 $(TARGET).pdf: $(TARGET).tex $(wildcard $(SRCDIR)/*.tex) $(wildcard $(CHAPDIR)/*.tex) $(wildcard $(REF).bib)
-	@echo "=== [1/4] XeLaTeX 第 1 遍 ==="
-	$(TEX) $(XELATEX_OPTS) $(TARGET).tex
-	@echo "=== [2/4] BibTeX 处理文献 ==="
-	$(BIB) $(BIB_OPTS)
-	@echo "=== [3/4] XeLaTeX 第 2 遍 ==="
-	$(TEX) $(XELATEX_OPTS) $(TARGET).tex
-	@echo "=== [4/4] XeLaTeX 第 3 遍（交叉引用）==="
-	$(TEX) $(XELATEX_OPTS) $(TARGET).tex
+	$(call RUN_XELATEX,1)
+ifneq ($(wildcard $(REF).bib),)
+	@echo "=== BibTeX 处理文献 ==="
+	-$(BIB) $(BIB_OPTS)
+endif
+	$(call RUN_XELATEX,2)
+	$(call RUN_XELATEX,3)
 	@echo "=== 完成 ==="
 
 clean:
