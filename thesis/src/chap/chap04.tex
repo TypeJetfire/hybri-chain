@@ -68,7 +68,7 @@ $T \leftarrow \texttt{tid}()$\;
 
 输出格式中，\texttt{@UPROBE@} 是标记前缀，依次是函数名、纳秒时间戳、线程 ID、耗时（微秒），然后是调用栈帧，最后是 \texttt{@END@} 标记。
 
-使用时要指定二进制文件路径（必须用带调试信息的 ollama-debug 版本，不能用 release 版本）。运行 bpftrace 追踪的命令格式为：\texttt{sudo\ bpftrace\ -o\ <输出文件>\ -B\ line\ <追踪脚本>}，其中 -o 指定输出文件，-B line 禁用输出缓冲。
+使用时要指定带调试信息的二进制文件路径（不能用 release 版本）。运行 bpftrace 追踪时，通过 -o 参数指定输出文件路径，-B line 参数禁用输出缓冲以实时写入。
 
 \subsection{系统调用 tracepoint 的具体配置}
 
@@ -289,7 +289,7 @@ $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \t
 \end{algorithm}
 \end{figure}
 
-缝合完成后，调用缝合模块的命令行接口：\texttt{python3\ stitcher.py\ <事件文件>\ --graph\ <静态图>\ --summary\ --anchors\ --export\ <结果文件>}，即可完成跨语言调用链的缝合与导出。
+缝合完成后，运行缝合模块：传入事件文件与静态调用图，即可完成跨语言调用链的缝合与导出，同时输出 Confirmed / Inferred / Unknown 边的统计摘要。
 
 输出内容包括：各置信等级的边数量统计、锚点命中详情（每个函数被命中多少次）、跨层调用关系列表、完整的缝合结果 JSON 文件。
 
