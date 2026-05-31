@@ -293,7 +293,7 @@ $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \t
 
 输出内容包括：各置信等级的边数量统计、锚点命中详情（每个函数被命中多少次）、跨层调用关系列表、完整的缝合结果 JSON 文件。
 
-\section{Ollama 独门方法：跨进程 traceID 注入}
+\section{跨进程 traceID 注入}
 
 Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端拥有完全不同的 TID 编号空间。这是第三章 3.5 节跨进程缝合方案在 Ollama 上必须解决的核心挑战。
 
