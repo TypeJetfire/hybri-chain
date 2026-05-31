@@ -45,23 +45,23 @@ Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下
 
 \BlankLine
 \CommentSty{uprobe：函数入口}
-\texttt{uprobe:$B$:"$F$"}
+\texttt{uprobe:$B$:“$F$”}
 \BlankLine
 $T \leftarrow \texttt{tid}()$\;
 $\text{per\_tid\_start}[T] \leftarrow \texttt{nsecs}()$
 
 \BlankLine
 \CommentSty{uretprobe：函数返回点}
-\texttt{uretprobe:$B$:"$F$"}
+\texttt{uretprobe:$B$:“$F$”}
 \BlankLine
 $T \leftarrow \texttt{tid}()$\;
 \If{$T \in \text{per\_tid\_start}$}{
     $t_{\text{start}} \leftarrow \text{per\_tid\_start}[T]$\;
     $t_{\text{end}} \leftarrow \texttt{nsecs}()$\;
     $d \leftarrow (t_{\text{end}} - t_{\text{start}}) / 1000$\;
-    $\text{printf}("@UPROBE@$ F $t_{\text{end}}$ $T$ $d \backslash n")$\;
+    $\text{printf}(“@UPROBE@$ F $t_{\text{end}}$ $T$ $d \backslash n”)$\;
     $\text{print}(\text{ustack}(32))$\;
-    $\text{printf}("@END@\backslash n")$\;
+    $\text{printf}(“@END@\backslash n”)$\;
     $\text{delete}(\text{per\_tid\_start}, T)$
 }
 \end{algorithm}
@@ -104,7 +104,7 @@ trace\_unify.py 输出的 JSON 文件是后续所有处理脚本的数据来源�
 $\text{STATE} \leftarrow \text{IDLE}$\;
 $\text{active\_trace\_id} \leftarrow \emptyset$ \tcp*[r]{tid $\rightarrow$ traceID 映射表}
 $\text{cur\_stack} \leftarrow []$\;
-$\text{cur\_func} \leftarrow \text{""}$\;
+$\text{cur\_func} \leftarrow \text{“”}$\;
 $\text{cur\_ts} \leftarrow 0$\;
 $\text{cur\_tid} \leftarrow 0$\;
 $\text{cur\_dur} \leftarrow 0$\;
@@ -112,13 +112,13 @@ $E \leftarrow []$
 
 \BlankLine
 \ForEach{$\text{line} \in L$}{
-    \If{$\text{line} = \text{""}$} {$pass$ \tcp*{跳过空行}}
-    \ElseIf{$\text{line}.\text{startsWith}("@TRACEID@") \}$}{
+    \If{$\text{line} = \text{“”}$} {$pass$ \tcp*{跳过空行}}
+    \ElseIf{$\text{line}.\text{startsWith}(“@TRACEID@”) \}$}{
         $parts \leftarrow \text{line}.\text{split}()$\;
         $T \leftarrow \text{int}(parts[3])$\;
         $\text{active\_trace\_id}[T] \leftarrow parts[4]$
     }
-    \ElseIf{$\text{line}.\text{startsWith}("@UPROBE@") \}$}{
+    \ElseIf{$\text{line}.\text{startsWith}(“@UPROBE@”) \}$}{
         $parts \leftarrow \text{line}.\text{split}()$\;
         $\text{STATE} \leftarrow \text{BUILDING\_UPROBE}$\;
         $\text{cur\_func} \leftarrow parts[1]$\;
@@ -127,22 +127,22 @@ $E \leftarrow []$
         $\text{cur\_dur} \leftarrow \text{int}(parts[4])$\;
         $\text{cur\_stack} \leftarrow []$
     }
-    \ElseIf{$\text{line}.\text{startsWith}("@SYSCALL@") \}$}{
+    \ElseIf{$\text{line}.\text{startsWith}(“@SYSCALL@”) \}$}{
         $parts \leftarrow \text{line}.\text{split}()$\;
         $T \leftarrow \text{int}(parts[3])$\;
         $\text{extra} \leftarrow \text{parse\_params}(parts[4:])$\;
-        $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ "syscall",$
-        $parts[1],\ 0,\ [],\ \text{active\_trace\_id.get}(T,""),\ \text{extra})$\;
+        $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ “syscall”,$
+        $parts[1],\ 0,\ [],\ \text{active\_trace\_id.get}(T,“”),\ \text{extra})$\;
         $E.\text{append}(e)$
     }
-    \ElseIf{$\text{line}.\text{startsWith}("@END@") \}$}{
+    \ElseIf{$\text{line}.\text{startsWith}(“@END@”) \}$}{
         \If{$\text{STATE} = \text{BUILDING\_UPROBE}$}{
             $T \leftarrow \text{cur\_tid}$\;
-            $\text{stack\_clean} \leftarrow [f \mid f \in \text{cur\_stack} \And \neg f.\text{startsWith}("0x")]$\;
+            $\text{stack\_clean} \leftarrow [f \mid f \in \text{cur\_stack} \And \neg f.\text{startsWith}(“0x”)]$\;
             $\text{stack\_dem} \leftarrow \text{map}(\text{c++filt},\ \text{stack\_clean})$\;
-            $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ "uprobe",$
+            $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ “uprobe”,$
             $\text{cur\_func},\ \text{cur\_dur},\ \text{stack\_dem},$
-            $\text{active\_trace\_id.get}(T,""),\ \emptyset)$\;
+            $\text{active\_trace\_id.get}(T,“”),\ \emptyset)$\;
             $E.\text{append}(e)$
         }
         $\text{STATE} \leftarrow \text{IDLE}$
@@ -190,7 +190,7 @@ AnchorMatcher 维护一个“等价映射表”，把各种格式的 CGO 函数�
 \uElseIf{$s \in S$}{
     \Return $s$ \tcp*{优先级 2：静态符号表精确匹配}
 }
-\uElseIf{$\text{contains}(s, "\_cgoexp\_")$}{
+\uElseIf{$\text{contains}(s, “\_cgoexp\_”)$}{
     $s' \leftarrow \text{demangle}(s)$\;
     \If{$s' \in S$}{\Return $s'$} \tcp*{优先级 3：C++ demangle 后匹配}
 }
@@ -272,7 +272,7 @@ Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味�
     $\text{TraceID} \leftarrow \text{string}$
     \BlankLine
     \CommentSty{daemon 向 runner 发起 HTTP 请求前：}
-    $\text{serverReq.Header.Set}("X-Request-ID", \text{req.TraceID})$
+    $\text{serverReq.Header.Set}(“X-Request-ID”, \text{req.TraceID})$
 }
 \BlankLine
 \ChangeB{
@@ -284,7 +284,7 @@ Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味�
 \BlankLine
 \ChangeC{
     \CommentSty{runner HTTP handler 入口处注入：}
-    $\text{traceID} \leftarrow r.\text{Header.Get}("X-Request-ID")$
+    $\text{traceID} \leftarrow r.\text{Header.Get}(“X-Request-ID”)$
     $\text{withTraceID}(\text{traceID},\ \lambda\ .\ \text{runCompletion}(w, r, \text{req}))$
 }
 \end{algorithm}
@@ -301,16 +301,16 @@ Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味�
 \BlankLine
 \CommentSty{daemon 侧：}
 $\text{traceID} \leftarrow \text{uuid.NewString}()$ \tcp*{步骤 1：生成 UUID}
-$\text{uprobe}("server.withTraceID", \text{traceID})$ \tcp*{bpftrace 捕获 daemon\_entry}
+$\text{uprobe}(“server.withTraceID”, \text{traceID})$ \tcp*{bpftrace 捕获 daemon\_entry}
 $\text{HTTP\_POST}(127.0.0.1:\text{runnerPort},\ \{$
     $\text{body}: \text{CompletionRequest},\ $
-    $\text{header}: "X-Request-ID: \text{traceID}"$
+    $\text{header}: “X-Request-ID: \text{traceID}”$
 $\})$
 
 \BlankLine
 \CommentSty{runner 侧：}
-$\text{traceID}' \leftarrow r.\text{Header.Get}("X-Request-ID")$ \tcp*{步骤 3：从 header 取出}
-$\text{uprobe}("llamarunner.withTraceID", \text{traceID}')$ \tcp*{bpftrace 捕获 runner\_entry}
+$\text{traceID}' \leftarrow r.\text{Header.Get}(“X-Request-ID”)$ \tcp*{步骤 3：从 header 取出}
+$\text{uprobe}(“llamarunner.withTraceID”, \text{traceID}')$ \tcp*{bpftrace 捕获 runner\_entry}
 
 \BlankLine
 \CommentSty{缝合阶段：}
