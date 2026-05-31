@@ -68,13 +68,7 @@ $T \leftarrow \texttt{tid}()$\;
 
 输出格式中，\texttt{@UPROBE@} 是标记前缀，依次是函数名、纳秒时间戳、线程 ID、耗时（微秒），然后是调用栈帧，最后是 \texttt{@END@} 标记。
 
-使用时要指定二进制文件路径（必须用带调试信息的 ollama-debug 版本，不能用 release 版本）：
-
-\begin{verbatim}
-sudo bpftrace -o trace_output.txt -B line trace_unified.bt
-\end{verbatim}
-
-其中 -o 指定输出文件，-B line 禁用输出缓冲。
+使用时要指定二进制文件路径（必须用带调试信息的 ollama-debug 版本，不能用 release 版本）。运行 bpftrace 追踪的命令格式为：\texttt{sudo\ bpftrace\ -o\ <输出文件>\ -B\ line\ <追踪脚本>}，其中 -o 指定输出文件，-B line 禁用输出缓冲。
 
 \subsection{系统调用 tracepoint 的具体配置}
 
@@ -168,7 +162,7 @@ $E \leftarrow []$
 
 extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构建静态调用图 JSON。
 
-用 \texttt{nm -C --defined-only ollama-debug} 提取所有全局符号。\texttt{-C} 参数会自动 demangle C++ 符号，\texttt{--defined-only} 排除未定义符号，只保留有定义的函数。
+用符号提取工具对带调试信息的二进制文件进行全局符号提取，工具的 -C 参数会自动 demangle C++ 符号，--defined-only 参数排除未定义符号，只保留有定义的函数。
 
 过滤条件是：只保留符号类型为 T 或 t 的行（全局或本地符号），且符号名包含 llama、ggml、common、cgo、vocab 之一。这个过滤器会把大量 Go runtime 符号（如 sync.*、net.*）排除掉，只保留和推理相关的函数。
 
@@ -295,14 +289,7 @@ $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \t
 \end{algorithm}
 \end{figure}
 
-缝合完成后，调用 stitcher.py 的命令行接口：
-
-\begin{verbatim}
-python3 stitcher.py trace_events.json \
-    --graph call_graph_static.json \
-    --summary --anchors \
-    --export stitched_result.json
-\end{verbatim}
+缝合完成后，调用缝合模块的命令行接口：\texttt{python3\ stitcher.py\ <事件文件>\ --graph\ <静态图>\ --summary\ --anchors\ --export\ <结果文件>}，即可完成跨语言调用链的缝合与导出。
 
 输出内容包括：各置信等级的边数量统计、锚点命中详情（每个函数被命中多少次）、跨层调用关系列表、完整的缝合结果 JSON 文件。
 
@@ -404,47 +391,11 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 第一步，准备带调试信息的二进制文件。需要从源码编译 Ollama，启用调试符号（Go 编译时加 -ldflags=“-s” 来保留符号表），生成 ollama-debug 文件。这是后续 bpftrace uprobe 挂载的前提——没有调试信息，bpftrace 无法定位函数地址。
 
-第二步，运行追踪采集：
+第二步，运行追踪采集。依次启动 Ollama 服务、后台运行 bpftrace 追踪、发送推理请求，最后终止 bpftrace 进程完成采集。
 
-\begin{verbatim}
-# 启动 Ollama 服务
-ollama serve &
-OLLAMA_PID=$!
+第三步，数据解析和缝合。依次运行解析脚本将原始文本转换为结构化 JSON，运行缝合脚本完成跨语言调用链缝合，最后运行分析脚本生成异常报告。
 
-# 启动 bpftrace 追踪（后台）
-sudo bpftrace -o trace_raw.txt -B line trace_unified.bt &
-BPFTRACE_PID=$!
-
-# 发送推理请求
-curl http://localhost:11434/api/generate \
-    -d '{“model”: “qwen2:0.5b”, “prompt”: “hello”}'
-
-# 停止追踪（Ctrl+C 或 kill）
-kill $BPFTRACE_PID
-\end{verbatim}
-
-第三步，数据解析和缝合：
-
-\begin{verbatim}
-python3 trace_unify.py trace_raw.txt -o parsed/
-python3 stitcher.py parsed/trace_events.json \
-    --graph call_graph_static.json \
-    --export stitched_result.json
-python3 analyzer.py parsed/trace_events.json \
-    --report anomaly_report.json
-\end{verbatim}
-
-第四步，查看结果：
-
-\begin{verbatim}
-# 查看缝合摘要
-python3 stitcher.py parsed/trace_events.json --summary --anchors
-
-# 查看异常告警
-cat anomaly_report.json | python3 -m json.tool | less
-\end{verbatim}
-
-整个流程在实测中的运行数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经 trace\_unify.py 解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。解析时间在毫秒级别，远快于推理过程本身。
+第四步，查看结果。运行缝合脚本可查看缝合摘要与锚点统计；格式化查看 JSON 报告可获取异常告警详情。整个流程在实测中的运行数据：bpftrace 在 TinyLlama-1.1B 推理过程中采集了 25,329 行原始输出，经 trace\_unify.py 解析后得到 8,891 个有效事件，压缩比约 2.8 倍。Qwen2-0.5B 的压缩比约 2.1 倍。解析时间在毫秒级别，远快于推理过程本身。
 
 缝合结果中，Confirmed 边全部落在 CGO 桥接层（Go $\rightarrow$ llama.cpp 边界），这正是 uprobe 探针挂载的位置。Inferred 边主要是 llama.cpp 内部的函数调用关系，这些函数在源码中存在，但本次采样的推理请求没有触发它们。Unknown 边是静态符号表里有但本次追踪完全没有观测到的函数，意味着它们对应的代码路径在本次采样期间没有被执行。
 
