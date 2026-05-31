@@ -89,72 +89,13 @@ read/write 的过滤条件是：返回值必须大于 0（失败的调用不记�
 
 本节对应第三章通用解析方案在 Ollama 上的具体落地。
 
-trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。解析核心是状态机，以四种标记（\texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@}）驱动状态转换，如算法~\ref{fig:parser-fsm} 所示：
+trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。解析核心是状态机，以四种标记（\texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@}）驱动状态转换。
 
 trace\_unify.py 输出的 JSON 文件是后续所有处理脚本的数据来源，也是实验数据的基础。
 
-\begin{algorithm}[H]
-\caption{\texttt{bpftrace} 原始输出的解析状态机}
-\label{fig:parser-fsm}
-\DontPrintSemicolon
-\KwIn{\texttt{bpftrace} 原始文本行列表 $L$}
-\KwOut{事件对象列表 $E$，每个事件包含 $ts\_ns,\ tid,\ type,\ func,\ dur,\ stack,\ trace\_id,\ extra$}
+解析脚本的核心是一个状态机，bpftrace 输出的每行文本根据前缀标记进入不同状态。状态机维护四个内部变量：当前状态（IDLE 或 BUILDING\_UPROBE）、线程 traceID 映射表、当前函数的上下文信息、调用栈累积列表。
 
-\BlankLine
-$\text{STATE} \leftarrow \text{IDLE}$\;
-$\text{active\_trace\_id} \leftarrow \emptyset$ \tcp*[r]{tid $\rightarrow$ traceID 映射表}
-$\text{cur\_stack} \leftarrow []$\;
-$\text{cur\_func} \leftarrow \text{“”}$\;
-$\text{cur\_ts} \leftarrow 0$\;
-$\text{cur\_tid} \leftarrow 0$\;
-$\text{cur\_dur} \leftarrow 0$\;
-$E \leftarrow []$
-
-\BlankLine
-\ForEach{$\text{line} \in L$}{
-    \If{$\text{line} = \text{“”}$} {$pass$ \tcp*{跳过空行}}
-    \ElseIf{$\text{line}.\text{startsWith}(“@TRACEID@”) \}$}{
-        $parts \leftarrow \text{line}.\text{split}()$\;
-        $T \leftarrow \text{int}(parts[3])$\;
-        $\text{active\_trace\_id}[T] \leftarrow parts[4]$
-    }
-    \ElseIf{$\text{line}.\text{startsWith}(“@UPROBE@”) \}$}{
-        $parts \leftarrow \text{line}.\text{split}()$\;
-        $\text{STATE} \leftarrow \text{BUILDING\_UPROBE}$\;
-        $\text{cur\_func} \leftarrow parts[1]$\;
-        $\text{cur\_ts} \leftarrow \text{int}(parts[2])$\;
-        $\text{cur\_tid} \leftarrow \text{int}(parts[3])$\;
-        $\text{cur\_dur} \leftarrow \text{int}(parts[4])$\;
-        $\text{cur\_stack} \leftarrow []$
-    }
-    \ElseIf{$\text{line}.\text{startsWith}(“@SYSCALL@”) \}$}{
-        $parts \leftarrow \text{line}.\text{split}()$\;
-        $T \leftarrow \text{int}(parts[3])$\;
-        $\text{extra} \leftarrow \text{parse\_params}(parts[4:])$\;
-        $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ “syscall”,$
-        $parts[1],\ 0,\ [],\ \text{active\_trace\_id.get}(T,“”),\ \text{extra})$\;
-        $E.\text{append}(e)$
-    }
-    \ElseIf{$\text{line}.\text{startsWith}(“@END@”) \}$}{
-        \If{$\text{STATE} = \text{BUILDING\_UPROBE}$}{
-            $T \leftarrow \text{cur\_tid}$\;
-            $\text{stack\_clean} \leftarrow [f \mid f \in \text{cur\_stack} \And \neg f.\text{startsWith}(“0x”)]$\;
-            $\text{stack\_dem} \leftarrow \text{map}(\text{c++filt},\ \text{stack\_clean})$\;
-            $e \leftarrow \text{Event}(\text{cur\_ts},\ T,\ “uprobe”,$
-            $\text{cur\_func},\ \text{cur\_dur},\ \text{stack\_dem},$
-            $\text{active\_trace\_id.get}(T,“”),\ \emptyset)$\;
-            $E.\text{append}(e)$
-        }
-        $\text{STATE} \leftarrow \text{IDLE}$
-    }
-    \ElseIf{$\text{STATE} = \text{BUILDING\_UPROBE}$}{
-        $\text{cur\_stack}.\text{append}(\text{line})$
-    }
-}
-
-\BlankLine
-\Return $\text{sort\_by\_ts}(E)$ \tcp*{按纳秒时间戳升序排序}
-\end{algorithm}
+处理流程如下：遇到 @TRACEID@ 行时，从第 4 和第 5 个字段提取线程 ID 和 traceID，更新映射表；遇到 @UPROBE@ 行时，切换为 BUILDING\_UPROBE 状态，提取函数名、时间戳、线程 ID、耗时并存入 	exttt{cur\_*} 变量；此后该状态下的每一行文本都作为调用栈帧累积；遇到 @SYSCALL@ 行时，直接构造一个 syscall 类型事件并追加到结果列表；遇到 @END@ 行时，若当前状态为 BUILDING\_UPROBE，则用累积的调用栈帧构造 uprobe 类型事件，最后切换回 IDLE 状态。调用栈帧中以 0x 开头的内存地址被过滤掉，不保留无分析价值的地址信息。全部解析完成后，按纳秒时间戳升序排序输出事件列表。
 
 \section{静态符号提取的具体实现}
 
@@ -176,33 +117,9 @@ extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构�
 
 AnchorMatcher 维护一个“等价映射表”，把各种格式的 CGO 函数名映射到 llama.cpp 的原始函数名，匹配策略按优先级递减执行（算法~\ref{fig:anchor-match}）。哈希值（8aa400f2462b）是 Ollama 版本的特征，和二进制文件强绑定。
 
-\begin{algorithm}[H]
-\caption{锚点函数名匹配算法}
-\label{fig:anchor-match}
-\DontPrintSemicolon
-\KwIn{待匹配符号 $s$；CGO 等价映射表 $M_{\text{cgo}}$；静态符号集合 $S$}
-\KwOut{目标语言层的规范化函数名 $s'$ 或 $\bot$}
+解析脚本的核心是一个状态机，bpftrace 输出的每行文本根据前缀标记进入不同状态。状态机维护四个内部变量：当前状态（IDLE 或 BUILDING\_UPROBE）、线程 traceID 映射表、当前函数的上下文信息、调用栈累积列表。
 
-\BlankLine
-\uIf{$s \in M_{\text{cgo}}$}{
-    \Return $M_{\text{cgo}}[s]$ \tcp*{优先级 1：CGO 等价表精确匹配}
-}
-\uElseIf{$s \in S$}{
-    \Return $s$ \tcp*{优先级 2：静态符号表精确匹配}
-}
-\uElseIf{$\text{contains}(s, “\_cgoexp\_”)$}{
-    $s' \leftarrow \text{demangle}(s)$\;
-    \If{$s' \in S$}{\Return $s'$} \tcp*{优先级 3：C++ demangle 后匹配}
-}
-\uElseIf{$|s| \ge 4$}{
-    \ForEach{$f \in S$}{
-        \If{$\text{contains}(f, s) \lor \text{contains}(s, f)$}{
-            \Return $f$ \tcp*{优先级 4：子串宽松匹配}
-        }
-    }
-}
-\Return $\bot$ \tcp*{所有策略均未命中}
-\end{algorithm}
+处理流程如下：遇到 @TRACEID@ 行时，从第 4 和第 5 个字段提取线程 ID 和 traceID，更新映射表；遇到 @UPROBE@ 行时，切换为 BUILDING\_UPROBE 状态，提取函数名、时间戳、线程 ID、耗时并存入 	exttt{cur\_*} 变量；此后该状态下的每一行文本都作为调用栈帧累积；遇到 @SYSCALL@ 行时，直接构造一个 syscall 类型事件并追加到结果列表；遇到 @END@ 行时，若当前状态为 BUILDING\_UPROBE，则用累积的调用栈帧构造 uprobe 类型事件，最后切换回 IDLE 状态。调用栈帧中以 0x 开头的内存地址被过滤掉，不保留无分析价值的地址信息。全部解析完成后，按纳秒时间戳升序排序输出事件列表。
 
 具体步骤是：先把事件按 TID 分组，同一 TID 内时间间隔超过 50 毫秒的事件被认为是不同请求，分别构成独立的请求树。然后对每条静态边，检查它两端对应的函数是否在 $\ge 2$ 棵不同的请求树中共同出现。如果是，标记为 Confirmed；只在 1 棵请求树中共同出现，标记为 Inferred；都没出现，标记为 Unknown。
 
