@@ -84,12 +84,12 @@ Ground Truth 由源码级调用关系构建。通过对 llama.cpp 源码中的�
 代码~\ref{lst:confirmed} 列出了缝合输出的三条 Confirmed 边，每条记录包含源节点、目标节点、置信状态与层间跨越关系。
 
 \begin{lstlisting}[caption={Confirmed 缝合边输出（JSON 片段）}, label={lst:confirmed}]
-{"from":"_cgo_*_Cfunc_llama_decode","to":"llama_decode",
- "confidence":"confirmed","layer_from":"go_cgo_bridge","layer_to":"llama_api"}
-{"from":"_cgo_*_Cfunc_common_sampler_csample","to":"common_sampler_csample",
- "confidence":"confirmed","layer_from":"go_cgo_bridge","layer_to":"llama_api"}
-{"from":"llama_decode","to":"ggml_backend_sched_graph_compute_async",
- "confidence":"confirmed","layer_from":"llama_api","layer_to":"sched_compute"}
+{“from”:“_cgo_*_Cfunc_llama_decode”,“to”:“llama_decode”,
+ “confidence”:“confirmed”,“layer_from”:“go_cgo_bridge”,“layer_to”:“llama_api”}
+{“from”:“_cgo_*_Cfunc_common_sampler_csample”,“to”:“common_sampler_csample”,
+ “confidence”:“confirmed”,“layer_from”:“go_cgo_bridge”,“layer_to”:“llama_api”}
+{“from”:“llama_decode”,“to”:“ggml_backend_sched_graph_compute_async”,
+ “confidence”:“confirmed”,“layer_from”:“llama_api”,“layer_to”:“sched_compute”}
 \end{lstlisting}
 
 \section{eBPF 追踪对推理性能的影响评估}
@@ -261,16 +261,16 @@ TinyLlama-1.1B 模型的推理执行阶段共包含约 119 次 llama\_decode 调
 代码~\ref{lst:alerts} 展示了前 10 条阻塞时长最长的 futex 告警（按阻塞时长降序）。
 
 \begin{lstlisting}[caption={Top 10 futex 阻塞告警（JSON 片段）}, label={lst:alerts}]
-{"tid":45633,"type":"futex_block","risk":"HIGH","dur_ms":15186.0}
-{"tid":41060,"type":"futex_block","risk":"HIGH","dur_ms":9791.7}
-{"tid":41122,"type":"futex_block","risk":"HIGH","dur_ms":9790.5}
-{"tid":41061,"type":"futex_block","risk":"HIGH","dur_ms":9789.5}
-{"tid":45627,"type":"futex_block","risk":"HIGH","dur_ms":9412.7}
-{"tid":45624,"type":"futex_block","risk":"HIGH","dur_ms":9332.0}
-{"tid":45631,"type":"futex_block","risk":"HIGH","dur_ms":9331.9}
-{"tid":45625,"type":"futex_block","risk":"HIGH","dur_ms":9331.7}
-{"tid":41053,"type":"futex_block","risk":"HIGH","dur_ms":9301.3}
-{"tid":41054,"type":"futex_block","risk":"HIGH","dur_ms":9301.3}
+{“tid”:45633,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:15186.0}
+{“tid”:41060,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9791.7}
+{“tid”:41122,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9790.5}
+{“tid”:41061,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9789.5}
+{“tid”:45627,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9412.7}
+{“tid”:45624,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9332.0}
+{“tid”:45631,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9331.9}
+{“tid”:45625,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9331.7}
+{“tid”:41053,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9301.3}
+{“tid”:41054,“type”:“futex_block”,“risk”:“HIGH”,“dur_ms”:9301.3}
 \end{lstlisting}
 
 \subsection{典型案例分析}

@@ -1,24 +1,37 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4\hspace  {.3em}}HybriChain 实现方案}{17}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4\hspace  {.3em}}HybriChain 在 Ollama 上的实现}{16}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10.0pt}}
 \@writefile{lot}{\addvspace {10.0pt}}
-\newlabel{chap:implementation}{{4}{17}{HybriChain 实现方案}{chapter.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 追踪的特殊问题}{17}{section.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}eBPF 追踪脚本的具体实现}{17}{section.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}uprobe 挂载的具体函数}{17}{subsection.4.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}系统调用 tracepoint 的具体配置}{18}{subsection.4.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Go 函数不可挂 uretprobe 的处理方式}{19}{subsection.4.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}数据解析脚本的具体实现}{19}{section.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.4}静态符号提取的具体实现}{19}{section.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.5}缝合模块的具体实现}{20}{section.4.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4-1}{\ignorespaces 置信度计算流程}}{21}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:confidence}{{4-1}{21}{置信度计算流程}{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.6}异常检测规则的具体实现}{22}{section.4.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.7}完整追踪流程}{23}{section.4.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.8}本章小结}{24}{section.4.8}\protected@file@percent }
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{chap:implementation}{{4}{16}{HybriChain 在 Ollama 上的实现}{chapter.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 的工程特性}{16}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}eBPF 追踪脚本的具体实现}{16}{section.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}uprobe 挂载的具体函数}{16}{subsection.4.2.1}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {3}{\ignorespaces uprobe/uretprobe 配置（以 llama\_decode 为例）}}{17}{algocf.3}\protected@file@percent }
+\newlabel{fig:uprobe-config}{{3}{17}{uprobe 挂载的具体函数}{algocf.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}系统调用 tracepoint 的具体配置}{17}{subsection.4.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}数据解析脚本的具体实现}{18}{section.4.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {4}{\ignorespaces bpftrace 原始输出的解析状态机}}{19}{algocf.4}\protected@file@percent }
+\newlabel{fig:parser-fsm}{{4}{19}{数据解析脚本的具体实现}{algocf.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}静态符号提取的具体实现}{20}{section.4.4}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {5}{\ignorespaces 函数符号层次分类算法}}{21}{algocf.5}\protected@file@percent }
+\newlabel{fig:classify-layer}{{5}{21}{静态符号提取的具体实现}{algocf.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}缝合模块的具体实现}{21}{section.4.5}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {6}{\ignorespaces 锚点函数名匹配算法}}{22}{algocf.6}\protected@file@percent }
+\newlabel{fig:anchor-match}{{6}{22}{缝合模块的具体实现}{algocf.6}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {7}{\ignorespaces 置信度计算流程}}{23}{algocf.7}\protected@file@percent }
+\newlabel{fig:confidence}{{7}{23}{缝合模块的具体实现}{algocf.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}Ollama 独门方法：跨进程 traceID 注入}{23}{section.4.6}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {8}{\ignorespaces tracelID 注入：三文件具体改动}}{24}{algocf.8}\protected@file@percent }
+\newlabel{fig:traceid-inject}{{8}{24}{Ollama 独门方法：跨进程 traceID 注入}{algocf.8}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {9}{\ignorespaces traceID 跨进程数据流}}{24}{algocf.9}\protected@file@percent }
+\newlabel{fig:traceid-flow}{{9}{24}{Ollama 独门方法：跨进程 traceID 注入}{algocf.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}异常检测规则的具体实现}{25}{section.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.8}完整追踪流程}{25}{section.4.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.9}本章小结}{27}{section.4.9}\protected@file@percent }
 \@setckpt{src/chap/chap04}{
-\setcounter{page}{25}
+\setcounter{page}{28}
 \setcounter{equation}{0}
 \setcounter{enumi}{6}
 \setcounter{enumii}{0}
@@ -28,12 +41,12 @@
 \setcounter{mpfootnote}{0}
 \setcounter{part}{0}
 \setcounter{chapter}{4}
-\setcounter{section}{8}
+\setcounter{section}{9}
 \setcounter{subsection}{0}
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{1}
+\setcounter{figure}{0}
 \setcounter{table}{0}
 \setcounter{lofdepth}{1}
 \setcounter{lotdepth}{1}
@@ -41,7 +54,7 @@
 \setcounter{Item}{11}
 \setcounter{Hfootnote}{0}
 \setcounter{Hy@AnnotLevel}{0}
-\setcounter{bookmark@seq@number}{46}
+\setcounter{bookmark@seq@number}{0}
 \setcounter{lstnumber}{1}
 \setcounter{caption@flags}{2}
 \setcounter{continuedfloat}{0}
@@ -52,6 +65,10 @@
 \setcounter{subfigure@save}{0}
 \setcounter{subtable}{0}
 \setcounter{subtable@save}{0}
+\setcounter{AlgoLine}{7}
+\setcounter{algocfline}{9}
+\setcounter{algocfproc}{9}
+\setcounter{algocf}{9}
 \setcounter{thm}{0}
 \setcounter{lstlisting}{0}
 }
