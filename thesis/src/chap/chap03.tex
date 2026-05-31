@@ -25,7 +25,7 @@ HybriChain 要做到以下几件事：
 
 \begin{enumerate}[(1)]
     \item \textbf{跨语言调用链追踪。} 从 API 请求到内核系统调用，把整个调用链串起来。
-    \item \textbf{零侵入观测。} 追踪不能修改推理引擎的代码，不能影响它的正常运行。
+    \item \textbf{轻量级追踪注入。} 为了实现跨进程的完整调用链缝合，需要在 Ollama 的 daemon 和 runner 进程里各注入一个轻量级的跟踪函数（\texttt{withTraceID}），生成 UUID 作为请求追踪 ID，并通过 HTTP header（\texttt{X-Request-ID}）在两个进程间传递。这个注入仅涉及函数入口处的一行调用，不改变推理逻辑，不影响推理性能。
     \item \textbf{低开销。} eBPF 追踪本身不能把推理引擎拖慢太多。
     \item \textbf{结果可读。} 追踪到的函数符号要让分析人员能看懂，知道是哪一层在做什么。
     \item \textbf{异常检测。} 在调用链上发现异常行为，比如 futex 长等待、大块 mmap 分配、敏感文件访问等。
@@ -35,7 +35,7 @@ HybriChain 要做到以下几件事：
 
 图~\ref{fig:system-arch} 是 HybriChain 的系统架构。整体分为两部分：左边是被追踪的靶点（Ollama 推理引擎），右边是 HybriChain 分析系统。
 
-Ollama 推理引擎本身是一个双进程架构：daemon 进程（Ollama 主服务）接收 HTTP 请求，runner 子进程（实际执行推理）负责跑模型。两者通过 Unix Domain Socket 通信。
+Ollama 推理引擎本身是一个双进程架构：daemon 进程（Ollama 主服务）接收 HTTP 请求，runner 子进程（实际执行推理）负责跑模型。两者通过 HTTP over TCP（127.0.0.1 随机端口）通信，而非传统的 Unix Domain Socket。daemon 和 runner 是独立进程，拥有各自独立的线程 ID（TID）编号空间，因此同一推理请求在 daemon 侧和 runner 侧会出现在完全不同的 TID 中——这给跨进程调用链缝合带来了根本性挑战。
 
 HybriChain 包含三个核心模块：
 
@@ -137,16 +137,19 @@ trace\_unify.py 的解析流程如下：
 
 \textbf{第一步：识别事件类型。} bpftrace 的输出用标记前缀来区分事件类型：
 \begin{itemize}
+    \item \texttt{@TRACEID@} 开头的是跨进程追踪 ID 事件（daemon 或 runner 侧 \texttt{withTraceID} 入口），后跟角色（\texttt{daemon\_entry} 或 \texttt{runner\_entry}）、时间戳（纳秒）、线程 ID、traceID 值；
     \item \texttt{@UPROBE@} 开头的是用户态函数调用事件，后跟函数名、时间戳（纳秒）、线程 ID、耗时（微秒）；
     \item \texttt{@SYSCALL@} 开头的是系统调用事件，后跟调用名、时间戳、线程 ID、耗时和参数（如 bytes=、fd=）；
     \item \texttt{@END@} 标记当前事件的结束。
 \end{itemize}
 
-\textbf{第二步：提取调用栈。} uprobe 事件在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间会输出调用栈帧。调用栈帧里既有可读的函数符号名，也有以 \texttt{0x} 开头的内存地址。地址没有分析价值，直接过滤掉，只保留函数符号名。同时还要对 C++ mangled 符号做 demangle（比如 \texttt{\_Z21common\_sampler\_sampleP14common\_sampler...} 还原成 \texttt{common\_sampler\_sample(common\_sampler*)})。
+\textbf{第二步：维护 traceID 映射表。} 解析过程中维护一个 \texttt{active\_trace\_id[tid] \to traceID} 的映射。当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件继承这个 traceID 作为其 \texttt{trace\_id} 字段。
+
+\textbf{第三步：提取调用栈。} uprobe 事件在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间会输出调用栈帧。调用栈帧里既有可读的函数符号名，也有以 \texttt{0x} 开头的内存地址。地址没有分析价值，直接过滤掉，只保留函数符号名。同时还要对 C++ mangled 符号做 demangle（比如 \texttt{\_Z21common\_sampler\_sampleP14common\_sampler...} 还原成 \texttt{common\_sampler\_sample(common\_sampler*)})。
 
 \textbf{第三步：按时间戳排序。} 所有事件按纳秒级时间戳排序，形成一个统一的时间序列。
 
-解析后的数据以 JSON 格式保存，每个事件包含字段：ts\_ns（纳秒时间戳）、tid（线程 ID）、type（uprobe 或 syscall）、func（函数名）、duration\_us（耗时，微秒）、stack（调用栈帧列表）、extra（额外参数）。
+解析后的数据以 JSON 格式保存，每个事件包含字段：ts\_ns（纳秒时间戳）、tid（线程 ID）、type（traceid、uprobe 或 syscall）、func（函数名）、duration\_us（耗时，微秒）、stack（调用栈帧列表）、extra（额外参数）、\textbf{trace\_id（跨进程追踪 ID）}。
 
 原始 bpftrace 输出通常有大量无效行（启动提示、停止提示、空行），这些在解析阶段直接跳过。
 
@@ -180,6 +183,59 @@ trace\_unify.py 的解析流程如下：
 跨语言边界上的调用关系无法通过单一数据源完全确认——调用栈可以确认有直接调用关系（Confirmed），但大量系统调用只能通过时间窗口推断（Inferred）。置信度的作用就是让分析人员分清哪些结论是确定的，哪些是推测的。
 
 缝合完成后，输出是一个带置信度标签的调用链图，每个节点有层次标注（对应下一节的分类体系），每条边有置信度标签（Confirmed / Inferred / Unknown）。
+
+\subsection{跨进程调用链缝合}
+
+Ollama 的 daemon 和 runner 是独立进程，同一推理请求的两段（daemon 侧处理和 runner 侧推理）在 TID 编号空间上是完全隔离的。要把这两段缝合起来，需要一个跨进程的关联键。
+
+HybriChain 的方案是：在 daemon 的 HTTP Handler 入口处生成一个 UUID 作为 \texttt{traceID}，通过 HTTP 请求的 \texttt{X-Request-ID} header 传给 runner，runner 在接收请求时读取同一个 header。这两个进程中带有相同 traceID 的事件，属于同一次推理请求。
+
+在实现上，daemon 和 runner 各有一个轻量级的 \texttt{withTraceID} 函数：
+
+\begin{verbatim}
+// daemon: server/routes.go
+func withTraceID(traceID string, handler func()) { handler() }
+func (s *Server) GenerateHandler(c *gin.Context) {
+    traceID := uuid.NewString()  // 每次请求生成一个新 UUID
+    withTraceID(traceID, func() {
+        // 原来的 handler 逻辑，traceID 在闭包里可用
+        r.Completion(ctx, llm.CompletionRequest{
+            TraceID: traceID,  // 透传到发给 runner 的请求里
+            ...
+        })
+    })
+}
+
+// runner: runner/llamarunner/runner.go
+func withTraceID(traceID string, handler func()) { handler() }
+func (s *Server) completion(w http.ResponseWriter, r *http.Request) {
+    traceID := r.Header.Get("X-Request-ID")
+    withTraceID(traceID, func() {
+        s.runCompletion(w, r, req)  // traceID 在闭包里可用
+    })
+}
+\end{verbatim}
+
+在 bpftrace 脚本中，分别在 daemon 侧和 runner 侧的 \texttt{withTraceID} 入口处挂 uprobe，记录 \texttt{@TRACEID@ daemon\_entry} 和 \texttt{@TRACEID@ runner\_entry} 事件：
+
+\begin{verbatim}
+uprobe:ollama-debug:"server.withTraceID"
+{
+    $ptr = *(uint64)$arg1;   // string data pointer
+    $len = *(uint64)($arg1+8); // string length
+    printf("@TRACEID@ daemon_entry %lu %d %s\n", nsecs, pid, $ptr);
+}
+uprobe:ollama-debug:"llamarunner.withTraceID"
+{
+    $ptr = *(uint64)$arg1;
+    $len = *(uint64)($arg1+8);
+    printf("@TRACEID@ runner_entry %lu %d %s\n", nsecs, pid, $ptr);
+}
+\end{verbatim}
+
+缝合脚本在解析时维护一个 \texttt{active\_trace\_id[tid]} 映射表：当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件都继承这个 traceID。最后，按 traceID 分组即可将 daemon 侧事件和 runner 侧事件归并到同一条调用链中。
+
+同一 traceID 下所有事件按时间戳排序，构成完整的跨进程调用链：\texttt{daemon entry} $\to$ \texttt{llama.cpp function} $\to$ \texttt{syscall} $\to$ \texttt{runner entry} $\to$ \texttt{llama.cpp function} $\to$ \texttt{syscall}。
 
 \section{跨语言符号分类体系}
 

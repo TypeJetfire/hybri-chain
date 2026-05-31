@@ -43,6 +43,7 @@ class Event:
     stack: list = field(default_factory=list)
     comm: str = ""
     extra: dict = field(default_factory=dict)
+    trace_id: str = ""  # HybriChain: cross-process trace ID from X-Request-ID
 
 
 def parse_jsonl(path: str):
@@ -54,7 +55,9 @@ def parse_jsonl(path: str):
     cur_tid = 0
     cur_dur = 0
     cur_stack = []
+    cur_trace_id = ''
     extra = {}
+    active_trace_id = {}  # tid(int) -> trace_id(str), updated by @TRACEID@ events
 
     for raw in open(path, "r"):
         line = raw.rstrip("\n")
@@ -64,7 +67,17 @@ def parse_jsonl(path: str):
             stripped.startswith("Stop") or stripped.startswith("---")):
             continue
 
-        if stripped.startswith("@UPROBE@ "):
+        if stripped.startswith("@TRACEID@ "):
+            # @TRACEID@ daemon_entry|runner_entry ts_ns pid traceID
+            parts = stripped.split(maxsplit=4)
+            if len(parts) >= 5:
+                tid_key = int(parts[3])
+                active_trace_id[tid_key] = parts[4]
+                ev = Event(ts_ns=int(parts[2]), tid=tid_key, type="traceid",
+                            func=parts[1], duration_us=0, trace_id=parts[4])
+                events.append(ev)
+
+        elif stripped.startswith("@UPROBE@ "):
             parts = stripped.split()
             cur_type = "uprobe"
             cur_func = parts[1]
@@ -72,6 +85,7 @@ def parse_jsonl(path: str):
             cur_tid = int(parts[3])
             cur_dur = int(parts[4])
             cur_stack = []
+            cur_trace_id = active_trace_id.get(cur_tid, '')
 
         elif stripped.startswith("@SYSCALL@ "):
             parts = stripped.split()
@@ -81,6 +95,7 @@ def parse_jsonl(path: str):
             cur_tid = int(parts[3])
             cur_dur = 0
             cur_stack = []
+            cur_trace_id = active_trace_id.get(cur_tid, '')
             extra = {}
             for p in reversed(parts[4:]):
                 if p.startswith("dur="):
@@ -98,11 +113,13 @@ def parse_jsonl(path: str):
             if cur_type == "uprobe":
                 clean = [f.strip() for f in cur_stack if f.strip() and not f.strip().startswith("0x")]
                 ev = Event(ts_ns=cur_ts_ns, tid=cur_tid, type="uprobe",
-                            func=cur_func, duration_us=cur_dur, stack=clean)
+                            func=cur_func, duration_us=cur_dur, stack=clean,
+                            trace_id=cur_trace_id, extra=extra)
                 events.append(ev)
             elif cur_type == "syscall":
                 ev = Event(ts_ns=cur_ts_ns, tid=cur_tid, type="syscall",
-                            func=cur_func, duration_us=cur_dur, stack=[], extra=extra)
+                            func=cur_func, duration_us=cur_dur, stack=[], extra=extra,
+                            trace_id=cur_trace_id)
                 events.append(ev)
             cur_type = None
 
@@ -111,6 +128,67 @@ def parse_jsonl(path: str):
 
     events.sort(key=lambda e: e.ts_ns)
     return events
+
+
+def build_trace_chains(events):
+    """
+    HybriChain 跨进程调用链缝合。
+
+    策略：按 trace_id 分组，相同 trace_id 的 daemon 侧和 runner 侧事件
+    归并到同一棵调用树中。trace_id 由 withTraceID uprobe 提供，
+    形式为 @TRACEID@ daemon_entry|runner_entry <ts> <pid> <traceID>。
+
+    事件流（单次推理）：
+      daemon:  @TRACEID@ daemon_entry  t0  pid  <traceID>
+               @UPROBE@  llama_xxx    t1   tid  (→ llama.cpp)
+               @SYSCALL@ futex        t2   tid  (→ 内核)
+      runner:  @TRACEID@ runner_entry t3   pid  <traceID>  ← 同 traceID
+               @UPROBE@  llama_decode t4   tid  (→ llama.cpp)
+               @SYSCALL@ mmap         t5   tid  (→ 内核)
+
+    同一 trace_id 下的所有事件，按时间戳排序，构成完整调用链。
+    无 trace_id 的事件（遗留或不支持的场景）回退到按 TID 分组。
+    """
+    by_trace = defaultdict(list)
+    no_trace = []  # 事件没有 trace_id 的原始 TID 分组
+
+    traceid_events = [e for e in events if e.type == "traceid"]
+    # 按 trace_id 分组
+    for ev in events:
+        if ev.trace_id:
+            by_trace[ev.trace_id].append(ev)
+        else:
+            no_trace.append(ev)
+
+    chains = []
+    for trace_id, evs in by_trace.items():
+        evs.sort(key=lambda e: e.ts_ns)
+        # 提取涉及的 PID（daemon 和 runner）
+        pids = list({e.tid for e in evs if e.type in ("uprobe", "syscall")})
+        chains.append({
+            "trace_id": trace_id,
+            "layer": "cross_process",
+            "pids": pids,
+            "events": evs,
+            "total_us": evs[-1].ts_ns - evs[0].ts_ns if evs else 0,
+        })
+
+    # 无 trace_id 的回退到原 TID 策略
+    by_tid_fallback = defaultdict(list)
+    for ev in no_trace:
+        by_tid_fallback[ev.tid].append(ev)
+    for tid, evs in by_tid_fallback.items():
+        evs.sort(key=lambda e: e.ts_ns)
+        chains.append({
+            "trace_id": "",
+            "layer": "single_process",
+            "tid": tid,
+            "events": evs,
+            "total_us": evs[-1].ts_ns - evs[0].ts_ns if evs else 0,
+        })
+
+    chains.sort(key=lambda c: -c["total_us"])
+    return chains
 
 
 def build_call_tree(events):
@@ -139,6 +217,7 @@ def build_call_tree(events):
         for req in requests:
             trees.append({
                 "tid": tid,
+                "trace_id": req[0].trace_id if req else "",
                 "comm": req[0].comm,
                 "events": req,
                 "total_us": req[-1].ts_ns - req[0].ts_ns,
@@ -169,6 +248,7 @@ class Stitcher:
 
         self.events = []
         self.trees = []
+        self.trace_chains = []
         self.anchor_index = {}
         self.edge_confidences = {}
         self.stitched_graph = None
@@ -183,9 +263,14 @@ class Stitcher:
         syscall_n = sum(1 for e in self.events if e.type == "syscall")
         print(f"[Stitcher]   uprobe={uprobe_n}, syscall={syscall_n}")
 
-        print("[Stitcher] 构建请求树...")
+        print("[Stitcher] 构建请求树（单进程 TID 分组）...")
         self.trees = build_call_tree(self.events)
-        print(f"[Stitcher]   {len(self.trees)} 个请求/调用链")
+        print(f"[Stitcher]   {len(self.trees)} 个 TID 请求树")
+
+        print("[Stitcher] 构建跨进程调用链（trace_id 分组）...")
+        self.trace_chains = build_trace_chains(self.events)
+        cross_chains = [c for c in self.trace_chains if c.get("layer") == "cross_process"]
+        print(f"[Stitcher]   {len(self.trace_chains)} 条调用链（其中跨进程: {len(cross_chains)} 条）")
 
     def run(self):
         """执行缝合。"""
@@ -250,6 +335,20 @@ class Stitcher:
             "confirmed_edges": confirmed,
             "inferred_edges": inferred,
             "conflicting_edges": conflicting,
+            "cross_process_chains": [
+                {
+                    "trace_id": c["trace_id"],
+                    "pids": c.get("pids", []),
+                    "events": [
+                        {"ts_ns": e.ts_ns, "tid": e.tid, "type": e.type,
+                         "func": e.func, "duration_us": e.duration_us}
+                        for e in c["events"]
+                    ],
+                    "total_us": c["total_us"],
+                }
+                for c in self.trace_chains
+                if c.get("layer") == "cross_process"
+            ],
         }
 
     def print_summary(self):

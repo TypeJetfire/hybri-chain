@@ -28,12 +28,13 @@ from pathlib import Path
 class Event:
     ts_ns: int
     tid: int
-    type: str          # 'uprobe' | 'syscall'
+    type: str          # 'uprobe' | 'syscall' | 'traceid'
     func: str
     duration_us: int
     stack: list = field(default_factory=list)
     comm: str = ''
     extra: dict = field(default_factory=dict)
+    trace_id: str = ''  # HybriChain: cross-process trace ID from X-Request-ID
 
 
 def parse_jsonl(path: str):
@@ -45,7 +46,9 @@ def parse_jsonl(path: str):
     cur_tid = 0
     cur_dur = 0
     cur_stack = []
+    cur_trace_id = ''   # HybriChain: active trace_id for the current tid
     extra = {}
+    active_trace_id = {}  # tid(int) -> trace_id(str), updated by @TRACEID@ events
 
     with open(path, 'r', encoding='utf-8', errors='replace') as f:
         for raw in f:
@@ -57,7 +60,24 @@ def parse_jsonl(path: str):
                 stripped.startswith('Attaching')):
                 continue
 
-            if stripped.startswith('@UPROBE@ '):
+            if stripped.startswith('@TRACEID@ '):
+                # @TRACEID@ daemon_entry|runner_entry ts_ns pid traceID
+                # Update the active trace_id for this pid (tid). All subsequent
+                # uprobe/syscall events with the same tid belong to this trace.
+                parts = stripped.split(maxsplit=4)
+                if len(parts) >= 5:
+                    tid_key = int(parts[3])
+                    active_trace_id[tid_key] = parts[4]
+                    events.append(Event(
+                        ts_ns=int(parts[2]),
+                        tid=tid_key,
+                        type='traceid',
+                        func=parts[1],
+                        duration_us=0,
+                        trace_id=parts[4],
+                    ))
+
+            elif stripped.startswith('@UPROBE@ '):
                 parts = stripped.split()
                 cur_type = 'uprobe'
                 cur_func = parts[1]
@@ -65,6 +85,8 @@ def parse_jsonl(path: str):
                 cur_tid = int(parts[3])
                 cur_dur = int(parts[4]) if len(parts) > 4 else 0
                 cur_stack = []
+                cur_trace_id = active_trace_id.get(cur_tid, '')
+                extra = {}
 
             elif stripped.startswith('@SYSCALL@ '):
                 parts = stripped.split()
@@ -94,13 +116,15 @@ def parse_jsonl(path: str):
                     events.append(Event(
                         ts_ns=cur_ts_ns, tid=cur_tid, type='uprobe',
                         func=cur_func, duration_us=cur_dur,
-                        stack=clean_frames,
+                        stack=clean_frames, extra=extra,
+                        trace_id=cur_trace_id,
                     ))
                 elif cur_type == 'syscall':
                     events.append(Event(
                         ts_ns=cur_ts_ns, tid=cur_tid, type='syscall',
                         func=cur_func, duration_us=cur_dur,
                         stack=[], extra=extra,
+                        trace_id=cur_trace_id,
                     ))
                 cur_type = None
 
@@ -241,6 +265,7 @@ def write_events_json(events, output_path):
             'duration_us': ev.duration_us,
             'stack': ev.stack,
             'extra': ev.extra,
+            'trace_id': ev.trace_id,  # HybriChain: cross-process trace ID
         })
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(out, f, indent=2, ensure_ascii=False)

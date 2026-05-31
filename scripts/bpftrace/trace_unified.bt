@@ -34,6 +34,33 @@ BEGIN
 }
 
 // ============================================================
+// 0. API 入口层（Daemon process：HTTP Handler → withTraceID）
+//
+// withTraceID 是我们在 Ollama daemon 和 runner 侧分别插入的跟踪函数：
+//   - daemon 侧：server.withTraceID，traceID 在函数入口处生成
+//   - runner 侧：llamarunner.withTraceID，traceID 从 X-Request-ID header 读出
+// 两者通过相同的 traceID 关联，实现跨进程的完整调用链缝合。
+// uprobe 只挂入口，闭包内部真正的 llama.cpp 调用链由后续 uprobes 覆盖。
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"server.withTraceID"
+{
+    // $arg1 = traceID (string: ptr+len, 16 bytes)
+    $ptr = *(uint64)$arg1;
+    $len = *(uint64)($arg1 + 8);
+    printf("@TRACEID@ daemon_entry %lu %d %s\n", nsecs, pid, $ptr);
+    printf("@END@\n");
+}
+
+uprobe:/home/typejetfire/graduation_thesis/ollama-debug:"llamarunner.withTraceID"
+{
+    // $arg1 = traceID (string: ptr+len, 16 bytes)
+    $ptr = *(uint64)$arg1;
+    $len = *(uint64)($arg1 + 8);
+    printf("@TRACEID@ runner_entry %lu %d %s\n", nsecs, pid, $ptr);
+    printf("@END@\n");
+}
+
+// ============================================================
 // 1. llama.cpp 函数层（Runner subprocess：推理循环）
 // ============================================================
 //

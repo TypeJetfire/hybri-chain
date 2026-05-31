@@ -9,11 +9,13 @@
 
 Ollama 不是普通的单进程程序，它有三个在实现追踪方案时必须处理的特点。
 
-\textbf{双进程架构。} Ollama 的 daemon 进程和 runner 子进程是独立进程。daemon 处理 HTTP 请求并通过 Unix Domain Socket 把推理任务发给 runner，runner 负责实际跑模型。两个进程都叫 \texttt{ollama-debug}，bpftrace 需要同时追踪两个进程。
+\textbf{双进程架构。} Ollama 的 daemon 进程和 runner 子进程是独立进程，通过 HTTP over TCP（127.0.0.1 随机端口）通信，而非 Unix Domain Socket。daemon 和 runner 的 TID 编号空间各自独立，同一推理请求在两端的 TID 不同，这给跨进程缝合带来了根本性挑战。bpftrace 需要同时追踪两个进程。
 
 \textbf{CGO 哈希后缀。} Go 编译器生成的 CGO 桥接函数名不是 \texttt{cgo:warning} 这种可读格式，而是 \texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode} 这样带哈希后缀的名字。这种名字无法直接和 llama.cpp 的 \texttt{llama\_decode} 对应，需要专门处理。
 
 \textbf{Go 函数不能挂 uretprobe。} Go 1.17+ 使用的栈管理机制和 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会导致进程崩溃。所以 HybriChain 的 uprobe 只能挂在 llama.cpp 的 C++ 函数上，不能追踪 Go 层的函数。
+
+\textbf{轻量级追踪注入实现跨进程缝合。} 为了把 daemon 侧和 runner 侧的事件缝合到同一条调用链，HybriChain 在 Ollama 代码中注入了一个轻量级的 \texttt{withTraceID} 函数（daemon 在 \texttt{server/routes.go}，runner 在 \texttt{runner/llamarunner/runner.go}）。daemon 在 HTTP Handler 入口生成 UUID 作为 traceID，通过 \texttt{X-Request-ID} HTTP header 传给 runner，runner 读取 header 后也调用 \texttt{withTraceID}。两个进程里具有相同 traceID 的事件被 bpftrace 的 \texttt{@TRACEID@} uprobe 捕获，按 traceID 匹配即可实现跨进程缝合。
 
 \section{eBPF 追踪脚本的具体实现}
 
@@ -80,17 +82,17 @@ read/write 的过滤条件是：返回值必须大于 0（失败的调用不记�
 
 \subsection{Go 函数不可挂 uretprobe 的处理方式}
 
-虽然 Go 函数不能挂 uretprobe，但这不影响追踪效果。原因是：跨语言调用的边界发生在 CGO 桥接函数上——CGO 桥接函数是 C++ 函数，在它们被调用时挂 uprobe，就能拿到完整的调用栈，栈里自然包含 Go 侧的调用路径。换句话说，只要在 llama.cpp 的函数上挂探针，就能看到从 Go 侧一路调用过来的完整栈。
-
-这个限制的真实影响是：无法单独测量 Go 层函数的耗时。但这不是本系统的目标——HybriChain 关注的是跨语言调用链的结构，而不是 Go 层的内部耗时。
+虽然 Go 函数不能挂 uretprobe，但通过注入 \texttt{withTraceID} 函数，可以在 API Handler 入口处捕获 traceID，作为跨进程缝合的起点。\texttt{withTraceID} 只是一个空壳函数（仅执行 \texttt{handler()}），性能影响为零，但能为 bpftrace 提供一个安全的 uprobe 挂载点来记录 traceID。
 
 \section{数据解析脚本的具体实现}
 
 trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JSON 事件列表。
 
-解析的核心是状态机逻辑：以 \texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@} 三个标记来识别事件边界。解析过程分三种情况：
+解析的核心是状态机逻辑：以 \texttt{@TRACEID@}、\texttt{@UPROBE@}、\texttt{@SYSCALL@}、\texttt{@END@} 四个标记来识别事件边界。解析过程分三种情况：
 
-当遇到 \texttt{@UPROBE@} 时，提取函数名、时间戳（纳秒）、线程 ID 和耗时，同时清空调用栈缓冲区，状态切换为"正在读 uprobe 栈"。
+当遇到 \texttt{@TRACEID@} 时，提取角色（daemon\_entry 或 runner\_entry）、时间戳、线程 ID 和 traceID 值，同时更新解析器内部的 \texttt{active\_trace\_id[tid]} 映射表，后续事件继承这个 traceID。
+
+当遇到 \texttt{@UPROBE@} 时，提取函数名、时间戳（纳秒）、线程 ID 和耗时，同时清空调用栈缓冲区，状态切换为"正在读 uprobe 栈"。当前事件的 traceID 从 \texttt{active\_trace\_id} 映射表中取。
 
 在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间，所有非空行都是调用栈帧。如果是内存地址（以 \texttt{0x} 开头），直接跳过；如果是函数符号名，存入栈帧列表。
 
@@ -162,6 +164,8 @@ CGO_EQUIV = {
 匹配策略按优先级递减执行：先查 CGO\_EQUIV 表（精确匹配）；再查静态符号表（精确匹配）；然后做 demangle 后匹配；最后做子串宽松匹配（长度至少 4 个字符）。
 
 ConfidenceCalculator 的计算逻辑是：遍历所有静态边（A → B），检查动态轨迹中是否观测到 A 和 B 同时出现在同一个请求树（同一个 TID 的时间窗口）里。
+
+除此之外，stitcher.py 新增了 \texttt{build\_trace\_chains} 函数，实现基于 traceID 的跨进程调用链缝合。按 traceID 分组后，相同 traceID 的 daemon 侧事件和 runner 侧事件被归并到同一条调用链，每条链包含完整的时间序列（daemon entry → llama.cpp/syscall → runner entry → llama.cpp/syscall），可直接用于分析一次端到端推理请求的全貌。无 traceID 的遗留事件回退到原 TID 分组策略。
 
 具体步骤是：先把事件按 TID 分组，同一 TID 内时间间隔超过 50 毫秒的事件被认为是不同请求，分别构成独立的请求树。然后对每条静态边，检查它两端对应的函数是否在 $\ge 2$ 棵不同的请求树中共同出现。如果是，标记为 Confirmed；只在 1 棵请求树中共同出现，标记为 Inferred；都没出现，标记为 Unknown。
 
