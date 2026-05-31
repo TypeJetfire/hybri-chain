@@ -267,7 +267,7 @@ AnchorMatcher 维护一个"等价映射表"，把各种格式的 CGO 函数名�
 \KwIn{静态调用图 $G=(V,E)$；动态事件列表 $E_{\text{dyn}}$；请求树构建函数 $\text{build\_trees}$；阈值 $T_{\text{gap}} = 50$ms}
 \KwOut{每条边 $(u,v) \in E$ 的置信度标签 $C(u,v)$}
 
-\ BlankLine
+\BlankLine
 $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \tcp*{构建请求树}
 \ForEach{$v \in V$}{
     $\text{tree\_set}[v] \leftarrow \emptyset$ \tcp*{$v$ 出现过的请求树集合}
@@ -382,13 +382,13 @@ analyzer.py 实现了一个简单的规则引擎，遍历所有事件，对每�
 
 六条规则的具体实现逻辑与第三章 3.7 节的通用设计一致，Ollama 场景下的阈值设定参考了实测数据：
 
-\textbf{futex\_block 规则。} 条件是 ev.type == "syscall" 且 ev.func == "futex" 且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。实测：Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒。
+\textbf{futex\_block 规则。} 条件是 ev.type == "syscall"且 ev.func == "futex"且 ev.duration\_us > 1000（1 毫秒）。如果耗时超过 5000 微秒，级别是高风险；否则是中风险。输出字段包括耗时（毫秒）和 futex 操作码（op）。实测：Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒。
 
 \textbf{mmap\_size 规则。} 条件是 ev.func 匹配 mmap/mmap2 且从 extra 字典中取 length 字段。如果 length > 1GB，级别为 CRITICAL；如果 512MB < length <= 1GB，级别为 HIGH。实测基准：TinyLlama-1.1B KV Cache 约为 256MB，Qwen2-0.5B 约为 512MB。
 
-\textbf{sensitive\_path 规则。} 条件是 ev.func == "openat" 且打开的路径匹配敏感模式。敏感模式包括：blobs（中风险，Ollama 存放模型缓存的位置）、.gguf/.ggml（高风险）、server.json（低风险）、model.json（中风险）。路径字符串用 lower() 统一大小写后做子串匹配。
+\textbf{sensitive\_path 规则。} 条件是 ev.func == "openat"且打开的路径匹配敏感模式。敏感模式包括：blobs（中风险，Ollama 存放模型缓存的位置）、.gguf/.ggml（高风险）、server.json（低风险）、model.json（中风险）。路径字符串用 lower() 统一大小写后做子串匹配。
 
-\textbf{read\_size\_anomaly 规则。} 条件是 ev.func == "read" 且返回值（bytes 字段）> 128KB。一次正常的 read 通常是 512B（HTTPS buffer）或 4KB（页对齐），超过 128KB 说明在读大块数据，可能是 prompt 注入或异常数据传输。
+\textbf{read\_size\_anomaly 规则。} 条件是 ev.func == "read"且返回值（bytes 字段）> 128KB。一次正常的 read 通常是 512B（HTTPS buffer）或 4KB（页对齐），超过 128KB 说明在读大块数据，可能是 prompt 注入或异常数据传输。
 
 \textbf{write\_non\_stdout 规则。} 条件是 ev.func 匹配 write/sendto/send 且 fd 不在标准描述符（0, 1, 2）范围内。如果 fd == 3（Ollama HTTP socket）且写入超过 1KB，级别是中风险，表示可能有推理结果外传。
 
