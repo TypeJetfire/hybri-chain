@@ -6,6 +6,8 @@
 
 % 模板样式
 \usepackage{scuthesis}
+\usepackage{hyperref}    % 生成 PDF 超链接（自动被 bookmark 使用）
+\usepackage{bookmark}    % 生成 PDF 书签大纲（侧边栏目录）
 
 % 数学与定理
 \usepackage{amssymb}
@@ -20,7 +22,8 @@
 \usepackage{float}                 % 固定图片位置
 \usepackage{subfig}                % 子图宏包
 \usepackage{booktabs}              % 三线表
-\usepackage{enumerate}             % 有序列表环境
+\usepackage{enumerate}             % 有序列表宏包
+\usepackage[linesnumbered,ruled,commentsnumbered]{algorithm2e}  % 伪代码环境
 
 % 兼容旧写法 \subfigure[标题]{...}
 \providecommand{\subfigure}[2][]{\subfloat[#1]{#2}}

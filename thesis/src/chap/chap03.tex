@@ -102,29 +102,35 @@ HybriChain 包含三个核心模块：
 \end{itemize}
 
 \begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=1.6cm,
-    font=\small,
-    process/.style={rectangle,draw,minimum width=3.5cm,minimum height=0.7cm},
-    arrow/.style={->,>=stealth,thick}
-]
-
-\node[process] (probe_in) at (0,0) {uprobe: \texttt{llama\_decode} 被调用};
-\node[process] (record) at (0,-2) {\texttt{@start[tid] = nsecs} 记录时刻};
-\node[process] (return) at (0,-4) {uretprobe: 函数返回};
-\node[process] (calc) at (0,-6) {$dur = (nsecs - @start[tid]) / 1000$};
-\node[process] (output) at (0,-8) {输出函数名 + 时间戳 + 耗时 + 调用栈};
-\node[process] (cleanup) at (0,-10) {delete(@start[tid]) 清理哈希表};
-\draw[arrow] (probe_in) -- (record);
-\draw[arrow] (record) -- (return);
-\draw[arrow] (return) -- (calc);
-\draw[arrow] (calc) -- (output);
-\draw[arrow] (output) -- (cleanup);
-\end{tikzpicture}
-\captionsetup{format=plain}
+\begin{algorithm}[H]
 \caption{uprobe/uretprobe 工作流程}
 \label{fig:uretprobe}
+\DontPrintSemicolon
+\KwIn{bpftrace 事件流 $E = \{e_1, e_2, \dots\}$}
+\KwOut{带耗时的 uprobe 事件列表 $L$}
+
+\ BlankLine
+$\text{per\_tid\_start} \leftarrow \emptyset$ \tcp*[r]{tid $\rightarrow$ 进入时刻（纳秒）}
+$L \leftarrow \emptyset$ \tcp*[r]{输出列表}
+
+\ForEach{$e \in E$}{
+    \uIf{$e.\text{type} = \text{uprobe}$}{
+        $T \leftarrow e.\text{tid}$ \tcp*{线程 ID}
+        $\text{per\_tid\_start}[T] \leftarrow \texttt{nsecs}()$ \tcp*{记录进入时刻}
+    }
+    \uElseIf{$e.\text{type} = \text{uretprobe}$}{
+        $T \leftarrow e.\text{tid}$\;
+        \If{$T \in \text{per\_tid\_start}$}{
+            $t_{\text{start}} \leftarrow \text{per\_tid\_start}[T]$\;
+            $t_{\text{end}} \leftarrow \texttt{nsecs}()$\;
+            $d \leftarrow (t_{\text{end}} - t_{\text{start}}) / 1000$ \tcp*{耗时：微秒}
+            $S \leftarrow \texttt{ustack}()$ \tcp*{当前调用栈}
+            $L.\text{append}(\text{Event}(e.\text{func}, t_{\text{end}}, T, d, S))$\;
+            $\text{delete}(\text{per\_tid\_start}, T)$ \tcp*{清理哈希表}
+        }
+    }
+}
+\end{algorithm}
 \end{figure}
 
 需要特别说明的是：Go 函数上不能挂 uretprobe。Go 1.17+ 使用的 segmented stack 和 jmp tail-call 机制与 uretprobe 的 trampoline 实现不兼容，在 Go 函数上挂 uretprobe 会破坏 Go 的栈帧元数据，导致进程崩溃。因此 HybriChain 的 uprobe 只挂在 llama.cpp 的 C++ 函数上，不碰 Go 函数。这是正确的工程选择，而不是功能缺失。
@@ -143,7 +149,7 @@ trace\_unify.py 的解析流程如下：
     \item \texttt{@END@} 标记当前事件的结束。
 \end{itemize}
 
-\textbf{第二步：维护 traceID 映射表。} 解析过程中维护一个 \texttt{active\_trace\_id[tid] \to traceID} 的映射。当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件继承这个 traceID 作为其 \texttt{trace\_id} 字段。
+\textbf{第二步：维护 traceID 映射表。} 解析过程中维护一个 \texttt{active\_trace\_id[tid] $\to$ traceID} 的映射。当遇到 \texttt{@TRACEID@} 事件时，更新对应 tid 的活跃 traceID；后续所有带有相同 tid 的 uprobe/syscall 事件继承这个 traceID 作为其 \texttt{trace\_id} 字段。
 
 \textbf{第三步：提取调用栈。} uprobe 事件在 \texttt{@UPROBE@} 和 \texttt{@END@} 之间会输出调用栈帧。调用栈帧里既有可读的函数符号名，也有以 \texttt{0x} 开头的内存地址。地址没有分析价值，直接过滤掉，只保留函数符号名。同时还要对 C++ mangled 符号做 demangle（比如 \texttt{\_Z21common\_sampler\_sampleP14common\_sampler...} 还原成 \texttt{common\_sampler\_sample(common\_sampler*)})。
 

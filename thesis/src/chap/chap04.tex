@@ -174,37 +174,39 @@ ConfidenceCalculator 的计算逻辑是：遍历所有静态边（A → B），�
 图~\ref{fig:confidence} 给出了置信度计算的整体流程：
 
 \begin{figure}[H]
-\centering
-\begin{tikzpicture}[
-    node distance=1.3cm,
-    font=\small,
-    process/.style={rectangle,draw,minimum height=0.7cm,align=center},
-    decision/.style={diamond,aspect=2.2,draw},
-    arrow/.style={->,>=stealth,thick}
-]
-
-\node[process,fill=blue!8] (s1) at (0,0) {Step 1: 按 TID 构建请求树};
-\node[process,fill=blue!8] (s2) at (0,-1.8) {Step 2: 记录每节点在哪些请求树出现};
-\node[process,fill=blue!8] (s3) at (0,-3.6) {Step 3: 遍历每条静态边};
-\node[decision] (d1) at (0,-6) {该边两端同时出现在 ≥2 棵树？};
-\node[process] (c1) at (-4.2,-8.5) {Confirmed};
-\node[process] (c2) at (0,-8.5) {Inferred};
-\node[process] (c3) at (4.2,-8.5) {Unknown};
-\node[process] (out) at (0,-10.5) {输出每条边的置信状态};
-
-\draw[arrow] (s1) -- (s2);
-\draw[arrow] (s2) -- (s3);
-\draw[arrow] (s3) -- (d1);
-\draw[arrow] (d1) -| node[above, near start]{是} (c1);
-\draw[arrow] (d1) -- node[right]{仅1棵} (c2);
-\draw[arrow] (d1) -| node[above, near start]{否} (c3);
-\draw[arrow] (c1) |- (out);
-\draw[arrow] (c2) -- (out);
-\draw[arrow] (c3) |- (out);
-\end{tikzpicture}
-\captionsetup{format=plain}
+\begin{algorithm}[H]
 \caption{置信度计算流程}
 \label{fig:confidence}
+\DontPrintSemicolon
+\KwIn{静态调用图 $G=(V,E)$；动态事件列表 $E_{\text{dyn}}$；请求树构建函数 $\text{build\_trees}$；阈值 $T_{\text{gap}} = 50$ms}
+\KwOut{每条边 $(u,v) \in E$ 的置信度标签 $C(u,v)$}
+
+\ BlankLine
+$\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \tcp*{构建请求树}
+\ForEach{$v \in V$}{
+    $\text{tree\_set}[v] \leftarrow \emptyset$ \tcp*{$v$ 出现过的请求树集合}
+}
+\ForEach{$\text{tree} \in \text{trees}$}{
+    \ForEach{$e \in \text{tree}.\text{events}$}{
+        $\text{tree\_set}[e.\text{func}].\text{add}(\text{tree})$ \tcp*{记录每节点出现的请求树}
+    }
+}
+
+\BlankLine
+\ForEach{$(u,v) \in E$}{
+    $n \leftarrow |\text{tree\_set}[u] \cap \text{tree\_set}[v]|$ \tcp*{两端共同出现的请求树数}
+    \uIf{$n \ge 2$}{
+        $C(u,v) \leftarrow \text{Confirmed}$ \tcp*{跨语言调用关系被多次独立观测}
+    }
+    \uElseIf{$n = 1$}{
+        $C(u,v) \leftarrow \text{Inferred}$ \tcp*{只有间接证据}
+    }
+    \Else{
+        $C(u,v) \leftarrow \text{Unknown}$ \tcp*{本次未观测到}
+    }
+}
+\Return $C$
+\end{algorithm}
 \end{figure}
 
 缝合完成后，调用 stitcher.py 的命令行接口：
