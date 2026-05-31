@@ -166,50 +166,7 @@ extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构�
 
 过滤条件是：只保留符号类型为 T 或 t 的行（全局或本地符号），且符号名包含 llama、ggml、common、cgo、vocab 之一。这个过滤器会把大量 Go runtime 符号（如 sync.*、net.*）排除掉，只保留和推理相关的函数。
 
-符号分类用算法~\ref{fig:classify-layer} 实现，按优先级从 L1 到 L8 依次检查前缀规则，命中即停止，保证每个符号唯一对应一个层次。\texttt{nm} 只能给出符号列表，调用关系由 KNOWN\_CALLS 手工建立（lla\_decode $\to$ \{ggml\_backend\_sched\_graph\_compute\_async, llama\_synchronize, ...\}）：
-
-\begin{algorithm}[H]
-\caption{函数符号层次分类算法}
-\label{fig:classify-layer}
-\DontPrintSemicolon
-\KwIn{符号名 $s$}
-\KwOut{层次标签 $L \in \{L1,\dots,L8\}$ 或 $\bot$（未分类）}
-
-\BlankLine
-\uIf{$\text{contains}(s, "\_cgo\_") \lor \text{contains}(s, "\_cgoexp\_")$}{
-    \Return $L1$ \tcp*{ffi\_bridge}
-}
-\uElseIf{$\text{startsWith}(s, "llama\_") \land$
-        $(\text{contains}(s, "decode") \lor \text{contains}(s, "model") \lor \text{contains}(s, "context"))$}{
-    \Return $L2$ \tcp*{inference\_api}
-}
-\uElseIf{$\text{startsWith}(s, "llama\_") \land$
-        $(\text{contains}(s, "batch") \lor \text{contains}(s, "sampler") \lor \text{contains}(s, "token"))$}{
-    \Return $L3$ \tcp*{batch\_sampler}
-}
-\uElseIf{$\text{contains}(s, "sched") \lor \text{contains}(s, "graph\_compute")$}{
-    \Return $L4$ \tcp*{sched\_compute}
-}
-\uElseIf{$(\text{startsWith}(s, "llama\_") \lor \text{startsWith}(s, "common\_"))
-        \land \text{contains}(s, "backend")$}{
-    \Return $L5$ \tcp*{backend}
-}
-\uElseIf{$\text{startsWith}(s, "ggml\_") \land \neg\text{contains}(s, "sched")
-        \land \neg\text{contains}(s, "backend")$}{
-    \Return $L6$ \tcp*{ops}
-}
-\uElseIf{$\text{contains}(s, "vocab") \lor \text{contains}(s, "tokenize")
-        \lor \text{contains}(s, "detokenize") \lor \text{contains}(s, "piece")$}{
-    \Return $L7$ \tcp*{vocab}
-}
-\uElseIf{$\text{contains}(s, "mmap") \lor \text{contains}(s, "munmap")
-        \lor \text{contains}(s, "malloc") \lor \text{contains}(s, "buffer")$}{
-    \Return $L8$ \tcp*{memory}
-}
-\Else{
-    \Return $\bot$ \tcp*{不属于推理相关符号，跳过}
-}
-\end{algorithm}
+符号分类按优先级从 L1 到 L8 依次检查前缀规则，命中即停止，保证每个符号唯一对应一个层次。\texttt{nm} 只能给出符号列表，调用关系由 KNOWN\_CALLS 手工建立（lla\_decode $\to$ \{ggml\_backend\_sched\_graph\_compute\_async, llama\_synchronize, ...\}）。八级层次分别是：L1 为 FFI 桥接层（符号名含 \_cgo\_ 或 \_cgoexp\_），L2 为推理 API 层（前缀 llama\_ 且含 decode / model / context），L3 为批采样层（前缀 llama\_ 且含 batch / sampler / token），L4 为调度计算层（符号含 sched 或 graph\_compute），L5 为推理后端层（前缀 llama\_ 或 common\_ 且含 backend），L6 为算子层（前缀 ggml\_ 且不含 sched/backend），L7 为词表层（含 vocab / tokenize / detokenize / piece），L8 为内存管理层（含 mmap / munmap / malloc / buffer）。不属于上述任一层次的符号标记为 $\bot$ 跳过。最终输出静态调用图 JSON。
 
 \section{缝合模块的具体实现}
 
