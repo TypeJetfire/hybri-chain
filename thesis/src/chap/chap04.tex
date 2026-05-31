@@ -37,7 +37,7 @@ Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下
 具体探针配置用算法~\ref{fig:uprobe-config} 描述。其中哈希表记录各线程的进入时刻，uretprobe 从哈希表取出时刻计算耗时后立即删除对应条目，避免哈希表无限增长：
 
 \begin{algorithm}[H]
-\caption{uprobe/uretprobe 配置（以 llama\_decode 为例）}
+\caption{uprobe/uretprobe 配置（以 \texttt{llama\_decode} 为例）}
 \label{fig:uprobe-config}
 \DontPrintSemicolon
 \KwIn{binary path $B$；函数名 $F$；uprobe 事件流}
@@ -100,10 +100,10 @@ trace\_unify.py 负责把 bpftrace 的原始文本输出转换成结构化的 JS
 trace\_unify.py 输出的 JSON 文件是后续所有处理脚本的数据来源，也是实验数据的基础。
 
 \begin{algorithm}[H]
-\caption{bpftrace 原始输出的解析状态机}
+\caption{\texttt{bpftrace} 原始输出的解析状态机}
 \label{fig:parser-fsm}
 \DontPrintSemicolon
-\KwIn{bpftrace 原始文本行列表 $L$}
+\KwIn{\texttt{bpftrace} 原始文本行列表 $L$}
 \KwOut{事件对象列表 $E$，每个事件包含 $ts\_ns,\ tid,\ type,\ func,\ dur,\ stack,\ trace\_id,\ extra$}
 
 \BlankLine
@@ -315,7 +315,7 @@ Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味�
 针对这一 Ollama 特有的问题，HybriChain 的独门解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法~\ref{fig:traceid-inject} 所示。
 
 \begin{algorithm}[H]
-\caption{tracelID 注入：三文件具体改动}
+\caption{traceID 注入：三文件具体改动}
 \label{fig:traceid-inject}
 \DontPrintSemicolon
 \SetKwBlock{ChangeA}{改动一（\texttt{llm/server.go}）：}{}
