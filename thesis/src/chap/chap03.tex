@@ -280,19 +280,67 @@ HybriChain 按语义把推理引擎内部函数划分为八个层次，每个层
 
 分类的用途是：当缝合结果显示一条边是 L1 $\to$ L4 时，分析人员立刻知道"Go 层通过 CGO 桥接调用了 GGML 调度函数"。这个语义信息是原始函数符号名给不了的。
 
+从 ollama-debug 二进制中提取的实际函数名示例如下（用 \texttt{nm -C --defined-only ollama-debug | grep} 获取）：
+
+\begin{itemize}
+    \item \textbf{L1（go\_cgo\_bridge）}：\texttt{\_cgoexp\_8aa400f2462b\_llama\_model\_load\_from\_file}、\texttt{\_cgo\_8aa400f2462b\_Cfunc\_llama\_decode}，即 Go 调用 C++ 的桥接函数；
+    \item \textbf{L2（llama\_api）}：\texttt{llama\_decode}、\texttt{llama\_model\_load\_from\_file}、\texttt{llama\_new\_context\_with\_model}；
+    \item \textbf{L3（batch\_sampler）}：\texttt{llama\_batch\_add}、\texttt{llama\_sampler\_sample}、\texttt{common\_sampler\_csample}；
+    \item \textbf{L4（sched\_compute）}：\texttt{ggml\_backend\_sched\_graph\_compute\_async}、\texttt{ggml\_backend\_sched\_synchronize}；
+    \item \textbf{L5（ggml\_backend）}：\texttt{ggml\_backend\_cpu\_init}、\texttt{ggml\_backend\_buffer\_type\_init}；
+    \item \textbf{L6（ggml\_ops）}：\texttt{ggml\_mul\_mat}（矩阵乘法）、\texttt{ggml\_soft\_max}（Softmax）、\texttt{ggml\_rope}（RoPE 位置编码）；
+    \item \textbf{L7（vocab）}：\texttt{llama\_token\_to\_str}、\texttt{llama\_tokenize}、\texttt{llama\_detokenize}；
+    \item \textbf{L8（memory）}：对应 \texttt{mmap/munmap} 系统调用，在 uprobe 层没有独立函数，属于系统调用层面的行为。
+\end{itemize}
+
+分类算法本身用前缀匹配实现（见 4.4 节），每次处理一个符号时，从 L1 到 L8 依次检查前缀规则，命中即停止。这保证了分类的确定性——每个函数只属于一个层次。
+
 \section{异常检测规则}
 
 在缝合后的统一调用序列上，HybriChain 运行一组预定义的异常检测规则。每条规则遍历所有事件，当条件满足时生成告警。
 
-目前实现了以下规则：
+规则引擎的核心是一个函数列表，每个规则接受一个事件对象，返回告警或空。遍历完所有事件后，把所有非空的告警收集起来，按风险等级排序输出。引擎本身无状态，各规则之间互不干扰，新规则的添加不影响现有逻辑。
 
-\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，一次 futex 等待超过 1 秒说明线程在等锁。5 秒以上是高风险告警，1\~5 秒是中风险告警。在实测中观察到 Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒，CPU-only 环境下 llama.cpp 的多线程同步存在瓶颈。
+\begin{algorithm}[H]
+\caption{异常检测规则引擎}
+\label{fig:rule_engine}
+\DontPrintSemicolon
+\KwIn{事件列表 $E = \{e_1, e_2, \dots\}$}
+\KwOut{告警列表 $A$}
 
-\textbf{规则 2：mmap 大小检测。} KV Cache 分配通常在几百 MB 到 1GB 之间。如果 mmap 大小超过 1GB，可能意味着配置错误或遭受攻击。超过 1GB 的 mmap 触发高风险告警，512MB\~1GB 触发中风险告警。
+$A \leftarrow \emptyset$\;
+$\text{rules} \leftarrow [$
+    $\text{rule\_futex\_block},\ \text{rule\_read\_size\_anomaly},\ $
+    $\text{rule\_write\_non\_stdout},\ \text{rule\_mmap\_size\_anomaly},\ $
+    $\text{rule\_sensitive\_path},\ \text{rule\_http\_socket\_anomaly}$
+$]$
 
-\textbf{规则 3：敏感路径访问检测。} 对 /etc/passwd、/root、/.ssh 等敏感路径的文件访问触发高风险告警，对 .gguf、.ggml 模型文件路径的访问触发中风险告警。这一规则用于检测类似 CVE-2024-37032（Probllama）的目录遍历攻击。
+\ForEach{$e \in E$}{
+    \ForEach{$\text{rule} \in \text{rules}$}{
+        $a \leftarrow \text{rule}(e)$\;
+        \If{$a \neq \text{None}$}{
+            $A.\text{append}(a)$\;
+        }
+    }
+}
+\Return $\text{sort\_by\_risk}(A)$
+\end{algorithm}
 
-各规则独立遍历事件序列，互不干扰。告警结果按风险等级聚合输出，包含时间戳、线程 ID、告警类型、风险等级和详细上下文。
+共实现了六条规则，每条规则的触发条件、阈值选择依据和实测数据支撑如下：
+
+\textbf{规则 1：futex 阻塞检测。} futex 是 Linux 的线程同步机制，llama.cpp 使用多线程推理时大量使用 futex 来协调各工作线程。当一个线程在 futex 上等待超过 1 秒，说明存在线程同步瓶颈。阈值 1 秒的选取依据是：正常情况下 llama.cpp 的 futex 等待时间一般在几毫秒到几百毫秒之间，超过 1 秒意味着存在锁竞争或线程死锁。实测数据：在 Qwen2-0.5B 推理时最长的单次 futex 阻塞达到 15.2 秒，发生在 GGML 张量计算调度阶段，属于 CPU-only 环境下 llama.cpp 多线程同步的性能瓶颈。超过 5 秒触发高风险告警，1\~5 秒触发中风险告警。
+
+\textbf{规则 2：read 大小异常检测。} 正常的 read 系统调用通常是 512B（HTTPS 元数据传输）或 4KB（页对齐读取）。如果一次 read 的返回值超过 128KB，说明正在读取大块数据——这在正常推理过程中不应该出现。触发场景包括：超长 prompt 注入（攻击者通过 API 传入超长字符串，导致模型文件被重新加载或大块内存被分配）、异常文件读取（读取非预期的大文件）。超过 128KB 触发高风险告警。
+
+\textbf{规则 3：HTTP socket 非标准写入检测。} Ollama 的 daemon 进程通过 HTTP 与 runner 通信，HTTP socket 的文件描述符固定为 3。当向 fd=3 写入超过 1KB 数据时，说明推理结果正在通过 HTTP 响应返回，这是正常行为。但如果写入数据量异常大（比如一个超长模型推理输出），可以作为数据外传监控的起点。规则还监控向其他非标准 fd（既不是 0/1/2 也不是 3）的写入，这类行为可能是非预期的网络外联或文件写入。fd=3 且超过 1KB 触发中风险告警，其他异常 fd 触发低风险告警。
+
+\textbf{规则 4：mmap 大小异常检测。} KV Cache 分配通常在几百 MB 到 1GB 之间（取决于模型大小和上下文长度）。如果 mmap 映射超过 1GB，可能意味着配置错误或遭受攻击（如尝试映射整个磁盘）。超过 1GB 触发 CRITICAL 告警，512MB\~1GB 触发高风险告警。实测中观察到 TinyLlama-1.1B 的 KV Cache 分配约为 256MB，Qwen2-0.5B 约为 512MB，这两个值可作为正常参考基准。
+
+\textbf{规则 5：敏感路径访问检测。} 对特定路径的文件访问可能意味着安全风险。规则监控 openat 系统调用，检测以下模式：\texttt{blobs} 目录（中风险，Ollama 存放模型缓存的位置）、\texttt{.gguf} 和 \texttt{.ggml} 模型文件（高风险，检测模型文件异常访问），\texttt{server.json}（低风险，Ollama 配置文件）、\texttt{model.json}（中风险，模型元数据）。这一规则借鉴了 CVE-2024-37032（Probllama）的攻击特征——攻击者通过目录遍历访问模型存储路径。
+
+\textbf{规则 6：HTTP socket 大量读入检测。} 与规则 3 对称，监控从 HTTP socket（fd=3）读入大量数据。正常的 HTTP 请求通常只有几 KB（prompt 和参数），如果一次 read 返回超过 1MB，说明收到了异常大的输入数据，可能面临 prompt 注入或 DoS 攻击。超过 1MB 触发高风险告警。
+
+各规则独立遍历事件序列，互不干扰。告警结果包含时间戳、线程 ID、告警类型、风险等级和详细上下文（触发阈值、实际值等），按 CRITICAL $\to$ HIGH $\to$ MEDIUM $\to$ LOW 的顺序聚合输出。
 
 \section{本章小结}
 
