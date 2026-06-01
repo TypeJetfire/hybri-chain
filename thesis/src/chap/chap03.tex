@@ -88,7 +88,7 @@ HybriChain 包含三个核心模块：
 
 第一，eBPF 程序运行在内核里，不需要修改被追踪程序，也不需要重新编译推理引擎。strace 用 ptrace 会在每次系统调用时在用户态和内核态之间切换两次，开销太大；eBPF 的 tracepoint 直接在内核里执行，切换开销极小。
 
-第二，eBPF 有内置的 Verifier，会在加载前检查程序是否会出现无限循环或越界访问，安全风险低。GDB 需要侵入式调试，DBI（如 Pin~\cite{luk2005pin}/DynamoRIO~\cite{bruening2003dynamorio}）的性能开销太大，都不适合对运行中的推理引擎做长期观测。
+第二，eBPF 有内置的 Verifier，会在加载前检查程序是否会出现无限循环或越界访问，安全风险低。GDB 需要侵入式调试，DBI（如 DynamoRIO~\cite{bruening2003dynamorio}）的性能开销太大，都不适合对运行中的推理引擎做长期观测。
 
 第三，eBPF 支持 RingBuf，数据可以直接从内核传到用户态，不需要额外的缓冲区管理，数据采集本身的开销很低。
 
