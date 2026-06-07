@@ -24,13 +24,13 @@
 
 HybriChain 要做到以下几件事：
 
-\begin{enumerate}[(1)]
-    \item \textbf{跨语言调用链追踪。} 从 API 请求到内核系统调用，把整个调用链串起来，覆盖多语言边界。
-    \item \textbf{跨进程完整缝合。} 推理引擎若采用多进程架构（如 daemon + worker 分离），各进程的 TID 编号空间相互独立，需要引入跨进程关联机制才能缝合出完整的端到端调用链。
-    \item \textbf{低开销零侵入。} eBPF 追踪本身不能对推理引擎的性能产生显著影响，也不应修改被追踪程序的代码。
-    \item \textbf{结果可读。} 追踪到的函数符号要能翻译成有语义的层次信息，让分析人员理解每层在做什么。
-    \item \textbf{异常行为检测。} 在调用链上发现异常行为，如 futex 长等待、大块 mmap 分配、敏感路径访问等。
-\end{enumerate}
+\begin{description}
+    \item[跨语言调用链追踪。] 从 API 请求到内核系统调用，把整个调用链串起来，覆盖多语言边界。
+    \item[跨进程完整缝合。] 推理引擎若采用多进程架构（如 daemon + worker 分离），各进程的 TID 编号空间相互独立，需要引入跨进程关联机制才能缝合出完整的端到端调用链。
+    \item[低开销零侵入。] eBPF 追踪本身不能对推理引擎的性能产生显著影响，也不应修改被追踪程序的代码。
+    \item[结果可读。] 追踪到的函数符号要能翻译成有语义的层次信息，让分析人员理解每层在做什么。
+    \item[异常行为检测。] 在调用链上发现异常行为，如 futex 长等待、大块 mmap 分配、敏感路径访问等。
+\end{description}
 
 \section{系统整体架构}
 
@@ -71,12 +71,12 @@ HybriChain 包含三个核心模块：
 
 具体而言，在推理引擎的以下类型函数上挂 uprobe/uretprobe：
 
-\begin{itemize}
-    \item \textbf{推理主循环入口：} 每生成一个 token 必然调用一次，是整个推理过程的中心节点；
-    \item \textbf{张量计算调度入口：} 底层算子执行的触发点，代表计算密集型的调度节点；
-    \item \textbf{同步等待节点：} 推理过程中等待前序操作完成的等待点；
-    \item \textbf{输出采样节点：} token 采样函数，代表推理输出的生成节点。
-\end{itemize}
+\begin{description}
+    \item[推理主循环入口：] 每生成一个 token 必然调用一次，是整个推理过程的中心节点；
+    \item[张量计算调度入口：] 底层算子执行的触发点，代表计算密集型的调度节点；
+    \item[同步等待节点：] 推理过程中等待前序操作完成的等待点；
+    \item[输出采样节点：] token 采样函数，代表推理输出的生成节点。
+\end{description}
 
 这四类节点覆盖了推理过程从“计算触发”到“输出生成”的完整路径。只要它们被观测到，就能覆盖推理的全流程。
 
@@ -92,7 +92,7 @@ HybriChain 包含三个核心模块：
 
 第三，eBPF 支持 RingBuf，数据可以直接从内核传到用户态，不需要额外的缓冲区管理，数据采集本身的开销很低。
 
-图~\ref{fig:uretprobe} 给出了 uprobe 的工作原理：
+算法~\ref{alg:uretprobe} 给出了 uprobe 的工作原理：
 
 \begin{itemize}
     \item uprobe 挂载在函数入口，记录函数被调用的时刻（存入 per-thread 哈希表）；
@@ -100,10 +100,9 @@ HybriChain 包含三个核心模块：
     \item 两者配合可以拿到每个函数调用的耗时，以及当时的调用栈（ustack）。
 \end{itemize}
 
-\begin{figure}[H]
 \begin{algorithm}[H]
 \caption{uprobe/uretprobe 工作流程}
-\label{fig:uretprobe}
+\label{alg:uretprobe}
 \DontPrintSemicolon
 \KwIn{bpftrace 事件流 $E = \{e_1, e_2, \dots\}$}
 \KwOut{带耗时的 uprobe 事件列表 $L$}
@@ -130,7 +129,6 @@ $L \leftarrow \emptyset$ \tcp*[r]{输出列表}
     }
 }
 \end{algorithm}
-\end{figure}
 
 需要特别说明的是：在某些运行时环境（如 Go 1.17+）上不能挂 uretprobe，因为该版本的栈管理机制与 uretprobe 的 trampoline 实现不兼容，挂载会导致进程崩溃。因此 HybriChain 的探针只挂在推理引擎的 C/C++ 函数上，不挂 Go 函数。这是正确的工程选择，而不是功能缺失。
 

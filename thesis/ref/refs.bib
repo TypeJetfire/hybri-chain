@@ -18,7 +18,20 @@
   year   = {2023}
 }
 
-% [3] Ma & Patterson LLM Inference Hardware
+% [3] Abdulkadhim & Repas LEAF
+@article{leaf2026,
+  author  = {Abdulkadhim, Mustafa and Repas, Stefan R.},
+  title   = {Introducing {LEAF}: {LLM} Edge Assessment Framework for Generative {AI} on the Edge},
+  journal = {Machine Learning and Knowledge Extraction},
+  volume  = {8},
+  number  = {2},
+  pages   = {48},
+  year    = {2026},
+  doi     = {10.3390/make8020048},
+  note    = {doi:10.3390/make8020048}
+}
+
+% [4] Ma & Patterson LLM Inference Hardware
 @article{ma2026challenges,
   author  = {Ma, Xiaoyu and Patterson, David},
   title   = {Challenges and Research Directions for Large Language Model Inference Hardware},
@@ -31,7 +44,7 @@
   note    = {https://doi.org/10.1109/MC.2026.3652916}
 }
 
-% [4] Jain et al. Scaling LLM Inference
+% [5] Jain et al. Scaling LLM Inference
 @inproceedings{jain2025scaling,
   author    = {Jain, Aditi M. and Jain, Ayush},
   title     = {Scaling {LLM} Inference Architectures: A Performance Analysis for Chatbot Applications},
@@ -42,8 +55,64 @@
   note      = {https://doi.org/10.1109/AIRC64931.2025.11077484}
 }
 
-% [5] Kwon et al. PagedAttention
-@inproceedings{kwon2023efficient,
+% [6] NVIDIA Triton Inference Server
+@misc{nvidia2026triton,
+  author = {{NVIDIA}},
+  title  = {Triton Inference Server},
+  url    = {https://github.com/triton-inference-server/server},
+  note   = {https://github.com/triton-inference-server/server},
+  year   = {2026}
+}
+
+% [7] Ollama
+@misc{ollama2024,
+  author = {{Ollama}},
+  title  = {Ollama},
+  url    = {https://github.com/ollama/ollama},
+  note   = {https://github.com/ollama/ollama},
+  year   = {2024}
+}
+
+% [8] Probllama / CVE-2024-37032
+@misc{tzadik2024probllama,
+  author = {Tzadik, Sagi and Lobstein, Valentin},
+  title  = {Probllama: Ollama remote code execution vulnerability (CVE-2024-37032)},
+  url    = {https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032},
+  note   = {https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032},
+  year   = {2024}
+}
+
+% [9] Pentest-Tools Ollama CVE
+@misc{pentesttools2024ollama,
+  author = {{Pentest-Tools}},
+  title  = {Ollama - Remote Code Execution CVE-2024-37032},
+  url    = {https://pentest-tools.com/vulnerabilities-exploits/ollama-remote-code-execution_22942},
+  note   = {https://pentest-tools.com/vulnerabilities-exploits/ollama-remote-code-execution_22942},
+  year   = {2024}
+}
+
+% [10] Oligo Security More ProbLLMs
+@misc{oligo2024probllms,
+  author = {{Oligo Security}},
+  title  = {More Models, More ProbLLMs},
+  url    = {https://www.oligo.security/blog/more-models-more-probllms},
+  note   = {https://www.oligo.security/blog/more-models-more-probllms},
+  year   = {2024}
+}
+
+% [11] Yu et al. Orca
+@inproceedings{yu2022orca,
+  author    = {Yu, Gyeong-In and Jeong, Jae Sung and Kim, Geon-Woo and Lee, Soo-Jin and Ha, Sungmin and Kim, Byung-Gon},
+  title     = {Orca: A Distributed Serving System for Transformer-based Generative Models},
+  booktitle = {16th USENIX Symposium on Operating Systems Design and Implementation (OSDI 22)},
+  pages     = {521--538},
+  year      = {2022},
+  url       = {https://www.usenix.org/conference/osdi22/presentation/yu},
+  note      = {https://www.usenix.org/conference/osdi22/presentation/yu}
+}
+
+% [12] Kwon et al. PagedAttention
+@inproceedings{kwon2023pagedattention,
   author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
   title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
   booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP '23)},
@@ -53,25 +122,197 @@
   note      = {https://doi.org/10.1145/3600006.3613165}
 }
 
-% [6] TorchServe
-@misc{pytorchserve2024,
-  author = {{PyTorch Team}},
-  title  = {TorchServe: A flexible and easy to use tool for serving deep learning models},
-  url    = {https://github.com/pytorch/serve},
-  note   = {https://github.com/pytorch/serve},
+% [13] Dao et al. FlashAttention
+@inproceedings{dao2022flashattention,
+  author    = {Dao, Tri and Fu, Daniel Y. and Ermon, Stefano and Rudra, Atri and R{\"{a}}tz, Christopher D.},
+  title     = {FlashAttention: Fast and Memory-Efficient Exact Attention with {IO}-awareness},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2022},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2022/file/67d57c32e20fd0a7a302cb81d36e40d5-Supplemental-Conference.pdf},
+  note      = {https://proceedings.neurips.cc/paper_files/paper/2022/file/67d57c32e20fd0a7a302cb81d36e40d5-Supplemental-Conference.pdf}
+}
+
+% [14] Leviathan et al. Speculative Decoding
+@inproceedings{leviathan2023speculative,
+  author    = {Leviathan, Yaniv and Kalman, Matan and Matias, Y.},
+  title     = {Fast Inference from Transformers via Speculative Decoding},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  pages     = {19274--19286},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2211.17192},
+  note      = {https://arxiv.org/abs/2211.17192}
+}
+
+% [15] Gu & Dao Mamba
+@article{gu2023mamba,
+  author  = {Gu, Albert and Dao, Tri},
+  title   = {Mamba: Linear-time Sequence Modeling with Selective State Spaces},
+  journal = {arXiv preprint arXiv:2312.00752},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2312.00752},
+  note    = {https://doi.org/10.48550/arXiv.2312.00752}
+}
+
+% [16] Pixie
+@misc{pixie2024,
+  author = {{Pixie}},
+  title  = {Pixie: Instant Kubernetes-Native Application Observability},
+  url    = {https://github.com/pixie-io/pixie},
+  note   = {https://github.com/pixie-io/pixie},
   year   = {2024}
 }
 
-% [7] Probllama / CVE-2024-37032
-@misc{tzadik2024probllama,
-  author = {Tzadik, Sagi and Lobstein, Valentin},
-  title  = {Probllama: Ollama remote code execution vulnerability (CVE-2024-37032)},
-  url    = {https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032},
-  note   = {https://www.wiz.io/blog/probllama-ollama-vulnerability-cve-2024-37032},
+% [17] Kepler
+@misc{kepler2023,
+  author = {{Sustainable Computing}},
+  title  = {Kepler: A framework to calculate the energy consumption of containerized applications},
+  url    = {https://github.com/sustainable-computing-io/kepler},
+  note   = {https://github.com/sustainable-computing-io/kepler},
+  year   = {2023}
+}
+
+% [18] Ibnath et al. eBeeMetrics
+@inproceedings{ibnath2026ebeemetrics,
+  author    = {Ibnath, Muntaka and Rezvani, Mohammadreza and Wong, Daniel},
+  title     = {{eBeeMetrics}: An {eBPF}-based Library Framework for Feedback-free Observability of {QoS} Metrics},
+  booktitle = {Proceedings of the 2026 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2603.25067},
+  note      = {https://arxiv.org/abs/2603.25067}
+}
+
+% [19] Hu eBPF Serverless Wasm
+@mastersthesis{hu2025ebpf,
+  author = {Hu, Yinan},
+  title  = {{eBPF}-based Observability for Serverless {Wasm} Workloads},
+  school = {Aalto University},
+  year   = {2025},
+  url    = {https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056},
+  note   = {https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056}
+}
+
+% [20] Sunil et al. LLMs for Call Graph
+@article{sunil2024llms,
+  author  = {Sunil, Rose and Sabu, Shine and Mir, Aafaq M. and R{\"u}{\"{a}}scher, Benedikt and Hermann, Ben},
+  title   = {An Empirical Study of Large Language Models for Type and Call Graph Analysis},
+  journal = {arXiv preprint arXiv:2410.00603},
+  year    = {2024},
+  doi     = {10.48550/arXiv.2410.00603},
+  note    = {https://doi.org/10.48550/arXiv.2410.00603}
+}
+
+% [21] Apache SkyWalking Rover
+@misc{apache2024skywalkingrover,
+  author = {{Apache}},
+  title  = {SkyWalking Rover: Metrics collector and profiler powered by eBPF},
+  url    = {https://github.com/apache/skywalking-rover},
+  note   = {https://github.com/apache/skywalking-rover},
   year   = {2024}
 }
 
-% [8] Starovoitov BPF 重构
+% [22] Zou et al. ProfInfer
+@inproceedings{zou2026profinfer,
+  author    = {Zou, Bohua and Roy, Debayan and Airao, Dhimankumar Yogesh and Xu, Weihao and Sun, Binqi and Liu, Yutao and Chen, Haibo},
+  title     = {{ProfInfer}: An {eBPF}-based Fine-grained {LLM} Inference Profiler},
+  booktitle = {Annual Conference on Machine Learning and Systems (MLSys)},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2601.20755},
+  note      = {https://arxiv.org/abs/2601.20755}
+}
+
+% [23] Chen et al. Empirical Study of CGO
+@article{chen2026empirical,
+  author  = {Chen, Jinbao and Ding, Boyao and Zhang, Yu and Li, Qingwei and Tang, Fugen},
+  title   = {An empirical study of {CGO} usage in {Go} projects: Distribution, purposes, patterns and critical issues},
+  journal = {Journal of Systems and Software},
+  volume  = {231},
+  pages   = {112601},
+  year    = {2026},
+  doi     = {10.1016/j.jss.2025.112601},
+  note    = {https://doi.org/10.1016/j.jss.2025.112601}
+}
+
+% [24] Ding et al. CGORewritter
+@inproceedings{ding2023cgorewritter,
+  author    = {Ding, Boyao and Zhang, Yu and Chen, Jinbao and Li, Qingwei and Tang, Fugen and others},
+  title     = {{CGORewritter}: A better way to use {C} library in {Go}},
+  booktitle = {2023 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
+  pages     = {688--692},
+  year      = {2023},
+  doi       = {10.1109/SANER56733.2023.00072},
+  note      = {https://doi.org/10.1109/SANER56733.2023.00072}
+}
+
+% [25] Hu et al. Cross-Language Call Graph
+@inproceedings{hu2023cross,
+  author    = {Hu, Mingzhe and Zhao, Qi and Zhang, Yu and Xiong, Yan},
+  title     = {Cross-Language Call Graph Construction Supporting Different Host Languages},
+  booktitle = {2023 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
+  pages     = {155--166},
+  year      = {2023},
+  doi       = {10.1109/SANER56733.2023.00024},
+  note      = {https://doi.org/10.1109/SANER56733.2023.00024}
+}
+
+% [26] Zheng & Hua POLYCALL
+@inproceedings{zheng2023polycall,
+  author    = {Zheng, Wenlong and Hua, Baojian},
+  title     = {Effective Call Graph Construction for Multilingual Programs ({POLYCALL})},
+  booktitle = {2023 IEEE European Symposium on Security and Privacy (EuroS\&P)},
+  year      = {2023},
+  url       = {https://csslab-ustc.github.io/publications/2023/call-graph.pdf},
+  note      = {https://csslab-ustc.github.io/publications/2023/call-graph.pdf}
+}
+
+% [27] Liu et al. Concurrency Bugs in Go
+@inproceedings{liu2021concurrencybugs,
+  author    = {Liu, Zhenkai and Zhu, Shan and Qin, Bo and Xu, Manh and Cheng, Song and Li, Zhou and Xu, Chengyang and Zhong, Lin and others},
+  title     = {Automatically detecting and fixing concurrency bugs in {Go} software systems},
+  booktitle = {Proceedings of the 26th ACM International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS)},
+  pages     = {616--629},
+  year      = {2021},
+  doi       = {10.1145/3445814.3446757},
+  note      = {https://doi.org/10.1145/3445814.3446757}
+}
+
+% [28] Li & Wang LLM Bug Root Cause
+@article{li2026llmbug,
+  author  = {Li, Hao and Wang, Yu},
+  title   = {Automated Bug Root Cause Analysis for {LLM} Inference Engines},
+  journal = {Big Data and Cognitive Computing},
+  volume  = {10},
+  number  = {2},
+  pages   = {60},
+  year    = {2026},
+  doi     = {10.3390/bdcc10020060},
+  note    = {https://doi.org/10.3390/bdcc10020060}
+}
+
+% [29] Qin et al. Rust Concurrency
+@inproceedings{qin2020rust,
+  author    = {Qin, Bo and Chen, Yiming and Yu, Zihao and Song, Linhai and Zhang, Yu},
+  title     = {Understanding Memory and Thread Safety Practices and Issues in Real-World {Rust} Programs},
+  booktitle = {Proceedings of the 41st ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  pages     = {763--779},
+  year      = {2020},
+  doi       = {10.1145/3385412.3386036},
+  note      = {https://doi.org/10.1145/3385412.3386036}
+}
+
+% [30] Ahn et al. IoT Micro-Batch Scheduling
+@article{ahn2026iot,
+  author  = {Ahn, Joonwon and Son, Yeseul and Kim, Dongwook and others},
+  title   = {Dynamic Micro-Batch and Token-Budget Scheduling for {IoT}-Scale Pipeline-Parallel {LLM} Inference},
+  journal = {Sensors},
+  volume  = {26},
+  number  = {4},
+  pages   = {1101},
+  year    = {2026},
+  doi     = {10.3390/s26041101},
+  note    = {https://doi.org/10.3390/s26041101}
+}
+
+% [31] Corbet & Starovoitov BPF
 @article{corbet2014bpf,
   author  = {Corbet, Jonathan and Starovoitov, Alexei},
   title   = {{BPF}: the universal in-kernel virtual machine},
@@ -81,7 +322,16 @@
   note    = {https://lwn.net/Articles/599755}
 }
 
-% [9] Gregg BPF Performance Tools
+% [32] Starovoitov BPF at Facebook
+@misc{starovoitov2019bpf,
+  author = {Starovoitov, Alexei},
+  title  = {{BPF} at Facebook},
+  year   = {2019},
+  url    = {https://kernel-recipes.org/en/2019/talks/bpf-at-facebook/},
+  note   = {https://kernel-recipes.org/en/2019/talks/bpf-at-facebook/}
+}
+
+% [33] Gregg BPF Performance Tools
 @book{gregg2020bpf,
   author    = {Gregg, Brendan},
   title     = {{BPF} Performance Tools: Linux System and Application Observability},
@@ -92,191 +342,16 @@
   note      = {https://www.amazon.com/BPF-Performance-Tools-Linux-Observability/dp/0136554822}
 }
 
-% [10] Calavera & Fontana Linux Observability with BPF
-@book{calavera2019linux,
-  author    = {Calavera, David and Fontana, Lorenzo},
-  title     = {Linux Observability with {BPF}},
-  publisher = {O'Reilly Media},
-  year      = {2019},
-  isbn      = {978-1492050209},
-  url       = {https://www.oreilly.com/library/view/linux-observability-with/9781492050209},
-  note      = {https://www.oreilly.com/library/view/linux-observability-with/9781492050209}
-}
-
-% [11] Nakryiko BPF Ring Buffer
-@misc{nakryiko2020ringbuf,
-  author = {Nakryiko, Andrii},
-  title  = {{BPF} ring buffer},
-  url    = {https://www.kernel.org/doc/html/latest/bpf/ringbuf.html},
-  note   = {https://www.kernel.org/doc/html/latest/bpf/ringbuf.html},
-  year   = {2020}
-}
-
-% [12] cilium/ebpf
-@misc{ciliumebpf2024,
-  author = {{Cilium Authors}},
-  title  = {cilium/ebpf: {eBPF} library for {Go}},
-  url    = {https://github.com/cilium/ebpf},
-  note   = {https://github.com/cilium/ebpf},
+% [34] Falco
+@misc{falco2024,
+  author = {{FalcoSecurity}},
+  title  = {Falco: Cloud native runtime security},
+  url    = {https://github.com/falcosecurity/falco},
+  note   = {https://github.com/falcosecurity/falco},
   year   = {2024}
 }
 
-% [13] Hu eBPF Serverless Wasm
-@mastersthesis{hu2025ebpf,
-  author = {Hu, Yinan},
-  title  = {{eBPF}-based Observability for Serverless {Wasm} Workloads},
-  school = {Aalto University},
-  year   = {2025},
-  url    = {https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056},
-  note   = {https://aaltodoc.aalto.fi/items/399258c7-b810-43a9-9c36-0cf68df20056}
-}
-
-% [14] Ibnath et al. eBeeMetrics
-@inproceedings{ibnath2026ebeemetrics,
-  author    = {Ibnath, Muntaka and Rezvani, Mohammadreza and Wong, Daniel},
-  title     = {{eBeeMetrics}: An {eBPF}-based Library Framework for Feedback-free Observability of {QoS} Metrics},
-  booktitle = {Proceedings of the 2026 IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)},
-  year      = {2026},
-  doi       = {10.48550/arXiv.2603.25067},
-  note      = {https://arxiv.org/abs/2603.25067}
-}
-
-% [15] Zou et al. ProfInfer
-@inproceedings{zou2026profinfer,
-  author    = {Zou, Bohua and Roy, Debayan and Airao, Dhimankumar Yogesh and Xu, Weihao and Sun, Binqi and Liu, Yutao and Chen, Haibo},
-  title     = {{ProfInfer}: An {eBPF}-based Fine-Grained {LLM} Inference Profiler},
-  booktitle = {Proceedings of the 9th Conference on Machine Learning and Systems (MLSys)},
-  year      = {2026},
-  doi       = {10.48550/arXiv.2601.20755},
-  note      = {https://arxiv.org/abs/2601.20755}
-}
-
-% [16] ControlPlane eBPF Security Threat Model
-@techreport{controlplane2024ebpf,
-  author      = {{ControlPlane}},
-  title       = {{eBPF} Security Threat Model},
-  url         = {https://www.linuxfoundation.org/hubfs/eBPF/ControlPlane\%20eBPF\%20Security\%20Threat\%20Model.pdf},
-  note        = {https://www.linuxfoundation.org/hubfs/eBPF/ControlPlane eBPF Security Threat Model.pdf},
-  institution = {eBPF Foundation},
-  year        = {2024}
-}
-
-% [17] LinuxSecurity Auditd vs eBPF
-@misc{linuxsecurity2026auditd,
-  author = {{LinuxSecurity}},
-  title  = {Auditd vs {eBPF}: Modern Approaches to Linux System Monitoring},
-  url    = {https://linuxsecurity.com/features/auditd-vs-ebpf-linux-security-monitoring},
-  note   = {https://linuxsecurity.com/features/auditd-vs-ebpf-linux-security-monitoring},
-  year   = {2026}
-}
-
-% [18] Groundcover eBPF Use Cases
-@misc{groundcover2024ebpf,
-  author = {{Groundcover Team}},
-  title  = {What is {eBPF}? common use cases and best practices},
-  url    = {https://www.groundcover.com/ebpf},
-  note   = {https://www.groundcover.com/ebpf},
-  year   = {2024}
-}
-
-% [19] Go Authors CGO
-@misc{goauthorscgo,
-  author = {{The Go Authors}},
-  title  = {cgo command -- cmd/cgo},
-  url    = {https://pkg.go.dev/cmd/cgo},
-  note   = {https://pkg.go.dev/cmd/cgo},
-  year   = {2024}
-}
-
-% [20] Chen et al. Empirical Study of CGO
-@article{chen2026empirical,
-  author  = {Chen, Jinbao and Ding, Boyao and Zhang, Yu prestige and Li, Qingwei and Tang, Fugen},
-  title   = {An empirical study of {CGO} usage in {Go} projects: Distribution, purposes, patterns and critical issues},
-  journal = {Journal of Systems and Software},
-  volume  = {231},
-  pages   = {112601},
-  year    = {2026},
-  doi     = {10.1016/j.jss.2025.112601},
-  note    = {https://doi.org/10.1016/j.jss.2025.112601}
-}
-
-% [21] Hu et al. Cross-Language Call Graph
-@inproceedings{hu2023cross,
-  author    = {Hu, Mingzhe and Zhao, Qi and Zhang, Yu and Xiong, Yan},
-  title     = {Cross-Language Call Graph Construction Supporting Different Host Languages},
-  booktitle = {Proceedings of the 2023 IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER)},
-  pages     = {155--166},
-  year      = {2023},
-  doi       = {10.1109/SANER56733.2023.00024},
-  note      = {https://doi.org/10.1109/SANER56733.2023.00024}
-}
-
-% [22] Zheng et al. POLYCALL
-@inproceedings{zheng2023effective,
-  author    = {Zheng, Wenlong and Hua, Baojian},
-  title     = {Effective Call Graph Construction for Multilingual Programs ({POLYCALL})},
-  booktitle = {Proceedings of the 2023 IEEE European Symposium on Security and Privacy (EuroS\&P)},
-  year      = {2023},
-  url       = {https://csslab-ustc.github.io/publications/2023/call-graph.pdf},
-  note      = {https://csslab-ustc.github.io/publications/2023/call-graph.pdf}
-}
-
-% [23] Sunil LLMs for Call Graph
-@mastersthesis{sunil2026llms,
-  author = {Sunil, Rose},
-  title  = {{LLMs} for Call Graph Construction: Benchmarking and Evaluation Across Languages},
-  school = {Paderborn University},
-  year   = {2026},
-  url    = {https://digital.ub.uni-paderborn.de/hs/content/structure/8212050},
-  note   = {https://digital.ub.uni-paderborn.de/hs/content/structure/8212050}
-}
-
-% [24] Brucker et al. Static Analysis Hybrid Mobile Apps
-@inproceedings{brucker2016static,
-  author    = {Brucker, Achim D. and Herzberg, Michael},
-  title     = {On the Static Analysis of Hybrid Mobile Apps},
-  booktitle = {International Symposium on Engineering Secure Software and Systems (ESSoS)},
-  pages     = {72--88},
-  year      = {2016},
-  doi       = {10.1007/978-3-319-30806-7\_5},
-  note      = {https://doi.org/10.1007/978-3-319-30806-7\_5}
-}
-
-% [25] Scholtes et al. CHARON
-@inproceedings{scholtes2025charon,
-  author    = {Scholtes, Raoul and Khodayari, Soheil and Staicu, Cristian-Alexandru and Pellegrino, Giancarlo},
-  title     = {{CHARON}: Polyglot Code Analysis for Detecting Vulnerabilities in Scripting Languages Native Extensions},
-  booktitle = {Proceedings of the 2025 IEEE European Symposium on Security and Privacy (EuroS\&P)},
-  year      = {2025},
-  doi       = {10.1109/EuroSP63821.2025.00115},
-  note      = {https://doi.org/10.1109/EuroSP63821.2025.00115}
-}
-
-% [26] Cheng et al. Deepwukong
-@article{cheng2021deepwukong,
-  author  = {Cheng, Xiao and Wang, Haoyu and Hua, Jiayi and Xu, Guoai and Sui, Yulei},
-  title   = {{Deepwukong}: Statically Detecting Software Vulnerabilities Using Deep Graph Neural Networks},
-  journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
-  volume  = {30},
-  number  = {3},
-  pages   = {1--33},
-  year    = {2021},
-  doi     = {10.1145/3436877},
-  note    = {https://doi.org/10.1145/3436877}
-}
-
-% [27] Bruening et al. DynamoRIO
-@inproceedings{bruening2003dynamorio,
-  author    = {Bruening, Derek and Garnett, Thomas and Amarasinghe, Saman},
-  title     = {{DynamoRIO}: A Framework for Implementing Dynamic Analyses and Optimizations},
-  booktitle = {Proceedings of the International Symposium on Code Generation and Optimization (CGO)},
-  pages     = {265--275},
-  year      = {2003},
-  doi       = {10.1109/CGO.2003.1191551},
-  note      = {https://doi.org/10.1109/CGO.2003.1191551}
-}
-
-% [28] Lattner & Adve LLVM
+% [35] Lattner & Adve LLVM
 @inproceedings{lattner2004llvm,
   author    = {Lattner, Chris and Adve, Vikram},
   title     = {{LLVM}: A Compilation Framework for Lifelong Program Analysis \& Transformation},
@@ -287,11 +362,112 @@
   note      = {https://doi.org/10.1109/CGO.2004.1281665}
 }
 
-% [29] Nethercote & Seward Valgrind
+% [36] Nakryiko BPF Ring Buffer
+@misc{nakryiko2020ringbuf,
+  author = {Nakryiko, Andrii},
+  title  = {{BPF} ring buffer},
+  url    = {https://www.kernel.org/doc/html/latest/bpf/ringbuf.html},
+  note   = {https://www.kernel.org/doc/html/latest/bpf/ringbuf.html},
+  year   = {2020}
+}
+
+% [37] Cilium eBPF
+@misc{cilium2024ebpf,
+  author = {{Cilium Authors}},
+  title  = {cilium/ebpf: {eBPF} library for {Go}},
+  url    = {https://github.com/cilium/ebpf},
+  note   = {https://github.com/cilium/ebpf},
+  year   = {2024}
+}
+
+% [38] Wang et al. EXIST
+@inproceedings{wang2025exist,
+  author    = {Wang, Chen and others},
+  title     = {{EXIST}: Enabling Continuous Profiling for Cloud-Native Datacenters},
+  booktitle = {Proceedings of the 30th International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS)},
+  year      = {2025},
+  url       = {https://www.cs.sjtu.edu.cn/~lichao/publications/EXIST_Enabling_ASPLOS-2025-Wang.pdf},
+  note      = {https://www.cs.sjtu.edu.cn/~lichao/publications/EXIST_Enabling_ASPLOS-2025-Wang.pdf}
+}
+
+% [39] bpftrace
+@misc{bpftrace2024,
+  author = {{BPFtrace}},
+  title  = {bpftrace: High-level tracing language for Linux eBPF},
+  url    = {https://github.com/bpftrace/bpftrace},
+  note   = {https://github.com/bpftrace/bpftrace},
+  year   = {2024}
+}
+
+% [40] BCC
+@misc{iovisor2024bcc,
+  author = {{IOVisor}},
+  title  = {BCC - Tools for BPF-based Linux IO analysis, networking, monitoring, and more},
+  url    = {https://github.com/iovisor/bcc},
+  note   = {https://github.com/iovisor/bcc},
+  year   = {2024}
+}
+
+% [41] Kudo & Richardson SentencePiece
+@inproceedings{kudo2018sentencepiece,
+  author    = {Kudo, Taku and Richardson, John},
+  title     = {SentencePiece: A simple and language independent subword tokenizer and detokenizer for neural text processing},
+  booktitle = {Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing: System Demonstrations},
+  pages     = {66--71},
+  year      = {2018},
+  doi       = {10.18653/v1/D18-2012},
+  note      = {https://doi.org/10.18653/v1/D18-2012}
+}
+
+% [42] Jumper et al. AlphaFold
+@article{jumper2021alphafold,
+  author  = {Jumper, John and Evans, Richard and Pritzel, Alexander and Green, Tim and Figurnov, Michael and Ronneberger, Olaf and others},
+  title   = {Highly accurate protein structure prediction with {AlphaFold}},
+  journal = {Nature},
+  volume  = {596},
+  pages   = {583--589},
+  year    = {2021},
+  doi     = {10.1038/s41586-021-03819-2},
+  note    = {https://doi.org/10.1038/s41586-021-03819-2}
+}
+
+% [43] Celikyilmaz et al. Text Generation Evaluation
+@article{celikyilmaz2020evaluation,
+  author  = {Celikyilmaz, Asli and Clark, Elizabeth and Gao, Jianfeng},
+  title   = {Evaluation of Text Generation: A Survey},
+  journal = {arXiv preprint arXiv:2006.14799},
+  year    = {2020},
+  url     = {https://arxiv.org/abs/2006.14799},
+  note    = {https://arxiv.org/abs/2006.14799}
+}
+
+% [44] Armeniakos et al. RISC-V Mixed Precision
+@inproceedings{armeniakos2025riscvmixed,
+  author    = {Armeniakos, Georgios and Maras, Alexander and Xydis, Sotiris and others},
+  title     = {Mixed-precision Neural Networks on {RISC-V} Cores: ISA Extensions for Multi-Pumped Soft {SIMD} Operations},
+  booktitle = {Proceedings of the 43rd IEEE/ACM International Conference on Computer-Aided Design},
+  pages     = {235},
+  year      = {2025},
+  doi       = {10.1145/3638062.3638063},
+  note      = {https://doi.org/10.1145/3638062.3638063}
+}
+
+% [45] Bruening et al. DynamoRIO
+@inproceedings{bruening2003dynamorio,
+  author    = {Bruening, Derek and Garnett, Thomas and Amarasinghe, Saman},
+  title     = {{DynamoRIO}: A Framework for Implementing Dynamic Analyses and Optimizations},
+  booktitle = {Proceedings of the International Symposium on Code Generation and Optimization (CGO)},
+  pages     = {265--275},
+  year      = {2003},
+  doi       = {10.1109/CGO.2003.1191551},
+  note      = {https://doi.org/10.1109/CGO.2003.1191551}
+}
+
+% [46] Nethercote & Seward Valgrind
 @article{nethercote2007valgrind,
   author  = {Nethercote, Nicholas and Seward, Julian},
   title   = {Valgrind: A Framework for Heavyweight Dynamic Binary Instrumentation},
-  journal = {Proceedings of the 28th ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  journal = {ACM SIGPLAN Notices},
   volume  = {42},
   number  = {6},
   pages   = {89--100},
@@ -300,7 +476,7 @@
   note    = {https://doi.org/10.1145/1250734.1250746}
 }
 
-% [30] Nethercote & Seward Shadow Memory
+% [47] Nethercote & Seward Shadow Memory
 @inproceedings{nethercote2007shadow,
   author    = {Nethercote, Nicholas and Seward, Julian},
   title     = {How to Shadow Every Byte of Memory Used by a Program},
@@ -309,4 +485,45 @@
   year      = {2007},
   doi       = {10.1145/1248814.1248820},
   note      = {https://doi.org/10.1145/1248814.1248820}
+}
+
+% [48] Ren et al. Google-Wide Profiling
+@article{ren2010googlewide,
+  author  = {Ren, Rubby and Tune, Eric and Moseley, Timothy and Cornell, Yipeng and Oliker, Leonid and Patterson, David},
+  title   = {Google-Wide Profiling: A Continuous Profiling Infrastructure for Data Centers},
+  journal = {IEEE Micro},
+  volume  = {30},
+  number  = {4},
+  pages   = {65--79},
+  year    = {2010},
+  doi     = {10.1109/MM.2010.68},
+  note    = {https://doi.org/10.1109/MM.2010.68}
+}
+
+% [49] Wang et al. eWAPA
+@inproceedings{wang2025ewapa,
+  author    = {Wang, Haotian and others},
+  title     = {{eWAPA}: An {eBPF}-based {WASI} Performance Analysis Framework for {WebAssembly} Runtimes},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2508.09875},
+  note      = {https://arxiv.org/abs/2508.09875}
+}
+
+% [50] Zou et al. Yaksha-Prashna
+@inproceedings{zou2026yaksha,
+  author    = {Zou, Bohua and others},
+  title     = {{Yaksha-Prashna}: Understanding {eBPF} Bytecode Network Function Behavior},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2601.20755},
+  note      = {https://arxiv.org/abs/2601.20755}
+}
+
+% [51] Pijnacker et al. Container Energy
+@article{pijnacker2025containerenergy,
+  author  = {Pijnacker, Bart and Setz, Brendan and Andrikopoulos, Vasilios and others},
+  title   = {Container-level Energy Observability in {Kubernetes} Clusters},
+  journal = {arXiv preprint arXiv:2504.10702},
+  year    = {2025},
+  url     = {https://arxiv.org/abs/2504.10702},
+  note    = {https://arxiv.org/abs/2504.10702}
 }

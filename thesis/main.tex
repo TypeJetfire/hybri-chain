@@ -11,6 +11,7 @@
 \AtBeginDocument{
   \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
   \renewcommand{\thetable}{\thechapter.\arabic{table}}
+  \renewcommand{\thelstlisting}{\thechapter.\arabic{lstlisting}}
 }
 \usepackage{bookmark}    % 生成 PDF 书签大纲（侧边栏目录）
 
@@ -34,6 +35,10 @@
 \usepackage{enumerate}             % 有序列表宏包
 \usepackage[linesnumbered,ruled,commentsnumbered]{algorithm2e}
 \SetAlgorithmName{算法}{算法}{算法清单}
+\makeatletter
+\@addtoreset{algocf}{chapter}
+\renewcommand{\thealgocf}{\thechapter.\arabic{algocf}}
+\makeatother
 \usepackage{listings}
 \lstset{
   basicstyle=\ttfamily\small,

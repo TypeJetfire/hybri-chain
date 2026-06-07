@@ -25,20 +25,20 @@ Go 运行时与探针兼容性。Go 1.17+ 的栈管理机制与 uretprobe 的 tr
 
 Ollama 的推理引擎二进制（带调试信息的 ollama-debug）中，以下函数是第三章所定义的四类关键节点的具体对应：
 
-\begin{enumerate}[(1)]
-    \item \texttt{llama\_decode}：推理主循环，每生成一个 token 必然调用一次。挂载在函数入口（uprobe）和返回点（uretprobe），记录进入时刻和耗时差值，并输出调用栈（ustack，32 层深度）。
-    \item \texttt{ggml\_backend\_sched\_graph\_compute\_async}：GGML 计算调度，不输出调用栈（GGML 内部函数太多，栈太深，价值不大）。
-    \item \texttt{llama\_synchronize}：同步等待点。
-    \item \texttt{llama\_sampler\_sample} 和 \texttt{common\_sampler\_csample}：采样函数，输出调用栈。
-    \item \texttt{llama\_model\_load\_from\_file}：模型加载入口，记录模型加载的总耗时。
-    \item \texttt{llama\_batch\_get\_one}：批处理函数。
-\end{enumerate}
+\begin{description}
+    \item[\texttt{llama\_decode}：] 推理主循环，每生成一个 token 必然调用一次。挂载在函数入口（uprobe）和返回点（uretprobe），记录进入时刻和耗时差值，并输出调用栈（ustack，32 层深度）。
+    \item[\texttt{ggml\_backend\_sched\_graph\_compute\_async}：] GGML 计算调度，不输出调用栈（GGML 内部函数太多，栈太深，价值不大）。
+    \item[\texttt{llama\_synchronize}：] 同步等待点。
+    \item[\texttt{llama\_sampler\_sample} 和 \texttt{common\_sampler\_csample}：] 采样函数，输出调用栈。
+    \item[\texttt{llama\_model\_load\_from\_file}：] 模型加载入口，记录模型加载的总耗时。
+    \item[\texttt{llama\_batch\_get\_one}：] 批处理函数。
+\end{description}
 
-具体探针配置用算法 1 描述。其中哈希表记录各线程的进入时刻，uretprobe 从哈希表取出时刻计算耗时后立即删除对应条目，避免哈希表无限增长：
+具体探针配置用算法~\ref{alg:uprobe-config} 描述。其中哈希表记录各线程的进入时刻，uretprobe 从哈希表取出时刻计算耗时后立即删除对应条目，避免哈希表无限增长：
 
 \begin{algorithm}[H]
 \caption{uprobe/uretprobe 配置（以 \texttt{llama\_decode} 为例）}
-\label{fig:uprobe-config}
+\label{alg:uprobe-config}
 \DontPrintSemicolon
 \KwIn{binary path $B$；函数名 $F$；uprobe 事件流}
 \KwOut{带耗时的 uprobe 事件行列表 $L$}
@@ -115,7 +115,7 @@ extract\_symbols.py 从 ollama-debug 二进制文件中提取函数符号，构�
 
 缝合模块由三个 Python 类协作完成：CGEdge（表示一条静态调用边）、CallGraph（加载静态调用图）、AnchorMatcher（做锚点匹配）、ConfidenceCalculator（计算置信度）。
 
-AnchorMatcher 维护一个“等价映射表”，把各种格式的 CGO 函数名映射到 llama.cpp 的原始函数名，匹配策略按优先级递减执行（算法 2）。哈希值（8aa400f2462b）是 Ollama 版本的特征，和二进制文件强绑定。
+AnchorMatcher 维护一个“等价映射表”，把各种格式的 CGO 函数名映射到 llama.cpp 的原始函数名，匹配策略按优先级递减执行（算法~\ref{alg:confidence}）。哈希值（8aa400f2462b）是 Ollama 版本的特征，和二进制文件强绑定。
 
 解析脚本的核心是一个状态机，bpftrace 输出的每行文本根据前缀标记进入不同状态。状态机维护四个内部变量：当前状态（IDLE 或 BUILDING\_UPROBE）、线程 traceID 映射表、当前函数的上下文信息、调用栈累积列表。
 
@@ -125,12 +125,12 @@ AnchorMatcher 维护一个“等价映射表”，把各种格式的 CGO 函数�
 
 阈值选择依据是：Llama.cpp 的 token 生成速度大约是每秒 10\~30 个 token，相邻两次 \texttt{llama\_decode} 的间隔在 30\~100 毫秒之间。因此用 50 毫秒作为请求树的切分阈值——如果两次事件间隔超过 50 毫秒，说明它们属于不同的推理请求。
 
-图~\ref{fig:confidence} 给出了置信度计算的整体流程：
+算法~\ref{alg:confidence} 给出了置信度计算的整体流程：
 
-\begin{figure}[H]
+
 \begin{algorithm}[H]
 \caption{置信度计算流程}
-\label{fig:confidence}
+\label{alg:confidence}
 \DontPrintSemicolon
 \KwIn{静态调用图 $G=(V,E)$；动态事件列表 $E_{\text{dyn}}$；请求树构建函数 $\text{build\_trees}$；阈值 $T_{\text{gap}} = 50$ms}
 \KwOut{每条边 $(u,v) \in E$ 的置信度标签 $C(u,v)$}
@@ -161,7 +161,6 @@ $\text{trees} \leftarrow \text{build\_trees}(E_{\text{dyn}}, T_{\text{gap}})$ \t
 }
 \Return $C$
 \end{algorithm}
-\end{figure}
 
 缝合完成后，运行缝合模块：传入事件文件与静态调用图，即可完成跨语言调用链的缝合与导出，同时输出 Confirmed / Inferred / Unknown 边的统计摘要。
 
@@ -173,11 +172,11 @@ Ollama 的 daemon + runner 双进程架构，使得同一推理请求在两端�
 
 Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味着进程间的 HTTP 连接本身不具备请求关联能力——daemon 侧发出的 HTTP POST 请求和 runner 侧接收到的请求，在 bpftrace 的 TID 视角下是毫不相干的两组线程。
 
-针对这一 Ollama 的问题，HybriChain 的解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法 3 所示。
+针对这一 Ollama 的问题，HybriChain 的解决方案是：在 Ollama 代码中注入轻量级的跟踪函数和 traceID 传递机制，使 bpftrace uprobe 能够从 API 入口一路追踪到推理结束。该方案已实际修改 Ollama 源码，涉及三个文件，如算法~\ref{alg:traceid-inject} 所示。
 
 \begin{algorithm}[H]
 \caption{traceID 注入：三文件具体改动}
-\label{fig:traceid-inject}
+\label{alg:traceid-inject}
 \DontPrintSemicolon
 \SetKwBlock{ChangeA}{改动一（\texttt{llm/server.go}）：}{}
 \SetKwBlock{ChangeB}{改动二（\texttt{server/routes.go}）：}{}
@@ -210,7 +209,7 @@ Ollama 的双进程间通信走的是 HTTP over TCP（而非 UDS），这意味�
 
 \begin{algorithm}[H]
 \caption{traceID 跨进程数据流}
-\label{fig:traceid-flow}
+\label{alg:traceid-flow}
 \DontPrintSemicolon
 \KwIn{一次推理请求}
 \KwOut{带统一 traceID 的完整调用链事件}
@@ -261,11 +260,11 @@ http\_socket\_read\_anomaly 规则。 条件是 fd == 3 的 read 调用且 bytes
 
 \section{完整追踪流程}
 
-算法 5 给出了完整追踪流程的步骤。
+算法~\ref{alg:trace-pipeline} 给出了完整追踪流程的步骤。
 
 \begin{algorithm}[H]
 \caption{追踪流程算法}
-\label{fig:trace-pipeline}
+\label{alg:trace-pipeline}
 \KwIn{待追踪推理引擎}
 \KwOut{跨语言调用链 JSON，异常报告 JSON}
 

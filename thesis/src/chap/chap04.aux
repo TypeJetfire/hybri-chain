@@ -1,39 +1,35 @@
 \relax 
 \providecommand\hyper@newdestlabel[2]{}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4\hspace  {.3em}}HybriChain 在 Ollama 上的实现}{16}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4\hspace  {.3em}}HybriChain 在 Ollama 上的实现}{18}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10.0pt}}
 \@writefile{lot}{\addvspace {10.0pt}}
 \@writefile{loa}{\addvspace {10\p@ }}
-\newlabel{chap:implementation}{{4}{16}{HybriChain 在 Ollama 上的实现}{chapter.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 的工程特性}{16}{section.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}eBPF 追踪脚本的具体实现}{16}{section.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}uprobe 挂载的具体函数}{16}{subsection.4.2.1}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {3}{\ignorespaces uprobe/uretprobe 配置（以 llama\_decode 为例）}}{17}{algocf.3}\protected@file@percent }
-\newlabel{fig:uprobe-config}{{3}{17}{uprobe 挂载的具体函数}{algocf.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}系统调用 tracepoint 的具体配置}{17}{subsection.4.2.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.3}数据解析脚本的具体实现}{18}{section.4.3}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {4}{\ignorespaces bpftrace 原始输出的解析状态机}}{19}{algocf.4}\protected@file@percent }
-\newlabel{fig:parser-fsm}{{4}{19}{数据解析脚本的具体实现}{algocf.4}{}}
+\newlabel{chap:implementation}{{4}{18}{HybriChain 在 Ollama 上的实现}{chapter.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Ollama 的工程特性}{18}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}eBPF 追踪脚本的具体实现}{18}{section.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}uprobe 挂载的具体函数}{18}{subsection.4.2.1}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {4.1}{\ignorespaces uprobe/uretprobe 配置（以 \texttt  {llama\_decode} 为例）}}{19}{algocf.4.1}\protected@file@percent }
+\newlabel{alg:uprobe-config}{{4.1}{19}{uprobe 挂载的具体函数}{algocf.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}系统调用 tracepoint 的具体配置}{19}{subsection.4.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}数据解析脚本的具体实现}{20}{section.4.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {4.4}静态符号提取的具体实现}{20}{section.4.4}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {5}{\ignorespaces 函数符号层次分类算法}}{21}{algocf.5}\protected@file@percent }
-\newlabel{fig:classify-layer}{{5}{21}{静态符号提取的具体实现}{algocf.5}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {4.5}缝合模块的具体实现}{21}{section.4.5}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {6}{\ignorespaces 锚点函数名匹配算法}}{22}{algocf.6}\protected@file@percent }
-\newlabel{fig:anchor-match}{{6}{22}{缝合模块的具体实现}{algocf.6}{}}
-\@writefile{loa}{\contentsline {algocf}{\numberline {7}{\ignorespaces 置信度计算流程}}{23}{algocf.7}\protected@file@percent }
-\newlabel{fig:confidence}{{7}{23}{缝合模块的具体实现}{algocf.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.6}Ollama 独门方法：跨进程 traceID 注入}{23}{section.4.6}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {8}{\ignorespaces tracelID 注入：三文件具体改动}}{24}{algocf.8}\protected@file@percent }
-\newlabel{fig:traceid-inject}{{8}{24}{Ollama 独门方法：跨进程 traceID 注入}{algocf.8}{}}
-\@writefile{loa}{\contentsline {algocf}{\numberline {9}{\ignorespaces traceID 跨进程数据流}}{24}{algocf.9}\protected@file@percent }
-\newlabel{fig:traceid-flow}{{9}{24}{Ollama 独门方法：跨进程 traceID 注入}{algocf.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.7}异常检测规则的具体实现}{25}{section.4.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.8}完整追踪流程}{25}{section.4.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4.9}本章小结}{27}{section.4.9}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {4.2}{\ignorespaces 置信度计算流程}}{22}{algocf.4.2}\protected@file@percent }
+\newlabel{alg:confidence}{{4.2}{22}{缝合模块的具体实现}{algocf.4.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}跨进程 traceID 注入}{22}{section.4.6}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {4.3}{\ignorespaces traceID 注入：三文件具体改动}}{23}{algocf.4.3}\protected@file@percent }
+\newlabel{alg:traceid-inject}{{4.3}{23}{跨进程 traceID 注入}{algocf.4.3}{}}
+\@writefile{loa}{\contentsline {algocf}{\numberline {4.4}{\ignorespaces traceID 跨进程数据流}}{23}{algocf.4.4}\protected@file@percent }
+\newlabel{alg:traceid-flow}{{4.4}{23}{跨进程 traceID 注入}{algocf.4.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.7}异常检测规则的具体实现}{24}{section.4.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.8}完整追踪流程}{24}{section.4.8}\protected@file@percent }
+\@writefile{loa}{\contentsline {algocf}{\numberline {4.5}{\ignorespaces 追踪流程算法}}{25}{algocf.4.5}\protected@file@percent }
+\newlabel{alg:trace-pipeline}{{4.5}{25}{完整追踪流程}{algocf.4.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.9}本章小结}{25}{section.4.9}\protected@file@percent }
 \@setckpt{src/chap/chap04}{
-\setcounter{page}{28}
+\setcounter{page}{26}
 \setcounter{equation}{0}
-\setcounter{enumi}{6}
+\setcounter{enumi}{0}
 \setcounter{enumii}{0}
 \setcounter{enumiii}{0}
 \setcounter{enumiv}{0}
@@ -51,7 +47,7 @@
 \setcounter{lofdepth}{1}
 \setcounter{lotdepth}{1}
 \setcounter{section@level}{0}
-\setcounter{Item}{11}
+\setcounter{Item}{0}
 \setcounter{Hfootnote}{0}
 \setcounter{Hy@AnnotLevel}{0}
 \setcounter{bookmark@seq@number}{0}
@@ -65,10 +61,10 @@
 \setcounter{subfigure@save}{0}
 \setcounter{subtable}{0}
 \setcounter{subtable@save}{0}
-\setcounter{AlgoLine}{7}
-\setcounter{algocfline}{9}
-\setcounter{algocfproc}{9}
-\setcounter{algocf}{9}
+\setcounter{AlgoLine}{17}
+\setcounter{algocfline}{7}
+\setcounter{algocfproc}{7}
+\setcounter{algocf}{5}
 \setcounter{thm}{0}
 \setcounter{lstlisting}{0}
 }
